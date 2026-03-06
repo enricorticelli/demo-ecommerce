@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Order.Application;
-using Shared.BuildingBlocks.Http;
+using Order.Api.Contracts;
+using Shared.BuildingBlocks.Api;
+using Shared.BuildingBlocks.Cqrs;
 
 namespace Order.Api.Endpoints;
 
@@ -8,8 +10,9 @@ public static class OrderEndpoints
 {
     public static RouteGroupBuilder MapOrderEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/v1/orders")
-            .WithTags("Order");
+        var group = app.MapGroup(OrderRoutes.Base)
+            .WithTags("Order")
+            .AddEndpointFilter<CqrsExceptionEndpointFilter>();
 
         group.MapPost("/", CreateOrder)
             .WithName("CreateOrder");
@@ -22,24 +25,18 @@ public static class OrderEndpoints
 
     private static async Task<IResult> CreateOrder(
         CreateOrderCommand command,
-        IOrderService orderService,
+        ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken)
     {
-        var errors = command.GetValidationErrors();
-        if (errors.Count != 0)
-        {
-            return ProblemDetailsExtensions.ValidationProblem(errors, "Invalid create order command");
-        }
-
         try
         {
-            var result = await orderService.CreateOrderAsync(command, cancellationToken);
+            var result = await commandDispatcher.ExecuteAsync(command, cancellationToken);
             if (result is null)
             {
                 return TypedResults.NotFound();
             }
 
-            return TypedResults.Accepted($"/v1/orders/{result.OrderId}", new { orderId = result.OrderId, status = result.Status });
+            return TypedResults.Accepted($"{OrderRoutes.Base}/{result.OrderId}", new { orderId = result.OrderId, status = result.Status });
         }
         catch (InvalidOperationException ex)
         {
@@ -50,9 +47,9 @@ public static class OrderEndpoints
         }
     }
 
-    private static async Task<Results<Ok<object>, NotFound>> GetOrder(Guid orderId, IOrderService orderService, CancellationToken cancellationToken)
+    private static async Task<Results<Ok<object>, NotFound>> GetOrder(Guid orderId, IQueryDispatcher queryDispatcher, CancellationToken cancellationToken)
     {
-        var order = await orderService.GetOrderAsync(orderId, cancellationToken);
+        var order = await queryDispatcher.ExecuteAsync(new GetOrderByIdQuery(orderId), cancellationToken);
         return order is null ? TypedResults.NotFound() : TypedResults.Ok((object)order);
     }
 }

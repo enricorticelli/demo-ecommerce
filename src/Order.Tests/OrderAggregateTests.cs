@@ -34,8 +34,3 @@ public sealed class OrderAggregateTests
         probe.Verify(x => x.Mark("order-tests"), Times.Once);
     }
 }
-
-public interface IOrderTestProbe
-{
-    void Mark(string name);
-}

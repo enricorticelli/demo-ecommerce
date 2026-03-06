@@ -1,13 +1,6 @@
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 
 namespace Shared.BuildingBlocks.Http;
-
-public static class CorrelationId
-{
-    public const string HeaderName = "X-Correlation-Id";
-    public const string ItemKey = "CorrelationId";
-}
 
 public sealed class CorrelationIdMiddleware(RequestDelegate next)
 {
@@ -21,9 +14,4 @@ public sealed class CorrelationIdMiddleware(RequestDelegate next)
         context.Response.Headers[CorrelationId.HeaderName] = correlationId;
         await next(context);
     }
-}
-
-public static class CorrelationIdExtensions
-{
-    public static IApplicationBuilder UseCorrelationId(this IApplicationBuilder app) => app.UseMiddleware<CorrelationIdMiddleware>();
 }

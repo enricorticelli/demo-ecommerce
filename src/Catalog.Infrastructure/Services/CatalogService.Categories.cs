@@ -6,21 +6,24 @@ namespace Catalog.Infrastructure;
 
 public sealed partial class CatalogService
 {
-    public async Task<IReadOnlyList<CategoryDocument>> GetCategoriesAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<CategoryView>> GetCategoriesAsync(CancellationToken cancellationToken)
     {
-        return await _querySession.Query<CategoryDocument>()
+        var categories = await _querySession.Query<CategoryAggregate>()
             .OrderBy(x => x.Name)
             .ToListAsync(cancellationToken);
+
+        return categories.Select(MapToView).ToArray();
     }
 
-    public Task<CategoryDocument?> GetCategoryByIdAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<CategoryView?> GetCategoryByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        return _querySession.LoadAsync<CategoryDocument>(id, cancellationToken);
+        var category = await _querySession.LoadAsync<CategoryAggregate>(id, cancellationToken);
+        return category is null ? null : MapToView(category);
     }
 
-    public async Task<CategoryDocument> CreateCategoryAsync(CreateCategoryCommand command, CancellationToken cancellationToken)
+    public async Task<CategoryView> CreateCategoryAsync(CreateCategoryCommand command, CancellationToken cancellationToken)
     {
-        var category = new CategoryDocument
+        var category = new CategoryAggregate
         {
             Id = Guid.NewGuid(),
             Name = command.Name,
@@ -30,18 +33,18 @@ public sealed partial class CatalogService
 
         _documentSession.Store(category);
         await _documentSession.SaveChangesAsync(cancellationToken);
-        return category;
+        return MapToView(category);
     }
 
-    public async Task<CategoryDocument?> UpdateCategoryAsync(Guid id, UpdateCategoryCommand command, CancellationToken cancellationToken)
+    public async Task<CategoryView?> UpdateCategoryAsync(Guid id, UpdateCategoryCommand command, CancellationToken cancellationToken)
     {
-        var existing = await _documentSession.LoadAsync<CategoryDocument>(id, cancellationToken);
+        var existing = await _documentSession.LoadAsync<CategoryAggregate>(id, cancellationToken);
         if (existing is null)
         {
             return null;
         }
 
-        var updated = new CategoryDocument
+        var updated = new CategoryAggregate
         {
             Id = id,
             Name = command.Name,
@@ -51,19 +54,24 @@ public sealed partial class CatalogService
 
         _documentSession.Store(updated);
         await _documentSession.SaveChangesAsync(cancellationToken);
-        return updated;
+        return MapToView(updated);
     }
 
     public async Task<bool> DeleteCategoryAsync(Guid id, CancellationToken cancellationToken)
     {
-        var category = await _documentSession.LoadAsync<CategoryDocument>(id, cancellationToken);
+        var category = await _documentSession.LoadAsync<CategoryAggregate>(id, cancellationToken);
         if (category is null)
         {
             return false;
         }
 
-        _documentSession.Delete<CategoryDocument>(id);
+        _documentSession.Delete<CategoryAggregate>(id);
         await _documentSession.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    private static CategoryView MapToView(CategoryAggregate category)
+    {
+        return new CategoryView(category.Id, category.Name, category.Slug, category.Description);
     }
 }

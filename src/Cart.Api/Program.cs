@@ -1,28 +1,18 @@
 using Cart.Api.Endpoints;
+using Cart.Application.Composition;
 using Cart.Infrastructure.Composition;
-using Shared.BuildingBlocks.Http;
+using Shared.BuildingBlocks.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDefaultProblemDetails();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddHealthChecks();
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("default", policy =>
-        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
-});
+builder.Services.AddDefaultApiServices();
 
+builder.Services.AddCartApplication();
 builder.AddCartInfrastructure();
 
 var app = builder.Build();
 
-app.UseExceptionHandler();
-app.UseCors("default");
-app.UseCorrelationId();
-
-app.MapHealthChecks("/health/live");
-app.MapHealthChecks("/health/ready");
+app.UseDefaultApiPipeline();
 app.MapCartEndpoints();
 
 await app.RunAsync();

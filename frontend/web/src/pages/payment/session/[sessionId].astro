@@ -1,0 +1,11 @@
+---
+import MainLayout from '../../../layouts/MainLayout.astro';
+import PaymentSessionPage from '../../../components/PaymentSessionPage.svelte';
+
+const { sessionId } = Astro.params;
+const orderId = Astro.url.searchParams.get('orderId') ?? '';
+---
+
+<MainLayout title="Pagamento Hosted">
+  <PaymentSessionPage client:only="svelte" sessionId={sessionId ?? ''} orderId={orderId} />
+</MainLayout>

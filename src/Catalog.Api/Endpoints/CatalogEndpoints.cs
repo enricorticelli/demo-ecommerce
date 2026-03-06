@@ -1,4 +1,7 @@
+using Catalog.Api.Contracts;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Shared.BuildingBlocks.Api;
+using Shared.BuildingBlocks.Cqrs;
 
 namespace Catalog.Api.Endpoints;
 
@@ -6,10 +9,10 @@ public static partial class CatalogEndpoints
 {
     public static IEndpointRouteBuilder MapCatalogEndpoints(this IEndpointRouteBuilder app)
     {
-        MapProductEndpoints(app.MapGroup("/v1/products").WithTags("Catalog.Products"));
-        MapBrandEndpoints(app.MapGroup("/v1/brands").WithTags("Catalog.Brands"));
-        MapCategoryEndpoints(app.MapGroup("/v1/categories").WithTags("Catalog.Categories"));
-        MapCollectionEndpoints(app.MapGroup("/v1/collections").WithTags("Catalog.Collections"));
+        MapProductEndpoints(app.MapGroup(CatalogRoutes.Products).WithTags("Catalog.Products").AddEndpointFilter<CqrsExceptionEndpointFilter>());
+        MapBrandEndpoints(app.MapGroup(CatalogRoutes.Brands).WithTags("Catalog.Brands").AddEndpointFilter<CqrsExceptionEndpointFilter>());
+        MapCategoryEndpoints(app.MapGroup(CatalogRoutes.Categories).WithTags("Catalog.Categories").AddEndpointFilter<CqrsExceptionEndpointFilter>());
+        MapCollectionEndpoints(app.MapGroup(CatalogRoutes.Collections).WithTags("Catalog.Collections").AddEndpointFilter<CqrsExceptionEndpointFilter>());
         return app;
     }
 

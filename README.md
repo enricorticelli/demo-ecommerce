@@ -86,3 +86,9 @@ flowchart LR
 
 Internal service names in Docker network:
 - `catalog-api`, `cart-api`, `order-api`, `warehouse-api`, `payment-api`, `shipping-api`, `user-api`
+
+## Payment Provider Mode
+- `payment-api` supports provider-oriented session flow for hosted redirect + future S2S callback.
+- Environment variable:
+  - `PAYMENT_PROVIDER_MODE=redirect` (default): creates payment sessions (`/v1/payments/sessions/...`) and waits for explicit authorize/reject.
+  - `PAYMENT_PROVIDER_MODE=auto`: authorizes immediately (legacy/demo automation).

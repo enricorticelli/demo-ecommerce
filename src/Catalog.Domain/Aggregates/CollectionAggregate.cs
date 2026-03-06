@@ -1,0 +1,10 @@
+namespace Catalog.Domain;
+
+public sealed class CollectionAggregate
+{
+    public Guid Id { get; init; }
+    public required string Name { get; init; }
+    public required string Slug { get; init; }
+    public string Description { get; init; } = string.Empty;
+    public bool IsFeatured { get; init; }
+}

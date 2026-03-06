@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { fetchOrder, type OrderView } from '../lib/api';
-  import { getProductImage } from '../lib/mock';
+  import { getProductImage } from '../lib/catalog-presenter';
   import { formatCurrency } from '../lib/format';
 
   export let orderId: string;

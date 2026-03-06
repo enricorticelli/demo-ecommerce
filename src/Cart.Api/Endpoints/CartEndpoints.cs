@@ -1,7 +1,9 @@
 using Cart.Application;
+using Cart.Api.Contracts;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Shared.BuildingBlocks.Api;
 using Shared.BuildingBlocks.Contracts;
-using Shared.BuildingBlocks.Http;
+using Shared.BuildingBlocks.Cqrs;
 
 namespace Cart.Api.Endpoints;
 
@@ -9,8 +11,9 @@ public static class CartEndpoints
 {
     public static RouteGroupBuilder MapCartEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/v1/carts")
-            .WithTags("Cart");
+        var group = app.MapGroup(CartRoutes.Base)
+            .WithTags("Cart")
+            .AddEndpointFilter<CqrsExceptionEndpointFilter>();
 
         group.MapPost("/{cartId:guid}/items", AddItem)
             .WithName("AddCartItem");
@@ -30,28 +33,22 @@ public static class CartEndpoints
     private static async Task<IResult> AddItem(
         Guid cartId,
         AddCartItemCommand command,
-        ICartService service,
+        ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken)
     {
-        var errors = command.GetValidationErrors();
-        if (errors.Count != 0)
-        {
-            return ProblemDetailsExtensions.ValidationProblem(errors, "Invalid add item command");
-        }
-
-        await service.AddItemAsync(cartId, command, cancellationToken);
+        await commandDispatcher.ExecuteAsync(new AddCartItemToCartCommand(cartId, command), cancellationToken);
         return TypedResults.Ok((object)new { cartId, message = "Item added" });
     }
 
-    private static async Task<Ok<object>> RemoveItem(Guid cartId, Guid productId, ICartService service, CancellationToken cancellationToken)
+    private static async Task<Ok<object>> RemoveItem(Guid cartId, Guid productId, ICommandDispatcher commandDispatcher, CancellationToken cancellationToken)
     {
-        await service.RemoveItemAsync(cartId, productId, cancellationToken);
+        await commandDispatcher.ExecuteAsync(new RemoveCartItemFromCartCommand(cartId, productId), cancellationToken);
         return TypedResults.Ok((object)new { cartId, productId, message = "Item removed" });
     }
 
-    private static async Task<Results<Ok<object>, NotFound>> GetCart(Guid cartId, ICartService service, CancellationToken cancellationToken)
+    private static async Task<Results<Ok<object>, NotFound>> GetCart(Guid cartId, IQueryDispatcher queryDispatcher, CancellationToken cancellationToken)
     {
-        var cart = await service.GetCartAsync(cartId, cancellationToken);
+        var cart = await queryDispatcher.ExecuteAsync(new GetCartByIdQuery(cartId), cancellationToken);
         if (cart is null)
         {
             return TypedResults.NotFound();
@@ -60,9 +57,9 @@ public static class CartEndpoints
         return TypedResults.Ok((object)cart);
     }
 
-    private static async Task<Results<Ok<CartCheckedOutV1>, NotFound>> CheckoutCart(Guid cartId, ICartService service, CancellationToken cancellationToken)
+    private static async Task<Results<Ok<CartCheckedOutV1>, NotFound>> CheckoutCart(Guid cartId, ICommandDispatcher commandDispatcher, CancellationToken cancellationToken)
     {
-        var checkout = await service.CheckoutAsync(cartId, cancellationToken);
+        var checkout = await commandDispatcher.ExecuteAsync(new CheckoutCartCommand(cartId), cancellationToken);
         return checkout is null ? TypedResults.NotFound() : TypedResults.Ok(checkout);
     }
 }

@@ -22,11 +22,13 @@ public static class PaymentInfrastructureExtensions
         builder.Host.UseWolverine(options =>
         {
             options.UseRabbitMq(InfrastructureConnectionFactory.BuildRabbitMqConnectionString());
-            options.Discovery.IncludeType<PaymentHandlers>();
+            options.Discovery.IncludeType<PaymentAuthorizeRequestedHandler>();
             options.Policies.AutoApplyTransactions();
         });
 
-        builder.Services.AddScoped<IPaymentService, PaymentService>();
+        builder.Services.AddScoped<PaymentService>();
+        builder.Services.AddScoped<IPaymentService>(sp => sp.GetRequiredService<PaymentService>());
+        builder.Services.AddScoped<IPaymentSessionService>(sp => sp.GetRequiredService<PaymentService>());
         return builder;
     }
 }

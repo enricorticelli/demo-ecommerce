@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { fetchCart, removeCartItem, type CartItemDto } from '../lib/api';
-  import { getProductImage } from '../lib/mock';
+  import { getProductImage } from '../lib/catalog-presenter';
   import { formatCurrency } from '../lib/format';
   import { cartId, cartItems, cartTotal, syncCartFromServer } from '../stores/cart';
   import { addToast } from '../stores/ui';

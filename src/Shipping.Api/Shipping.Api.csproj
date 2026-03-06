@@ -6,7 +6,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Shipping.Application/Shipping.Application.csproj" />
-    <ProjectReference Include="../Shipping.Domain/Shipping.Domain.csproj" />
     <ProjectReference Include="../Shipping.Infrastructure/Shipping.Infrastructure.csproj" />
     <ProjectReference Include="../Shared.BuildingBlocks/Shared.BuildingBlocks.csproj" />
   </ItemGroup>

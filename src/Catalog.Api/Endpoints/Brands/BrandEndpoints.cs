@@ -1,6 +1,6 @@
 using Catalog.Application;
-using Catalog.Domain;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Shared.BuildingBlocks.Cqrs;
 using Shared.BuildingBlocks.Http;
 
 namespace Catalog.Api.Endpoints;
@@ -16,21 +16,21 @@ public static partial class CatalogEndpoints
         group.MapDelete("/{id:guid}", DeleteBrand).WithName("DeleteBrand");
     }
 
-    private static async Task<Ok<IReadOnlyList<BrandDocument>>> GetBrands(ICatalogService service, CancellationToken cancellationToken)
+    private static async Task<Ok<IReadOnlyList<BrandView>>> GetBrands(IQueryDispatcher queryDispatcher, CancellationToken cancellationToken)
     {
-        var brands = await service.GetBrandsAsync(cancellationToken);
+        var brands = await queryDispatcher.ExecuteAsync(new GetBrandsQuery(), cancellationToken);
         return TypedResults.Ok(brands);
     }
 
-    private static async Task<Results<Ok<BrandDocument>, NotFound>> GetBrandById(Guid id, ICatalogService service, CancellationToken cancellationToken)
+    private static async Task<Results<Ok<BrandView>, NotFound>> GetBrandById(Guid id, IQueryDispatcher queryDispatcher, CancellationToken cancellationToken)
     {
-        var brand = await service.GetBrandByIdAsync(id, cancellationToken);
+        var brand = await queryDispatcher.ExecuteAsync(new GetBrandByIdQuery(id), cancellationToken);
         return brand is null ? TypedResults.NotFound() : TypedResults.Ok(brand);
     }
 
-    private static async Task<Results<Created<BrandDocument>, ProblemHttpResult>> CreateBrand(
+    private static async Task<Results<Created<BrandView>, ProblemHttpResult>> CreateBrand(
         CreateBrandCommand command,
-        ICatalogService service,
+        ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken)
     {
         var errors = command.GetValidationErrors();
@@ -39,14 +39,14 @@ public static partial class CatalogEndpoints
             return CreateValidationProblem(errors, "Invalid brand payload");
         }
 
-        var brand = await service.CreateBrandAsync(command, cancellationToken);
+        var brand = await commandDispatcher.ExecuteAsync(new CreateBrandCatalogCommand(command), cancellationToken);
         return TypedResults.Created($"/v1/brands/{brand.Id}", brand);
     }
 
-    private static async Task<Results<Ok<BrandDocument>, NotFound, ProblemHttpResult>> UpdateBrand(
+    private static async Task<Results<Ok<BrandView>, NotFound, ProblemHttpResult>> UpdateBrand(
         Guid id,
         UpdateBrandCommand command,
-        ICatalogService service,
+        ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken)
     {
         var errors = command.GetValidationErrors();
@@ -55,13 +55,13 @@ public static partial class CatalogEndpoints
             return CreateValidationProblem(errors, "Invalid brand payload");
         }
 
-        var brand = await service.UpdateBrandAsync(id, command, cancellationToken);
+        var brand = await commandDispatcher.ExecuteAsync(new UpdateBrandCatalogCommand(id, command), cancellationToken);
         return brand is null ? TypedResults.NotFound() : TypedResults.Ok(brand);
     }
 
-    private static async Task<Results<NoContent, NotFound>> DeleteBrand(Guid id, ICatalogService service, CancellationToken cancellationToken)
+    private static async Task<Results<NoContent, NotFound>> DeleteBrand(Guid id, ICommandDispatcher commandDispatcher, CancellationToken cancellationToken)
     {
-        var deleted = await service.DeleteBrandAsync(id, cancellationToken);
+        var deleted = await commandDispatcher.ExecuteAsync(new DeleteBrandCatalogCommand(id), cancellationToken);
         return deleted ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 }

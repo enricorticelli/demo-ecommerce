@@ -22,7 +22,7 @@ public static class ShippingInfrastructureExtensions
         builder.Host.UseWolverine(options =>
         {
             options.UseRabbitMq(InfrastructureConnectionFactory.BuildRabbitMqConnectionString());
-            options.Discovery.IncludeType<ShippingHandlers>();
+            options.Discovery.IncludeType<ShippingCreateRequestedHandler>();
             options.Policies.AutoApplyTransactions();
         });
 

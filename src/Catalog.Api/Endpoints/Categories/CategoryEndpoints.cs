@@ -1,6 +1,6 @@
 using Catalog.Application;
-using Catalog.Domain;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Shared.BuildingBlocks.Cqrs;
 using Shared.BuildingBlocks.Http;
 
 namespace Catalog.Api.Endpoints;
@@ -16,21 +16,21 @@ public static partial class CatalogEndpoints
         group.MapDelete("/{id:guid}", DeleteCategory).WithName("DeleteCategory");
     }
 
-    private static async Task<Ok<IReadOnlyList<CategoryDocument>>> GetCategories(ICatalogService service, CancellationToken cancellationToken)
+    private static async Task<Ok<IReadOnlyList<CategoryView>>> GetCategories(IQueryDispatcher queryDispatcher, CancellationToken cancellationToken)
     {
-        var categories = await service.GetCategoriesAsync(cancellationToken);
+        var categories = await queryDispatcher.ExecuteAsync(new GetCategoriesQuery(), cancellationToken);
         return TypedResults.Ok(categories);
     }
 
-    private static async Task<Results<Ok<CategoryDocument>, NotFound>> GetCategoryById(Guid id, ICatalogService service, CancellationToken cancellationToken)
+    private static async Task<Results<Ok<CategoryView>, NotFound>> GetCategoryById(Guid id, IQueryDispatcher queryDispatcher, CancellationToken cancellationToken)
     {
-        var category = await service.GetCategoryByIdAsync(id, cancellationToken);
+        var category = await queryDispatcher.ExecuteAsync(new GetCategoryByIdQuery(id), cancellationToken);
         return category is null ? TypedResults.NotFound() : TypedResults.Ok(category);
     }
 
-    private static async Task<Results<Created<CategoryDocument>, ProblemHttpResult>> CreateCategory(
+    private static async Task<Results<Created<CategoryView>, ProblemHttpResult>> CreateCategory(
         CreateCategoryCommand command,
-        ICatalogService service,
+        ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken)
     {
         var errors = command.GetValidationErrors();
@@ -39,14 +39,14 @@ public static partial class CatalogEndpoints
             return CreateValidationProblem(errors, "Invalid category payload");
         }
 
-        var category = await service.CreateCategoryAsync(command, cancellationToken);
+        var category = await commandDispatcher.ExecuteAsync(new CreateCategoryCatalogCommand(command), cancellationToken);
         return TypedResults.Created($"/v1/categories/{category.Id}", category);
     }
 
-    private static async Task<Results<Ok<CategoryDocument>, NotFound, ProblemHttpResult>> UpdateCategory(
+    private static async Task<Results<Ok<CategoryView>, NotFound, ProblemHttpResult>> UpdateCategory(
         Guid id,
         UpdateCategoryCommand command,
-        ICatalogService service,
+        ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken)
     {
         var errors = command.GetValidationErrors();
@@ -55,13 +55,13 @@ public static partial class CatalogEndpoints
             return CreateValidationProblem(errors, "Invalid category payload");
         }
 
-        var category = await service.UpdateCategoryAsync(id, command, cancellationToken);
+        var category = await commandDispatcher.ExecuteAsync(new UpdateCategoryCatalogCommand(id, command), cancellationToken);
         return category is null ? TypedResults.NotFound() : TypedResults.Ok(category);
     }
 
-    private static async Task<Results<NoContent, NotFound>> DeleteCategory(Guid id, ICatalogService service, CancellationToken cancellationToken)
+    private static async Task<Results<NoContent, NotFound>> DeleteCategory(Guid id, ICommandDispatcher commandDispatcher, CancellationToken cancellationToken)
     {
-        var deleted = await service.DeleteCategoryAsync(id, cancellationToken);
+        var deleted = await commandDispatcher.ExecuteAsync(new DeleteCategoryCatalogCommand(id), cancellationToken);
         return deleted ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 }

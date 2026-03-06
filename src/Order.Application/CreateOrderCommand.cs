@@ -1,8 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using Shared.BuildingBlocks.Cqrs;
 
 namespace Order.Application;
 
-public sealed record CreateOrderCommand(Guid CartId, Guid UserId) : IValidatableObject
+public sealed record CreateOrderCommand(Guid CartId, Guid UserId) : ICommand<OrderCreationResult?>, IValidatableObject
 {
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

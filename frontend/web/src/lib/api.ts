@@ -96,6 +96,19 @@ export type CreateOrderResult = {
   status: string;
 };
 
+export type PaymentSession = {
+  sessionId: string;
+  orderId: string;
+  userId: string;
+  amount: number;
+  status: string;
+  transactionId: string | null;
+  failureReason: string | null;
+  createdAtUtc: string;
+  completedAtUtc: string | null;
+  redirectUrl: string;
+};
+
 // ─── Catalog ─────────────────────────────────────────────────────────────────
 
 export async function fetchProducts(): Promise<Product[]> {
@@ -236,6 +249,38 @@ export async function fetchOrder(orderId: string): Promise<OrderView> {
   if (res.status === 404) throw new NotFoundError(`Order ${orderId} not found`);
   if (!res.ok) throw new Error(`Order fetch error: ${res.status}`);
   return res.json();
+}
+
+export async function getPaymentSessionByOrder(orderId: string): Promise<PaymentSession | null> {
+  const res = await fetch(`${gatewayUrl()}/api/payment/v1/payments/sessions/orders/${orderId}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Payment session error: ${res.status}`);
+  return res.json();
+}
+
+export async function getPaymentSessionById(sessionId: string): Promise<PaymentSession | null> {
+  const res = await fetch(`${gatewayUrl()}/api/payment/v1/payments/sessions/${sessionId}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Payment session error: ${res.status}`);
+  return res.json();
+}
+
+export async function authorizePaymentSession(sessionId: string): Promise<void> {
+  const res = await fetch(`${gatewayUrl()}/api/payment/v1/payments/sessions/${sessionId}/authorize`, {
+    method: 'POST',
+  });
+
+  if (!res.ok) throw new Error(`Payment authorize error: ${res.status}`);
+}
+
+export async function rejectPaymentSession(sessionId: string, reason = 'Payment declined'): Promise<void> {
+  const res = await fetch(`${gatewayUrl()}/api/payment/v1/payments/sessions/${sessionId}/reject`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason }),
+  });
+
+  if (!res.ok) throw new Error(`Payment reject error: ${res.status}`);
 }
 
 // ─── Utilities ───────────────────────────────────────────────────────────────

@@ -38,8 +38,3 @@ public sealed class AddCartItemCommandValidationTests
         probe.Verify(x => x.Ping("cart-tests"), Times.Once);
     }
 }
-
-public interface ITestProbe
-{
-    void Ping(string message);
-}

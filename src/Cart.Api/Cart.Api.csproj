@@ -6,7 +6,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Cart.Application/Cart.Application.csproj" />
-    <ProjectReference Include="../Cart.Domain/Cart.Domain.csproj" />
     <ProjectReference Include="../Cart.Infrastructure/Cart.Infrastructure.csproj" />
     <ProjectReference Include="../Shared.BuildingBlocks/Shared.BuildingBlocks.csproj" />
   </ItemGroup>

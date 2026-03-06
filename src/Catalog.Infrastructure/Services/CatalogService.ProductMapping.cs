@@ -8,8 +8,8 @@ public sealed partial class CatalogService
 {
     private async Task<bool> ReferencesExistAsync(Guid brandId, Guid categoryId, IReadOnlyList<Guid> collectionIds, CancellationToken cancellationToken)
     {
-        var brand = await _querySession.LoadAsync<BrandDocument>(brandId, cancellationToken);
-        var category = await _querySession.LoadAsync<CategoryDocument>(categoryId, cancellationToken);
+        var brand = await _querySession.LoadAsync<BrandAggregate>(brandId, cancellationToken);
+        var category = await _querySession.LoadAsync<CategoryAggregate>(categoryId, cancellationToken);
         if (brand is null || category is null)
         {
             return false;
@@ -20,7 +20,7 @@ public sealed partial class CatalogService
             return true;
         }
 
-        var existingCollectionIds = await _querySession.Query<CollectionDocument>()
+        var existingCollectionIds = await _querySession.Query<CollectionAggregate>()
             .Where(x => collectionIds.Contains(x.Id))
             .Select(x => x.Id)
             .ToListAsync(cancellationToken);
@@ -28,7 +28,7 @@ public sealed partial class CatalogService
         return collectionIds.Distinct().All(existingCollectionIds.Contains);
     }
 
-    private async Task<IReadOnlyList<ProductView>> BuildProductViewsAsync(IReadOnlyList<ProductDocument> products, CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<ProductView>> BuildProductViewsAsync(IReadOnlyList<ProductAggregate> products, CancellationToken cancellationToken)
     {
         if (products.Count == 0)
         {
@@ -39,15 +39,15 @@ public sealed partial class CatalogService
         var categoryIds = products.Select(p => p.CategoryId).Distinct().ToArray();
         var collectionIds = products.SelectMany(p => p.CollectionIds).Distinct().ToArray();
 
-        var brands = await _querySession.Query<BrandDocument>()
+        var brands = await _querySession.Query<BrandAggregate>()
             .Where(x => brandIds.Contains(x.Id))
             .ToListAsync(cancellationToken);
 
-        var categories = await _querySession.Query<CategoryDocument>()
+        var categories = await _querySession.Query<CategoryAggregate>()
             .Where(x => categoryIds.Contains(x.Id))
             .ToListAsync(cancellationToken);
 
-        var collections = await _querySession.Query<CollectionDocument>()
+        var collections = await _querySession.Query<CollectionAggregate>()
             .Where(x => collectionIds.Contains(x.Id))
             .ToListAsync(cancellationToken);
 
@@ -58,17 +58,17 @@ public sealed partial class CatalogService
         return products.Select(p => MapToView(p, brandMap, categoryMap, collectionMap)).ToArray();
     }
 
-    private async Task<ProductView> BuildProductViewAsync(ProductDocument product, CancellationToken cancellationToken)
+    private async Task<ProductView> BuildProductViewAsync(ProductAggregate product, CancellationToken cancellationToken)
     {
-        var brands = await _querySession.Query<BrandDocument>()
+        var brands = await _querySession.Query<BrandAggregate>()
             .Where(x => x.Id == product.BrandId)
             .ToListAsync(cancellationToken);
 
-        var categories = await _querySession.Query<CategoryDocument>()
+        var categories = await _querySession.Query<CategoryAggregate>()
             .Where(x => x.Id == product.CategoryId)
             .ToListAsync(cancellationToken);
 
-        var collections = await _querySession.Query<CollectionDocument>()
+        var collections = await _querySession.Query<CollectionAggregate>()
             .Where(x => product.CollectionIds.Contains(x.Id))
             .ToListAsync(cancellationToken);
 
@@ -80,10 +80,10 @@ public sealed partial class CatalogService
     }
 
     private static ProductView MapToView(
-        ProductDocument product,
-        IReadOnlyDictionary<Guid, BrandDocument> brandMap,
-        IReadOnlyDictionary<Guid, CategoryDocument> categoryMap,
-        IReadOnlyDictionary<Guid, CollectionDocument> collectionMap)
+        ProductAggregate product,
+        IReadOnlyDictionary<Guid, BrandAggregate> brandMap,
+        IReadOnlyDictionary<Guid, CategoryAggregate> categoryMap,
+        IReadOnlyDictionary<Guid, CollectionAggregate> collectionMap)
     {
         var brandName = brandMap.TryGetValue(product.BrandId, out var brand) ? brand.Name : "Unknown brand";
         var categoryName = categoryMap.TryGetValue(product.CategoryId, out var category) ? category.Name : "Unknown category";

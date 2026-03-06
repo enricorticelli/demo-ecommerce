@@ -1,6 +1,6 @@
 using Catalog.Application;
-using Catalog.Domain;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Shared.BuildingBlocks.Cqrs;
 using Shared.BuildingBlocks.Http;
 
 namespace Catalog.Api.Endpoints;
@@ -16,21 +16,21 @@ public static partial class CatalogEndpoints
         group.MapDelete("/{id:guid}", DeleteCollection).WithName("DeleteCollection");
     }
 
-    private static async Task<Ok<IReadOnlyList<CollectionDocument>>> GetCollections(ICatalogService service, CancellationToken cancellationToken)
+    private static async Task<Ok<IReadOnlyList<CollectionView>>> GetCollections(IQueryDispatcher queryDispatcher, CancellationToken cancellationToken)
     {
-        var collections = await service.GetCollectionsAsync(cancellationToken);
+        var collections = await queryDispatcher.ExecuteAsync(new GetCollectionsQuery(), cancellationToken);
         return TypedResults.Ok(collections);
     }
 
-    private static async Task<Results<Ok<CollectionDocument>, NotFound>> GetCollectionById(Guid id, ICatalogService service, CancellationToken cancellationToken)
+    private static async Task<Results<Ok<CollectionView>, NotFound>> GetCollectionById(Guid id, IQueryDispatcher queryDispatcher, CancellationToken cancellationToken)
     {
-        var collection = await service.GetCollectionByIdAsync(id, cancellationToken);
+        var collection = await queryDispatcher.ExecuteAsync(new GetCollectionByIdQuery(id), cancellationToken);
         return collection is null ? TypedResults.NotFound() : TypedResults.Ok(collection);
     }
 
-    private static async Task<Results<Created<CollectionDocument>, ProblemHttpResult>> CreateCollection(
+    private static async Task<Results<Created<CollectionView>, ProblemHttpResult>> CreateCollection(
         CreateCollectionCommand command,
-        ICatalogService service,
+        ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken)
     {
         var errors = command.GetValidationErrors();
@@ -39,14 +39,14 @@ public static partial class CatalogEndpoints
             return CreateValidationProblem(errors, "Invalid collection payload");
         }
 
-        var collection = await service.CreateCollectionAsync(command, cancellationToken);
+        var collection = await commandDispatcher.ExecuteAsync(new CreateCollectionCatalogCommand(command), cancellationToken);
         return TypedResults.Created($"/v1/collections/{collection.Id}", collection);
     }
 
-    private static async Task<Results<Ok<CollectionDocument>, NotFound, ProblemHttpResult>> UpdateCollection(
+    private static async Task<Results<Ok<CollectionView>, NotFound, ProblemHttpResult>> UpdateCollection(
         Guid id,
         UpdateCollectionCommand command,
-        ICatalogService service,
+        ICommandDispatcher commandDispatcher,
         CancellationToken cancellationToken)
     {
         var errors = command.GetValidationErrors();
@@ -55,13 +55,13 @@ public static partial class CatalogEndpoints
             return CreateValidationProblem(errors, "Invalid collection payload");
         }
 
-        var collection = await service.UpdateCollectionAsync(id, command, cancellationToken);
+        var collection = await commandDispatcher.ExecuteAsync(new UpdateCollectionCatalogCommand(id, command), cancellationToken);
         return collection is null ? TypedResults.NotFound() : TypedResults.Ok(collection);
     }
 
-    private static async Task<Results<NoContent, NotFound>> DeleteCollection(Guid id, ICatalogService service, CancellationToken cancellationToken)
+    private static async Task<Results<NoContent, NotFound>> DeleteCollection(Guid id, ICommandDispatcher commandDispatcher, CancellationToken cancellationToken)
     {
-        var deleted = await service.DeleteCollectionAsync(id, cancellationToken);
+        var deleted = await commandDispatcher.ExecuteAsync(new DeleteCollectionCatalogCommand(id), cancellationToken);
         return deleted ? TypedResults.NoContent() : TypedResults.NotFound();
     }
 }

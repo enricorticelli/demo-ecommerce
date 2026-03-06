@@ -6,8 +6,6 @@ namespace Order.Infrastructure;
 public sealed class OrderService(
     ICartSnapshotClient cartSnapshotClient,
     IWarehouseClient warehouseClient,
-    IPaymentClient paymentClient,
-    IShippingClient shippingClient,
     IOrderStateStore orderStateStore,
     IOrderEventPublisher eventPublisher) : IOrderService
 {
@@ -38,23 +36,8 @@ public sealed class OrderService(
         }
 
         await orderStateStore.MarkStockReservedAsync(orderId, cancellationToken);
-
-        var payment = await paymentClient.AuthorizeAsync(orderId, command.UserId, cart.TotalAmount, cancellationToken);
-        if (!payment.Authorized)
-        {
-            const string reason = "Payment declined";
-            await orderStateStore.MarkFailedAsync(orderId, reason, cancellationToken);
-            await eventPublisher.PublishOrderFailedAsync(orderId, reason);
-            return new OrderCreationResult(orderId, OrderStatus.Failed.ToString());
-        }
-
-        await orderStateStore.MarkPaymentAuthorizedAsync(orderId, payment.TransactionId, cancellationToken);
-
-        var trackingCode = await shippingClient.CreateShipmentAsync(orderId, command.UserId, cart.Items, cancellationToken);
-        await orderStateStore.MarkCompletedAsync(orderId, trackingCode, payment.TransactionId, cancellationToken);
-        await eventPublisher.PublishOrderCompletedAsync(orderId, trackingCode, payment.TransactionId);
-
-        return new OrderCreationResult(orderId, OrderStatus.Completed.ToString());
+        await eventPublisher.RequestPaymentAuthorizationAsync(orderId, command.UserId, cart.TotalAmount);
+        return new OrderCreationResult(orderId, OrderStatus.StockReserved.ToString());
     }
 
     public Task<OrderView?> GetOrderAsync(Guid orderId, CancellationToken cancellationToken)

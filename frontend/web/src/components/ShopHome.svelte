@@ -19,7 +19,7 @@
     STOCK_LABELS,
     STOCK_COLORS,
     stableHash,
-  } from '../lib/mock';
+  } from '../lib/catalog-presenter';
   import { formatCurrency } from '../lib/format';
   import { cartId, userId, cartItems, syncCartFromServer } from '../stores/cart';
   import { addToast } from '../stores/ui';

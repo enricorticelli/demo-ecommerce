@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { createOrder } from '../lib/api';
-  import { getProductImage } from '../lib/mock';
+  import { createOrder, getPaymentSessionByOrder } from '../lib/api';
+  import { getProductImage } from '../lib/catalog-presenter';
   import { formatCurrency } from '../lib/format';
   import { cartId, userId, cartItems, cartTotal, clearCart } from '../stores/cart';
   import { addToast } from '../stores/ui';
@@ -47,6 +47,12 @@
     try {
       const result = await createOrder($cartId, $userId);
       clearCart();
+      const paymentSession = await getPaymentSessionByOrder(result.orderId);
+      if (paymentSession) {
+        window.location.href = paymentSession.redirectUrl;
+        return;
+      }
+
       window.location.href = `/orders/${result.orderId}`;
     } catch (err) {
       submitError = err instanceof Error ? err.message : 'Errore durante la creazione dell\'ordine.';

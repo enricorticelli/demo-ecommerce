@@ -22,7 +22,7 @@ public static class WarehouseInfrastructureExtensions
         builder.Host.UseWolverine(options =>
         {
             options.UseRabbitMq(InfrastructureConnectionFactory.BuildRabbitMqConnectionString());
-            options.Discovery.IncludeType<WarehouseHandlers>();
+            options.Discovery.IncludeType<OrderPlacedHandler>();
             options.Policies.AutoApplyTransactions();
         });
 

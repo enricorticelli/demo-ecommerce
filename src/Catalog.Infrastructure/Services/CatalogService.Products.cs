@@ -8,7 +8,7 @@ public sealed partial class CatalogService
 {
     public async Task<IReadOnlyList<ProductView>> GetProductsAsync(CancellationToken cancellationToken)
     {
-        var products = await _querySession.Query<ProductDocument>()
+        var products = await _querySession.Query<ProductAggregate>()
             .OrderBy(p => p.Name)
             .ToListAsync(cancellationToken);
 
@@ -17,7 +17,7 @@ public sealed partial class CatalogService
 
     public async Task<IReadOnlyList<ProductView>> GetNewArrivalsAsync(CancellationToken cancellationToken)
     {
-        var products = await _querySession.Query<ProductDocument>()
+        var products = await _querySession.Query<ProductAggregate>()
             .Where(p => p.IsNewArrival)
             .OrderByDescending(p => p.CreatedAtUtc)
             .ToListAsync(cancellationToken);
@@ -27,7 +27,7 @@ public sealed partial class CatalogService
 
     public async Task<IReadOnlyList<ProductView>> GetBestSellersAsync(CancellationToken cancellationToken)
     {
-        var products = await _querySession.Query<ProductDocument>()
+        var products = await _querySession.Query<ProductAggregate>()
             .Where(p => p.IsBestSeller)
             .OrderBy(p => p.Name)
             .ToListAsync(cancellationToken);
@@ -37,7 +37,7 @@ public sealed partial class CatalogService
 
     public async Task<ProductView?> GetProductByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        var product = await _querySession.LoadAsync<ProductDocument>(id, cancellationToken);
+        var product = await _querySession.LoadAsync<ProductAggregate>(id, cancellationToken);
         if (product is null)
         {
             return null;
@@ -54,7 +54,7 @@ public sealed partial class CatalogService
             return null;
         }
 
-        var product = new ProductDocument
+        var product = new ProductAggregate
         {
             Id = Guid.NewGuid(),
             Sku = command.Sku,
@@ -77,7 +77,7 @@ public sealed partial class CatalogService
 
     public async Task<ProductView?> UpdateProductAsync(Guid id, UpdateProductCommand command, CancellationToken cancellationToken)
     {
-        var existing = await _documentSession.LoadAsync<ProductDocument>(id, cancellationToken);
+        var existing = await _documentSession.LoadAsync<ProductAggregate>(id, cancellationToken);
         if (existing is null)
         {
             return null;
@@ -89,7 +89,7 @@ public sealed partial class CatalogService
             return null;
         }
 
-        var updated = new ProductDocument
+        var updated = new ProductAggregate
         {
             Id = id,
             Sku = command.Sku,
@@ -112,13 +112,13 @@ public sealed partial class CatalogService
 
     public async Task<bool> DeleteProductAsync(Guid id, CancellationToken cancellationToken)
     {
-        var existing = await _documentSession.LoadAsync<ProductDocument>(id, cancellationToken);
+        var existing = await _documentSession.LoadAsync<ProductAggregate>(id, cancellationToken);
         if (existing is null)
         {
             return false;
         }
 
-        _documentSession.Delete<ProductDocument>(id);
+        _documentSession.Delete<ProductAggregate>(id);
         await _documentSession.SaveChangesAsync(cancellationToken);
         return true;
     }
