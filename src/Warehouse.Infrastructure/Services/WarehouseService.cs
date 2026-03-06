@@ -7,11 +7,32 @@ namespace Warehouse.Infrastructure;
 
 public sealed class WarehouseService(IDocumentSession documentSession) : IWarehouseService
 {
+    public async Task UpsertStockAsync(UpsertStockItem model, CancellationToken cancellationToken)
+    {
+        var existing = await documentSession.LoadAsync<StockAggregate>(model.ProductId, cancellationToken);
+        if (existing is null)
+        {
+            documentSession.Store(new StockAggregate
+            {
+                Id = model.ProductId,
+                Sku = model.Sku,
+                AvailableQuantity = model.AvailableQuantity
+            });
+        }
+        else
+        {
+            existing.AvailableQuantity = model.AvailableQuantity;
+            documentSession.Store(existing);
+        }
+
+        await documentSession.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<StockReservationResult> ReserveStockAsync(StockReserveRequestedV1 request, CancellationToken cancellationToken)
     {
         var productIds = request.Items.Select(i => i.ProductId).ToArray();
         var docs = await documentSession.Query<StockAggregate>()
-            .Where(x => productIds.AsEnumerable().Contains(x.Id))
+            .Where(x => productIds.Contains(x.Id))
             .ToListAsync(cancellationToken);
         var byId = docs.ToDictionary(x => x.Id, x => x);
 
@@ -24,6 +45,7 @@ public sealed class WarehouseService(IDocumentSession documentSession) : IWareho
         foreach (var item in request.Items)
         {
             byId[item.ProductId].AvailableQuantity -= item.Quantity;
+            documentSession.Store(byId[item.ProductId]);
         }
 
         await documentSession.SaveChangesAsync(cancellationToken);

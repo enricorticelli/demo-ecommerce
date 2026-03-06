@@ -1,4 +1,5 @@
 using Cart.Application;
+using Cart.Infrastructure.Persistence.ReadModels;
 using Marten;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +26,7 @@ public static class CartInfrastructureExtensions
             options.Policies.AutoApplyTransactions();
         });
 
+        builder.Services.AddScoped<ICartReadModelStore, MongoCartReadModelStore>();
         builder.Services.AddScoped<ICartService, CartService>();
         return builder;
     }

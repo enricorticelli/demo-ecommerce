@@ -15,6 +15,9 @@ public static class WarehouseEndpoints
             .WithTags("Warehouse")
             .AddEndpointFilter<CqrsExceptionEndpointFilter>();
 
+        group.MapPost("/", UpsertStock)
+            .WithName("UpsertStock");
+
         group.MapPost("/reserve", ReserveStock)
             .WithName("ReserveStock");
 
@@ -27,4 +30,15 @@ public static class WarehouseEndpoints
         return TypedResults.Ok((object)new { result.OrderId, result.Reserved, result.Reason });
     }
 
+    private static async Task<Ok<object>> UpsertStock(UpsertStockRequest request, ICommandDispatcher commandDispatcher, CancellationToken cancellationToken)
+    {
+        var command = new UpsertStockCommand(new UpsertStockItem(request.ProductId, request.Sku, request.AvailableQuantity));
+        await commandDispatcher.ExecuteAsync(command, cancellationToken);
+        return TypedResults.Ok((object)new
+        {
+            request.ProductId,
+            request.Sku,
+            request.AvailableQuantity
+        });
+    }
 }

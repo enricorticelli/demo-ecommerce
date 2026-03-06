@@ -3,11 +3,11 @@ using Order.Domain;
 
 namespace Order.Infrastructure;
 
-public sealed class OrderService(
+public sealed class OrderCommandService(
     ICartSnapshotClient cartSnapshotClient,
     IWarehouseClient warehouseClient,
     IOrderStateStore orderStateStore,
-    IOrderEventPublisher eventPublisher) : IOrderService
+    IOrderEventPublisher eventPublisher) : IOrderCommandService
 {
     public async Task<OrderCreationResult?> CreateOrderAsync(CreateOrderCommand command, CancellationToken cancellationToken)
     {
@@ -38,10 +38,5 @@ public sealed class OrderService(
         await orderStateStore.MarkStockReservedAsync(orderId, cancellationToken);
         await eventPublisher.RequestPaymentAuthorizationAsync(orderId, command.UserId, cart.TotalAmount);
         return new OrderCreationResult(orderId, OrderStatus.StockReserved.ToString());
-    }
-
-    public Task<OrderView?> GetOrderAsync(Guid orderId, CancellationToken cancellationToken)
-    {
-        return orderStateStore.GetOrderViewAsync(orderId, cancellationToken);
     }
 }

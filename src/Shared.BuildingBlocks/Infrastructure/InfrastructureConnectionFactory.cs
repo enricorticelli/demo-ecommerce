@@ -19,4 +19,19 @@ public static class InfrastructureConnectionFactory
         var password = Environment.GetEnvironmentVariable("RABBITMQ_PASSWORD") ?? "guest";
         return $"amqp://{user}:{password}@{host}:{port}";
     }
+
+    public static string BuildMongoConnectionString()
+    {
+        var host = Environment.GetEnvironmentVariable("MONGO_HOST") ?? "mongodb";
+        var port = Environment.GetEnvironmentVariable("MONGO_PORT") ?? "27017";
+        var user = Environment.GetEnvironmentVariable("MONGO_USER");
+        var password = Environment.GetEnvironmentVariable("MONGO_PASSWORD");
+
+        if (!string.IsNullOrWhiteSpace(user) && !string.IsNullOrWhiteSpace(password))
+        {
+            return $"mongodb://{user}:{password}@{host}:{port}";
+        }
+
+        return $"mongodb://{host}:{port}";
+    }
 }

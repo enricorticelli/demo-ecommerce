@@ -7,7 +7,6 @@ public static class ShippingApplicationExtensions
 {
     public static IServiceCollection AddShippingApplication(this IServiceCollection services)
     {
-        services.AddCqrs(typeof(ShippingApplicationExtensions).Assembly);
-        return services;
+        return services.AddModuleApplication(typeof(ShippingApplicationExtensions).Assembly);
     }
 }

@@ -7,7 +7,6 @@ public static class UserApplicationExtensions
 {
     public static IServiceCollection AddUserApplication(this IServiceCollection services)
     {
-        services.AddCqrs(typeof(UserApplicationExtensions).Assembly);
-        return services;
+        return services.AddModuleApplication(typeof(UserApplicationExtensions).Assembly);
     }
 }

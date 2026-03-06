@@ -4,11 +4,11 @@ using Shared.BuildingBlocks.Contracts;
 
 namespace Order.Infrastructure;
 
-public sealed class OrderWorkflowProcessor(IOrderStateStore orderStateStore, IOrderEventPublisher eventPublisher) : IOrderWorkflowProcessor
+public sealed class OrderWorkflowProcessor(IOrderStateReader orderStateReader, IOrderStateStore orderStateStore, IOrderEventPublisher eventPublisher) : IOrderWorkflowProcessor
 {
     public async Task HandleStockReservedAsync(StockReservedV1 message, CancellationToken cancellationToken)
     {
-        var state = await orderStateStore.GetAsync(message.OrderId, cancellationToken);
+        var state = await orderStateReader.GetAsync(message.OrderId, cancellationToken);
         if (state is null || IsTerminal(state.Status))
         {
             return;
@@ -26,7 +26,7 @@ public sealed class OrderWorkflowProcessor(IOrderStateStore orderStateStore, IOr
 
     public async Task HandlePaymentAuthorizedAsync(PaymentAuthorizedV1 message, CancellationToken cancellationToken)
     {
-        var state = await orderStateStore.GetAsync(message.OrderId, cancellationToken);
+        var state = await orderStateReader.GetAsync(message.OrderId, cancellationToken);
         if (state is null || IsTerminal(state.Status))
         {
             return;
@@ -44,7 +44,7 @@ public sealed class OrderWorkflowProcessor(IOrderStateStore orderStateStore, IOr
 
     public async Task HandleShippingCreatedAsync(ShippingCreatedV1 message, CancellationToken cancellationToken)
     {
-        var state = await orderStateStore.GetAsync(message.OrderId, cancellationToken);
+        var state = await orderStateReader.GetAsync(message.OrderId, cancellationToken);
         if (state is null || IsTerminal(state.Status))
         {
             return;

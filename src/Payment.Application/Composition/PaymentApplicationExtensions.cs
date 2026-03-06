@@ -7,7 +7,6 @@ public static class PaymentApplicationExtensions
 {
     public static IServiceCollection AddPaymentApplication(this IServiceCollection services)
     {
-        services.AddCqrs(typeof(PaymentApplicationExtensions).Assembly);
-        return services;
+        return services.AddModuleApplication(typeof(PaymentApplicationExtensions).Assembly);
     }
 }

@@ -41,10 +41,10 @@
       description: 'Ordine confermato e pronto per la spedizione.',
     },
     Failed: {
-      label: 'Non elaborato',
+      label: 'Non completato',
       color: 'text-rose-700',
       background: 'bg-rose-50 border-rose-200',
-      description: 'Si e verificato un problema durante l\'elaborazione.',
+      description: 'Si è verificato un problema durante l\'elaborazione.',
     },
   };
 

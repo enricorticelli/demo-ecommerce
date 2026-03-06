@@ -5,6 +5,7 @@ using Order.Application;
 using Order.Infrastructure.Clients;
 using Order.Infrastructure.Messaging;
 using Order.Infrastructure.Persistence;
+using Order.Infrastructure.Persistence.ReadModels;
 using Order.Infrastructure.WorkflowHandlers;
 using Shared.BuildingBlocks.Infrastructure;
 using Wolverine;
@@ -55,10 +56,13 @@ public static class OrderInfrastructureExtensions
         builder.Services.AddScoped<IWarehouseClient, HttpWarehouseClient>();
         builder.Services.AddScoped<IPaymentClient, HttpPaymentClient>();
         builder.Services.AddScoped<IShippingClient, HttpShippingClient>();
+        builder.Services.AddScoped<IOrderReadModelStore, MongoOrderReadModelStore>();
+        builder.Services.AddScoped<IOrderStateReader, OrderStateReader>();
         builder.Services.AddScoped<IOrderStateStore, MartenOrderStateStore>();
         builder.Services.AddScoped<IOrderEventPublisher, WolverineOrderEventPublisher>();
         builder.Services.AddScoped<IOrderWorkflowProcessor, OrderWorkflowProcessor>();
-        builder.Services.AddScoped<IOrderService, OrderService>();
+        builder.Services.AddScoped<IOrderCommandService, OrderCommandService>();
+        builder.Services.AddScoped<IOrderQueryService, OrderReadService>();
 
         return builder;
     }

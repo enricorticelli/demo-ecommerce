@@ -1,7 +1,6 @@
 namespace Order.Application;
 
-public interface IOrderService
+public interface IOrderCommandService
 {
     Task<OrderCreationResult?> CreateOrderAsync(CreateOrderCommand command, CancellationToken cancellationToken);
-    Task<OrderView?> GetOrderAsync(Guid orderId, CancellationToken cancellationToken);
 }

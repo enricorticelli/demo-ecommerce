@@ -7,7 +7,6 @@ public static class WarehouseApplicationExtensions
 {
     public static IServiceCollection AddWarehouseApplication(this IServiceCollection services)
     {
-        services.AddCqrs(typeof(WarehouseApplicationExtensions).Assembly);
-        return services;
+        return services.AddModuleApplication(typeof(WarehouseApplicationExtensions).Assembly);
     }
 }

@@ -7,7 +7,6 @@ public static class OrderApplicationExtensions
 {
     public static IServiceCollection AddOrderApplication(this IServiceCollection services)
     {
-        services.AddCqrs(typeof(OrderApplicationExtensions).Assembly);
-        return services;
+        return services.AddModuleApplication(typeof(OrderApplicationExtensions).Assembly);
     }
 }

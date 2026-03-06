@@ -7,7 +7,6 @@ public static class CartApplicationExtensions
 {
     public static IServiceCollection AddCartApplication(this IServiceCollection services)
     {
-        services.AddCqrs(typeof(CartApplicationExtensions).Assembly);
-        return services;
+        return services.AddModuleApplication(typeof(CartApplicationExtensions).Assembly);
     }
 }

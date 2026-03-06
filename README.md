@@ -6,7 +6,8 @@ Professional starter kit for a basic e-commerce platform built with CQRS, Event 
 - `.NET 10` Minimal API microservices
 - CQRS and event sourcing with `Wolverine + Marten`
 - RabbitMQ for async workflows
-- PostgreSQL for documents, streams, and Wolverine durability
+- PostgreSQL for write model, event streams, and Wolverine durability
+- MongoDB for CQRS read models (query side)
 - YARP gateway (`/api/{service}/...`)
 - Fast frontend with `Astro SSR + Svelte + Nanostores + Tailwind`
 - One-command docker orchestration
@@ -49,7 +50,8 @@ flowchart LR
 
     subgraph INFRA[Infrastructure]
         MQ[(RabbitMQ)]
-        PG[(PostgreSQL)]
+        PG[(PostgreSQL Write)]
+        MONGO[(MongoDB Read)]
     end
 
     FE --> GW
@@ -70,6 +72,8 @@ flowchart LR
     CAT --> PG
     CART --> PG
     ORD --> PG
+    CART --> MONGO
+    ORD --> MONGO
     WH --> PG
     PAY --> PG
     SHIP --> PG
@@ -83,6 +87,7 @@ flowchart LR
 - Gateway OpenAPI JSON: `http://localhost:8080/openapi/v1.json`
 - RabbitMQ Management: `http://localhost:15672` (`guest/guest` by default)
 - PostgreSQL: `localhost:5432`
+- MongoDB: `localhost:27017`
 
 Internal service names in Docker network:
 - `catalog-api`, `cart-api`, `order-api`, `warehouse-api`, `payment-api`, `shipping-api`, `user-api`

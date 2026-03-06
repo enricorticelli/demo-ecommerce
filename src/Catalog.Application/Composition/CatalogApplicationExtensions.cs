@@ -7,7 +7,6 @@ public static class CatalogApplicationExtensions
 {
     public static IServiceCollection AddCatalogApplication(this IServiceCollection services)
     {
-        services.AddCqrs(typeof(CatalogApplicationExtensions).Assembly);
-        return services;
+        return services.AddModuleApplication(typeof(CatalogApplicationExtensions).Assembly);
     }
 }

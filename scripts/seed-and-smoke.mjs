@@ -1,5 +1,6 @@
 const seedCount = Number(process.env.SEED_PRODUCTS_COUNT ?? '18');
 const catalogUrlFromEnv = process.env.CATALOG_URL;
+const warehouseUrlFromEnv = process.env.WAREHOUSE_URL;
 const gatewayUrl = process.env.GATEWAY_URL ?? 'http://localhost:8080';
 
 const seedBrands = [
@@ -92,6 +93,28 @@ async function resolveCatalogServiceUrl() {
   return candidates[1];
 }
 
+async function resolveWarehouseServiceUrl() {
+  if (warehouseUrlFromEnv) {
+    return warehouseUrlFromEnv.replace(/\/$/, '');
+  }
+
+  const candidates = [
+    'http://warehouse-api:8080',
+    `${gatewayUrl.replace(/\/$/, '')}/api/warehouse`
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      await waitFor(`${candidate}/health/ready`, 3, 1000);
+      return candidate;
+    } catch {
+      // try next candidate
+    }
+  }
+
+  return candidates[1];
+}
+
 async function postJson(url, body) {
   const response = await fetch(url, {
     method: 'POST',
@@ -119,10 +142,13 @@ async function getJson(url) {
 
 async function main() {
   const catalogServiceUrl = await resolveCatalogServiceUrl();
+  const warehouseServiceUrl = await resolveWarehouseServiceUrl();
 
   console.log(`[seed] catalog base url: ${catalogServiceUrl}`);
+  console.log(`[seed] warehouse base url: ${warehouseServiceUrl}`);
   console.log('[seed] waiting for catalog service');
   await waitFor(`${catalogServiceUrl}/health/ready`);
+  await waitFor(`${warehouseServiceUrl}/health/ready`);
 
   console.log('[seed] creating brands/categories/collections (idempotent)');
   const existingBrands = await getJson(`${catalogServiceUrl}/v1/brands`);
@@ -163,6 +189,19 @@ async function main() {
   const products = await getJson(`${catalogServiceUrl}/v1/products`);
   const newArrivals = await getJson(`${catalogServiceUrl}/v1/products/new-arrivals`);
   const bestSellers = await getJson(`${catalogServiceUrl}/v1/products/best-sellers`);
+
+  console.log('[seed] upserting warehouse stock');
+  for (const product of Array.isArray(products) ? products : []) {
+    if (!product?.id || !product?.sku) {
+      continue;
+    }
+
+    await postJson(`${warehouseServiceUrl}/v1/stock`, {
+      productId: product.id,
+      sku: product.sku,
+      availableQuantity: randomInt(15, 60)
+    });
+  }
 
   console.log(`[seed] done, catalog size: ${Array.isArray(products) ? products.length : 0}`);
   console.log(`[seed] new arrivals: ${Array.isArray(newArrivals) ? newArrivals.length : 0}`);
