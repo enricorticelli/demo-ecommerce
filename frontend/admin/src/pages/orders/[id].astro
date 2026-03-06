@@ -1,0 +1,10 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import AdminOrderDetailPage from '../../components/AdminOrderDetailPage.svelte';
+
+const { id } = Astro.params;
+---
+
+<MainLayout title="Dettaglio ordine">
+  <AdminOrderDetailPage client:only="svelte" orderId={id ?? ''} />
+</MainLayout>

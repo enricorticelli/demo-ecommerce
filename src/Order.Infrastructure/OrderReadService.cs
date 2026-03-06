@@ -21,4 +21,21 @@ public sealed class OrderReadService(IOrderReadModelStore orderReadModelStore) :
                 readModel.TransactionId,
                 readModel.FailureReason);
     }
+
+    public async Task<IReadOnlyList<OrderView>> GetOrdersAsync(int limit, CancellationToken cancellationToken)
+    {
+        var rows = await orderReadModelStore.ListAsync(limit, cancellationToken);
+        return rows
+            .Select(readModel => new OrderView(
+                readModel.OrderId,
+                readModel.CartId,
+                readModel.UserId,
+                readModel.Status,
+                readModel.TotalAmount,
+                readModel.Items,
+                readModel.TrackingCode,
+                readModel.TransactionId,
+                readModel.FailureReason))
+            .ToList();
+    }
 }

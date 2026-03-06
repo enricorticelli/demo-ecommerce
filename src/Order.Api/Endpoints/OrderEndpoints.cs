@@ -17,6 +17,9 @@ public static class OrderEndpoints
         group.MapPost("/", CreateOrder)
             .WithName("CreateOrder");
 
+        group.MapGet("/", ListOrders)
+            .WithName("ListOrders");
+
         group.MapGet("/{orderId:guid}", GetOrder)
             .WithName("GetOrder");
 
@@ -51,5 +54,15 @@ public static class OrderEndpoints
     {
         var order = await queryDispatcher.ExecuteAsync(new GetOrderByIdQuery(orderId), cancellationToken);
         return order is null ? TypedResults.NotFound() : TypedResults.Ok((object)order);
+    }
+
+    private static async Task<Ok<IReadOnlyList<OrderView>>> ListOrders(
+        IQueryDispatcher queryDispatcher,
+        int? limit,
+        CancellationToken cancellationToken)
+    {
+        var safeLimit = Math.Clamp(limit ?? 50, 1, 200);
+        var orders = await queryDispatcher.ExecuteAsync(new GetOrdersQuery(safeLimit), cancellationToken);
+        return TypedResults.Ok(orders);
     }
 }

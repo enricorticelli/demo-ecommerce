@@ -16,7 +16,6 @@
     <nav class="hidden items-center gap-6 text-sm font-medium text-[#4a4f55] lg:flex">
       <a href="/" class="transition hover:text-[#202223]">Home</a>
       <a href="/search" class="transition hover:text-[#202223]">Shop</a>
-      <a href="/catalog-admin" class="transition hover:text-[#202223]">Catalog Admin</a>
     </nav>
 
     <form action="/search" method="get" class="order-3 w-full md:order-none md:ml-auto md:max-w-md lg:max-w-lg">

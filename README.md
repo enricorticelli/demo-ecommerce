@@ -28,6 +28,11 @@ Professional starter kit for a basic e-commerce platform built with CQRS, Event 
    ```
 4. Open UI:
    - `http://localhost:3000`
+   - `http://localhost:3001` (Backoffice gestionale separato)
+     - `http://localhost:3001/catalog`
+     - `http://localhost:3001/orders`
+     - `http://localhost:3001/payments`
+     - `http://localhost:3001/warehouse`
 
 ## Architecture
 
@@ -82,6 +87,7 @@ flowchart LR
 
 ## Services and Ports
 - Frontend: `http://localhost:3000`
+- Frontend Admin: `http://localhost:3001`
 - Gateway: `http://localhost:8080`
 - Gateway Scalar UI: `http://localhost:8080/scalar`
 - Gateway OpenAPI JSON: `http://localhost:8080/openapi/v1.json`

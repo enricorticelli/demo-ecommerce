@@ -17,6 +17,8 @@ public static class PaymentEndpoints
 
         group.MapPost("/authorize", AuthorizePayment)
             .WithName("AuthorizePayment");
+        group.MapGet("/sessions", ListPaymentSessions)
+            .WithName("ListPaymentSessions");
         group.MapGet("/sessions/orders/{orderId:guid}", GetPaymentSessionByOrderId)
             .WithName("GetPaymentSessionByOrderId");
         group.MapGet("/sessions/{sessionId:guid}", GetPaymentSessionById)
@@ -45,6 +47,16 @@ public static class PaymentEndpoints
     {
         var session = await queryDispatcher.ExecuteAsync(new GetPaymentSessionByOrderIdQuery(orderId), cancellationToken);
         return session is null ? TypedResults.NotFound() : TypedResults.Ok(session);
+    }
+
+    private static async Task<Ok<IReadOnlyList<PaymentSessionView>>> ListPaymentSessions(
+        IQueryDispatcher queryDispatcher,
+        int? limit,
+        CancellationToken cancellationToken)
+    {
+        var safeLimit = Math.Clamp(limit ?? 50, 1, 200);
+        var sessions = await queryDispatcher.ExecuteAsync(new GetPaymentSessionsQuery(safeLimit), cancellationToken);
+        return TypedResults.Ok(sessions);
     }
 
     private static async Task<Results<Ok<PaymentSessionView>, NotFound>> GetPaymentSessionById(

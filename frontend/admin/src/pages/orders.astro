@@ -1,0 +1,8 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import AdminOrdersPage from '../components/AdminOrdersPage.svelte';
+---
+
+<MainLayout title="Ordini">
+  <AdminOrdersPage client:only="svelte" />
+</MainLayout>

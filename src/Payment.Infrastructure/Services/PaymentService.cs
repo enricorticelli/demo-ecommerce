@@ -67,6 +67,19 @@ public sealed class PaymentService(IMessageBus bus) : IPaymentService, IPaymentS
         return Task.FromResult<PaymentSessionView?>(MapToView(aggregate));
     }
 
+    public Task<IReadOnlyList<PaymentSessionView>> GetAllAsync(int limit, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var list = SessionsById.Values
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .Take(Math.Max(1, limit))
+            .Select(MapToView)
+            .ToList();
+
+        return Task.FromResult<IReadOnlyList<PaymentSessionView>>(list);
+    }
+
     public async Task<bool> AuthorizeSessionAsync(Guid sessionId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
