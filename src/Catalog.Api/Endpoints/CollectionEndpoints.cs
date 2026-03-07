@@ -1,7 +1,9 @@
 using Catalog.Api.Contracts;
 using Catalog.Api.Contracts.Requests;
 using Catalog.Api.Contracts.Responses;
-using Catalog.Application.Abstractions.Collections;
+using Catalog.Api.Mappers;
+using Catalog.Application.Abstractions.Commands;
+using Catalog.Application.Abstractions.Queries;
 using Shared.BuildingBlocks.Api.Correlation;
 using Shared.BuildingBlocks.Api.Errors;
 
@@ -23,18 +25,18 @@ public static class CollectionEndpoints
         return group;
     }
 
-    private static async Task<IResult> GetCollections(string? searchTerm, ICollectionService service, CancellationToken cancellationToken)
+    private static async Task<IResult> GetCollections(string? searchTerm, ICollectionQueryService service, CancellationToken cancellationToken)
     {
-        var collections = await service.GetCollectionsAsync(searchTerm, cancellationToken);
-        return Results.Ok(collections.Select(x => new CollectionResponse(x.Id, x.Name, x.Slug, x.Description, x.IsFeatured)));
+        var collections = await service.ListAsync(searchTerm, cancellationToken);
+        return Results.Ok(collections.Select(x => x.ToResponse()));
     }
 
-    private static async Task<IResult> GetCollectionById(Guid id, ICollectionService service, CancellationToken cancellationToken)
+    private static async Task<IResult> GetCollectionById(Guid id, ICollectionQueryService service, CancellationToken cancellationToken)
     {
         try
         {
-            var collection = await service.GetCollectionAsync(id, cancellationToken);
-            return Results.Ok(new CollectionResponse(collection.Id, collection.Name, collection.Slug, collection.Description, collection.IsFeatured));
+            var collection = await service.GetByIdAsync(id, cancellationToken);
+            return Results.Ok(collection.ToResponse());
         }
         catch (Exception exception)
         {
@@ -42,12 +44,12 @@ public static class CollectionEndpoints
         }
     }
 
-    private static async Task<IResult> CreateCollection(CreateCollectionRequest request, ICollectionService service, HttpContext httpContext, CancellationToken cancellationToken)
+    private static async Task<IResult> CreateCollection(CreateCollectionRequest request, ICollectionCommandService service, HttpContext httpContext, CancellationToken cancellationToken)
     {
         try
         {
             var correlationId = CorrelationIdResolver.Resolve(httpContext);
-            var collection = await service.CreateCollectionAsync(
+            var collection = await service.CreateAsync(
                 request.Name,
                 request.Slug,
                 request.Description,
@@ -55,7 +57,7 @@ public static class CollectionEndpoints
                 correlationId,
                 cancellationToken);
 
-            var response = new CollectionResponse(collection.Id, collection.Name, collection.Slug, collection.Description, collection.IsFeatured);
+            var response = collection.ToResponse();
             return Results.Created($"{CatalogRoutes.Collections}/{collection.Id}", response);
         }
         catch (Exception exception)
@@ -64,12 +66,12 @@ public static class CollectionEndpoints
         }
     }
 
-    private static async Task<IResult> UpdateCollection(Guid id, UpdateCollectionRequest request, ICollectionService service, HttpContext httpContext, CancellationToken cancellationToken)
+    private static async Task<IResult> UpdateCollection(Guid id, UpdateCollectionRequest request, ICollectionCommandService service, HttpContext httpContext, CancellationToken cancellationToken)
     {
         try
         {
             var correlationId = CorrelationIdResolver.Resolve(httpContext);
-            var collection = await service.UpdateCollectionAsync(
+            var collection = await service.UpdateAsync(
                 id,
                 request.Name,
                 request.Slug,
@@ -78,7 +80,7 @@ public static class CollectionEndpoints
                 correlationId,
                 cancellationToken);
 
-            return Results.Ok(new CollectionResponse(collection.Id, collection.Name, collection.Slug, collection.Description, collection.IsFeatured));
+            return Results.Ok(collection.ToResponse());
         }
         catch (Exception exception)
         {
@@ -86,12 +88,12 @@ public static class CollectionEndpoints
         }
     }
 
-    private static async Task<IResult> DeleteCollection(Guid id, ICollectionService service, HttpContext httpContext, CancellationToken cancellationToken)
+    private static async Task<IResult> DeleteCollection(Guid id, ICollectionCommandService service, HttpContext httpContext, CancellationToken cancellationToken)
     {
         try
         {
             var correlationId = CorrelationIdResolver.Resolve(httpContext);
-            await service.DeleteCollectionAsync(id, correlationId, cancellationToken);
+            await service.DeleteAsync(id, correlationId, cancellationToken);
             return Results.NoContent();
         }
         catch (Exception exception)

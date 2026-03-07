@@ -1,7 +1,9 @@
 using Catalog.Api.Contracts;
 using Catalog.Api.Contracts.Requests;
 using Catalog.Api.Contracts.Responses;
-using Catalog.Application.Abstractions.Categories;
+using Catalog.Api.Mappers;
+using Catalog.Application.Abstractions.Commands;
+using Catalog.Application.Abstractions.Queries;
 using Shared.BuildingBlocks.Api.Correlation;
 using Shared.BuildingBlocks.Api.Errors;
 
@@ -23,18 +25,18 @@ public static class CategoryEndpoints
         return group;
     }
 
-    private static async Task<IResult> GetCategories(string? searchTerm, ICategoryService service, CancellationToken cancellationToken)
+    private static async Task<IResult> GetCategories(string? searchTerm, ICategoryQueryService service, CancellationToken cancellationToken)
     {
-        var categories = await service.GetCategoriesAsync(searchTerm, cancellationToken);
-        return Results.Ok(categories.Select(x => new CategoryResponse(x.Id, x.Name, x.Slug, x.Description)));
+        var categories = await service.ListAsync(searchTerm, cancellationToken);
+        return Results.Ok(categories.Select(x => x.ToResponse()));
     }
 
-    private static async Task<IResult> GetCategoryById(Guid id, ICategoryService service, CancellationToken cancellationToken)
+    private static async Task<IResult> GetCategoryById(Guid id, ICategoryQueryService service, CancellationToken cancellationToken)
     {
         try
         {
-            var category = await service.GetCategoryAsync(id, cancellationToken);
-            return Results.Ok(new CategoryResponse(category.Id, category.Name, category.Slug, category.Description));
+            var category = await service.GetByIdAsync(id, cancellationToken);
+            return Results.Ok(category.ToResponse());
         }
         catch (Exception exception)
         {
@@ -42,13 +44,13 @@ public static class CategoryEndpoints
         }
     }
 
-    private static async Task<IResult> CreateCategory(CreateCategoryRequest request, ICategoryService service, HttpContext httpContext, CancellationToken cancellationToken)
+    private static async Task<IResult> CreateCategory(CreateCategoryRequest request, ICategoryCommandService service, HttpContext httpContext, CancellationToken cancellationToken)
     {
         try
         {
             var correlationId = CorrelationIdResolver.Resolve(httpContext);
-            var category = await service.CreateCategoryAsync(request.Name, request.Slug, request.Description, correlationId, cancellationToken);
-            var response = new CategoryResponse(category.Id, category.Name, category.Slug, category.Description);
+            var category = await service.CreateAsync(request.Name, request.Slug, request.Description, correlationId, cancellationToken);
+            var response = category.ToResponse();
             return Results.Created($"{CatalogRoutes.Categories}/{category.Id}", response);
         }
         catch (Exception exception)
@@ -57,13 +59,13 @@ public static class CategoryEndpoints
         }
     }
 
-    private static async Task<IResult> UpdateCategory(Guid id, UpdateCategoryRequest request, ICategoryService service, HttpContext httpContext, CancellationToken cancellationToken)
+    private static async Task<IResult> UpdateCategory(Guid id, UpdateCategoryRequest request, ICategoryCommandService service, HttpContext httpContext, CancellationToken cancellationToken)
     {
         try
         {
             var correlationId = CorrelationIdResolver.Resolve(httpContext);
-            var category = await service.UpdateCategoryAsync(id, request.Name, request.Slug, request.Description, correlationId, cancellationToken);
-            return Results.Ok(new CategoryResponse(category.Id, category.Name, category.Slug, category.Description));
+            var category = await service.UpdateAsync(id, request.Name, request.Slug, request.Description, correlationId, cancellationToken);
+            return Results.Ok(category.ToResponse());
         }
         catch (Exception exception)
         {
@@ -71,12 +73,12 @@ public static class CategoryEndpoints
         }
     }
 
-    private static async Task<IResult> DeleteCategory(Guid id, ICategoryService service, HttpContext httpContext, CancellationToken cancellationToken)
+    private static async Task<IResult> DeleteCategory(Guid id, ICategoryCommandService service, HttpContext httpContext, CancellationToken cancellationToken)
     {
         try
         {
             var correlationId = CorrelationIdResolver.Resolve(httpContext);
-            await service.DeleteCategoryAsync(id, correlationId, cancellationToken);
+            await service.DeleteAsync(id, correlationId, cancellationToken);
             return Results.NoContent();
         }
         catch (Exception exception)

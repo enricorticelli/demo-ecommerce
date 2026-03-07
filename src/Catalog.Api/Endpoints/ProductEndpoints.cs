@@ -1,8 +1,9 @@
 using Catalog.Api.Contracts;
 using Catalog.Api.Contracts.Requests;
 using Catalog.Api.Contracts.Responses;
-using Catalog.Application.Abstractions.Products;
-using Catalog.Application.Views;
+using Catalog.Api.Mappers;
+using Catalog.Application.Abstractions.Commands;
+using Catalog.Application.Abstractions.Queries;
 using Shared.BuildingBlocks.Api.Correlation;
 using Shared.BuildingBlocks.Api.Errors;
 
@@ -26,30 +27,30 @@ public static class ProductEndpoints
         return group;
     }
 
-    private static async Task<IResult> GetProducts(string? searchTerm, IProductService service, CancellationToken cancellationToken)
+    private static async Task<IResult> GetProducts(string? searchTerm, IProductQueryService service, CancellationToken cancellationToken)
     {
-        var products = await service.GetProductsAsync(searchTerm, cancellationToken);
-        return Results.Ok(products.Select(MapProductResponse));
+        var products = await service.ListAsync(searchTerm, cancellationToken);
+        return Results.Ok(products.Select(x => x.ToResponse()));
     }
 
-    private static async Task<IResult> GetNewArrivals(string? searchTerm, IProductService service, CancellationToken cancellationToken)
+    private static async Task<IResult> GetNewArrivals(string? searchTerm, IProductQueryService service, CancellationToken cancellationToken)
     {
-        var products = await service.GetNewArrivalsAsync(searchTerm, cancellationToken);
-        return Results.Ok(products.Select(MapProductResponse));
+        var products = await service.ListNewArrivalsAsync(searchTerm, cancellationToken);
+        return Results.Ok(products.Select(x => x.ToResponse()));
     }
 
-    private static async Task<IResult> GetBestSellers(string? searchTerm, IProductService service, CancellationToken cancellationToken)
+    private static async Task<IResult> GetBestSellers(string? searchTerm, IProductQueryService service, CancellationToken cancellationToken)
     {
-        var products = await service.GetBestSellersAsync(searchTerm, cancellationToken);
-        return Results.Ok(products.Select(MapProductResponse));
+        var products = await service.ListBestSellersAsync(searchTerm, cancellationToken);
+        return Results.Ok(products.Select(x => x.ToResponse()));
     }
 
-    private static async Task<IResult> GetProductById(Guid id, IProductService service, CancellationToken cancellationToken)
+    private static async Task<IResult> GetProductById(Guid id, IProductQueryService service, CancellationToken cancellationToken)
     {
         try
         {
-            var product = await service.GetProductAsync(id, cancellationToken);
-            return Results.Ok(MapProductResponse(product));
+            var product = await service.GetByIdAsync(id, cancellationToken);
+            return Results.Ok(product.ToResponse());
         }
         catch (Exception exception)
         {
@@ -57,12 +58,12 @@ public static class ProductEndpoints
         }
     }
 
-    private static async Task<IResult> CreateProduct(CreateProductRequest request, IProductService service, HttpContext httpContext, CancellationToken cancellationToken)
+    private static async Task<IResult> CreateProduct(CreateProductRequest request, IProductCommandCatalogService service, HttpContext httpContext, CancellationToken cancellationToken)
     {
         try
         {
             var correlationId = CorrelationIdResolver.Resolve(httpContext);
-            var product = await service.CreateProductAsync(
+            var product = await service.CreateAsync(
             request.Sku,
             request.Name,
             request.Description,
@@ -75,7 +76,7 @@ public static class ProductEndpoints
             correlationId,
             cancellationToken);
 
-            return Results.Created($"{CatalogRoutes.Products}/{product.Id}", MapProductResponse(product));
+            return Results.Created($"{CatalogRoutes.Products}/{product.Id}", product.ToResponse());
         }
         catch (Exception exception)
         {
@@ -83,12 +84,12 @@ public static class ProductEndpoints
         }
     }
 
-    private static async Task<IResult> UpdateProduct(Guid id, UpdateProductRequest request, IProductService service, HttpContext httpContext, CancellationToken cancellationToken)
+    private static async Task<IResult> UpdateProduct(Guid id, UpdateProductRequest request, IProductCommandCatalogService service, HttpContext httpContext, CancellationToken cancellationToken)
     {
         try
         {
             var correlationId = CorrelationIdResolver.Resolve(httpContext);
-            var product = await service.UpdateProductAsync(
+            var product = await service.UpdateAsync(
             id,
             request.Sku,
             request.Name,
@@ -102,7 +103,7 @@ public static class ProductEndpoints
             correlationId,
             cancellationToken);
 
-            return Results.Ok(MapProductResponse(product));
+            return Results.Ok(product.ToResponse());
         }
         catch (Exception exception)
         {
@@ -110,12 +111,12 @@ public static class ProductEndpoints
         }
     }
 
-    private static async Task<IResult> DeleteProduct(Guid id, IProductService service, HttpContext httpContext, CancellationToken cancellationToken)
+    private static async Task<IResult> DeleteProduct(Guid id, IProductCommandCatalogService service, HttpContext httpContext, CancellationToken cancellationToken)
     {
         try
         {
             var correlationId = CorrelationIdResolver.Resolve(httpContext);
-            await service.DeleteProductAsync(id, correlationId, cancellationToken);
+            await service.DeleteAsync(id, correlationId, cancellationToken);
             return Results.NoContent();
         }
         catch (Exception exception)
@@ -124,22 +125,4 @@ public static class ProductEndpoints
         }
     }
 
-    private static ProductResponse MapProductResponse(ProductView product)
-    {
-        return new ProductResponse(
-            product.Id,
-            product.Sku,
-            product.Name,
-            product.Description,
-            product.Price,
-            product.BrandId,
-            product.BrandName,
-            product.CategoryId,
-            product.CategoryName,
-            product.CollectionIds,
-            product.CollectionNames,
-            product.IsNewArrival,
-            product.IsBestSeller,
-            product.CreatedAtUtc);
-    }
 }
