@@ -106,6 +106,21 @@ Policy checkout/order:
 - Niente endpoint interni di seed hardcoded: il seeding passa da API pubbliche CRUD.
 - Per moduli operativi (es. `Shipping`) esporre capability gestionali tramite endpoint CQRS dedicati (lista, dettaglio, aggiornamento stato) con endpoint sottili.
 
+Pattern standard nei progetti `*.Api`:
+- Contratti API separati in:
+  - `Contracts/Requests`
+  - `Contracts/Responses`
+- Endpoint con mapping minimale: delegano conversioni strutturate a mapper statici.
+- Mapper in classi statiche `*Mapper.cs` vicine agli endpoint (tipicamente `Endpoints/`), con metodi per:
+  - `Request -> Command/Integration Payload`
+  - `Application View/Model -> Response`
+- Vietato il mapping inline ripetitivo/complesso negli endpoint.
+- Vietata logica di dominio nei mapper (solo conversione dati e fallback tecnici).
+- Convenzioni naming raccomandate:
+  - `To<CommandName>()`
+  - `To<PayloadName>()`
+  - `ToResponse()` o `To<SpecificResponseName>()`
+
 Catalog (baseline):
 - `GET /v1/products`
 - `GET /v1/products/{id}`

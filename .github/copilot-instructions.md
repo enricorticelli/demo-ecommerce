@@ -56,6 +56,17 @@ Pattern vietati:
 - Endpoint con naming/tag coerenti (`WithName`, `WithTags`).
 - Validazione input ai boundary API.
 
+Pattern obbligatori nei progetti `*.Api`:
+- Contratti separati in `Contracts/Requests` e `Contracts/Responses` (namespace del modulo API).
+- Gli endpoint non costruiscono payload/DTO complessi inline.
+- Mapping centralizzato in classi statiche `*Mapper.cs` (es. `OrderMapper`, `PaymentMapper`).
+- Il mapper gestisce:
+  - `Request -> Command/Integration Payload`
+  - `Application View/Model -> Response`
+- Niente business rules nei mapper: solo conversione strutturale e default tecnici.
+- Convenzioni naming:
+  - `To<CommandName>`, `To<IntegrationPayloadName>`, `ToResponse`, `To<SpecificResponseName>`.
+
 ## 7) SOLID e Clean Code
 - SRP: una classe, una responsabilita primaria.
 - DIP: dipendenze su astrazioni.

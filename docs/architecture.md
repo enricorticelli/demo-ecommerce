@@ -48,6 +48,8 @@ Additional workflow integration:
 ## Technical governance
 - Detailed technical guidelines and implementation rules:
   - `docs/technical-guidelines.md`
+- API request/response/mapper conventions:
+  - `docs/api-patterns.md`
 - Checkout flow (detailed sequence/state diagrams):
   - `docs/checkout-flow.md`
 - Architectural decisions (ADR):
