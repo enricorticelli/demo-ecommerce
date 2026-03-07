@@ -4,7 +4,7 @@ using Shared.BuildingBlocks.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDefaultApiServices();
+builder.AddDefaultApiServices();
 builder.AddCatalogModule();
 
 var app = builder.Build();

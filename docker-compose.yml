@@ -9,7 +9,7 @@ x-api-infra-dependencies: &api-infra-dependencies
 services:
   postgres:
     container_name: postgres
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -27,7 +27,7 @@ services:
 
   rabbitmq:
     container_name: rabbitmq
-    image: rabbitmq:3.13-management-alpine
+    image: rabbitmq:4.1-management-alpine
     environment:
       RABBITMQ_DEFAULT_USER: ${MessageBus__Username}
       RABBITMQ_DEFAULT_PASS: ${MessageBus__Password}
@@ -44,7 +44,7 @@ services:
 
   aspire-dashboard:
     container_name: aspire-dashboard
-    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.0
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:13
     environment:
       DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
     ports:
@@ -63,6 +63,8 @@ services:
       dockerfile: src/Catalog.Api/Dockerfile
     env_file:
       - .env
+    environment:
+      OTEL_SERVICE_NAME: catalog-api
     depends_on:
       <<: *api-infra-dependencies
     healthcheck: &api-health
@@ -78,6 +80,8 @@ services:
       dockerfile: src/Cart.Api/Dockerfile
     env_file:
       - .env
+    environment:
+      OTEL_SERVICE_NAME: cart-api
     depends_on:
       <<: *api-infra-dependencies
     healthcheck: *api-health
@@ -89,6 +93,8 @@ services:
       dockerfile: src/Order.Api/Dockerfile
     env_file:
       - .env
+    environment:
+      OTEL_SERVICE_NAME: order-api
     depends_on:
       <<: *api-infra-dependencies
       cart-api:
@@ -102,6 +108,8 @@ services:
       dockerfile: src/Warehouse.Api/Dockerfile
     env_file:
       - .env
+    environment:
+      OTEL_SERVICE_NAME: warehouse-api
     depends_on:
       <<: *api-infra-dependencies
     healthcheck: *api-health
@@ -113,6 +121,8 @@ services:
       dockerfile: src/Payment.Api/Dockerfile
     env_file:
       - .env
+    environment:
+      OTEL_SERVICE_NAME: payment-api
     depends_on:
       <<: *api-infra-dependencies
     healthcheck: *api-health
@@ -124,6 +134,8 @@ services:
       dockerfile: src/Shipping.Api/Dockerfile
     env_file:
       - .env
+    environment:
+      OTEL_SERVICE_NAME: shipping-api
     depends_on:
       <<: *api-infra-dependencies
     healthcheck: *api-health
@@ -135,6 +147,8 @@ services:
       dockerfile: src/Gateway.Api/Dockerfile
     env_file:
       - .env
+    environment:
+      OTEL_SERVICE_NAME: gateway-api
     ports:
       - "8080:8080"
     depends_on:

@@ -1,10 +1,18 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Shared.BuildingBlocks.Observability;
 
 namespace Shared.BuildingBlocks.Api;
 
 public static class DefaultApiExtensions
 {
+    public static WebApplicationBuilder AddDefaultApiServices(this WebApplicationBuilder builder)
+    {
+        builder.Services.AddDefaultApiServices();
+        builder.AddObservability();
+        return builder;
+    }
+
     public static IServiceCollection AddDefaultApiServices(this IServiceCollection services)
     {
         services.AddEndpointsApiExplorer();

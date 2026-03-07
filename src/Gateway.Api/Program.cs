@@ -1,8 +1,10 @@
 using Scalar.AspNetCore;
+using Shared.BuildingBlocks.Observability;
 using Yarp.ReverseProxy.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddObservability();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddProblemDetails();

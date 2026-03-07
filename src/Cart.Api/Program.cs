@@ -3,7 +3,7 @@ using Shared.BuildingBlocks.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDefaultApiServices();
+builder.AddDefaultApiServices();
 
 var app = builder.Build();
 

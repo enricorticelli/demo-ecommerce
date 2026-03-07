@@ -13,6 +13,7 @@ using Catalog.Domain.Entities;
 using Catalog.Infrastructure.Messaging;
 using Catalog.Infrastructure.Persistence;
 using Catalog.Infrastructure.Persistence.Repositories;
+using Evoluzione.TracedServiceCollection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,31 +30,31 @@ public static class CatalogInfrastructureServiceCollectionExtensions
         var connectionString = CatalogTechnicalOptions.ResolveCatalogConnectionString(configuration);
 
         services.AddDbContextWithWolverineIntegration<CatalogDbContext>(options => options.UseNpgsql(connectionString));
-        services.AddScoped<IBrandRepository, BrandRepository>();
-        services.AddScoped<ICategoryRepository, CategoryRepository>();
-        services.AddScoped<ICollectionRepository, CollectionRepository>();
-        services.AddScoped<IProductRepository, ProductRepository>();
-        services.AddScoped<IDomainEventPublisher, OutboxDomainEventPublisher>();
+        services.AddTracedScoped<IBrandRepository, BrandRepository>();
+        services.AddTracedScoped<ICategoryRepository, CategoryRepository>();
+        services.AddTracedScoped<ICollectionRepository, CollectionRepository>();
+        services.AddTracedScoped<IProductRepository, ProductRepository>();
+        services.AddTracedScoped<IDomainEventPublisher, OutboxDomainEventPublisher>();
 
-        services.AddScoped<IBrandRules, BrandRules>();
-        services.AddScoped<ICategoryRules, CategoryRules>();
-        services.AddScoped<ICollectionRules, CollectionRules>();
-        services.AddScoped<IProductRules, ProductRules>();
+        services.AddTracedScoped<IBrandRules, BrandRules>();
+        services.AddTracedScoped<ICategoryRules, CategoryRules>();
+        services.AddTracedScoped<ICollectionRules, CollectionRules>();
+        services.AddTracedScoped<IProductRules, ProductRules>();
 
-        services.AddScoped<IViewMapper<Brand, BrandView>, BrandViewMapper>();
-        services.AddScoped<IViewMapper<Category, CategoryView>, CategoryViewMapper>();
-        services.AddScoped<IViewMapper<CatalogCollection, CollectionView>, CollectionViewMapper>();
-        services.AddScoped<IViewMapper<Product, ProductView>, ProductViewMapper>();
+        services.AddTracedScoped<IViewMapper<Brand, BrandView>, BrandViewMapper>();
+        services.AddTracedScoped<IViewMapper<Category, CategoryView>, CategoryViewMapper>();
+        services.AddTracedScoped<IViewMapper<CatalogCollection, CollectionView>, CollectionViewMapper>();
+        services.AddTracedScoped<IViewMapper<Product, ProductView>, ProductViewMapper>();
 
-        services.AddScoped<IBrandCommandService, BrandCommandService>();
-        services.AddScoped<ICategoryCommandService, CategoryCommandService>();
-        services.AddScoped<ICollectionCommandService, CollectionCommandService>();
-        services.AddScoped<IProductCommandCatalogService, ProductCommandCatalogService>();
+        services.AddTracedScoped<IBrandCommandService, BrandCommandService>();
+        services.AddTracedScoped<ICategoryCommandService, CategoryCommandService>();
+        services.AddTracedScoped<ICollectionCommandService, CollectionCommandService>();
+        services.AddTracedScoped<IProductCommandCatalogService, ProductCommandCatalogService>();
 
-        services.AddScoped<IBrandQueryService, BrandQueryService>();
-        services.AddScoped<ICategoryQueryService, CategoryQueryService>();
-        services.AddScoped<ICollectionQueryService, CollectionQueryService>();
-        services.AddScoped<IProductQueryService, ProductQueryService>();
+        services.AddTracedScoped<IBrandQueryService, BrandQueryService>();
+        services.AddTracedScoped<ICategoryQueryService, CategoryQueryService>();
+        services.AddTracedScoped<ICollectionQueryService, CollectionQueryService>();
+        services.AddTracedScoped<IProductQueryService, ProductQueryService>();
 
         return services;
     }
