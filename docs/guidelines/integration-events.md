@@ -40,3 +40,6 @@ Definire eventi di integrazione chiari, versionati e resilienti per comunicazion
 
 - `../adr/0002-comunicazione-inter-context.md`
 - `../adr/0003-data-ownership-database-separati.md`
+- `../adr/0004-contract-first-versioning.md`
+- `../adr/0005-eventual-consistency-compensazioni.md`
+- `../adr/0006-idempotenza-deduplica.md`

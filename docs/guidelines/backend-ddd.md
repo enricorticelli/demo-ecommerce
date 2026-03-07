@@ -39,3 +39,6 @@ Implementare logica di business reale nei layer `Application` e `Domain`, manten
 - `../adr/0001-microservices-pragmatici.md`
 - `../adr/0002-comunicazione-inter-context.md`
 - `../adr/0003-data-ownership-database-separati.md`
+- `../adr/0005-eventual-consistency-compensazioni.md`
+- `../adr/0006-idempotenza-deduplica.md`
+- `../adr/0008-strategia-test-backend.md`

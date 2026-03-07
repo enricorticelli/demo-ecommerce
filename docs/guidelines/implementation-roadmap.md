@@ -41,3 +41,8 @@ Eseguire evoluzione incrementale per vertical slice, mantenendo il sistema sempr
 - `../adr/0001-microservices-pragmatici.md`
 - `../adr/0002-comunicazione-inter-context.md`
 - `../adr/0003-data-ownership-database-separati.md`
+- `../adr/0004-contract-first-versioning.md`
+- `../adr/0005-eventual-consistency-compensazioni.md`
+- `../adr/0006-idempotenza-deduplica.md`
+- `../adr/0007-osservabilita-distribuita-minima.md`
+- `../adr/0008-strategia-test-backend.md`

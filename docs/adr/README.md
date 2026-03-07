@@ -14,11 +14,11 @@
 | [0001](./0001-microservices-pragmatici.md) | Modello architetturale: microservizi pragmatici | Accepted | 2026-03-07 |
 | [0002](./0002-comunicazione-inter-context.md) | Comunicazione tra bounded context | Accepted | 2026-03-07 |
 | [0003](./0003-data-ownership-database-separati.md) | Ownership dati e database separati | Accepted | 2026-03-07 |
-| 0004 | Contract-first e versioning contratti | Proposed | 2026-03-07 |
-| 0005 | Eventual consistency e compensazioni | Proposed | 2026-03-07 |
-| 0006 | Idempotenza e deduplica messaggi | Proposed | 2026-03-07 |
-| 0007 | Osservabilita distribuita minima | Proposed | 2026-03-07 |
-| 0008 | Strategia test backend | Proposed | 2026-03-07 |
+| [0004](./0004-contract-first-versioning.md) | Contract-first e versioning contratti | Accepted | 2026-03-07 |
+| [0005](./0005-eventual-consistency-compensazioni.md) | Eventual consistency e compensazioni | Accepted | 2026-03-07 |
+| [0006](./0006-idempotenza-deduplica.md) | Idempotenza e deduplica messaggi | Accepted | 2026-03-07 |
+| [0007](./0007-osservabilita-distribuita-minima.md) | Osservabilita distribuita minima | Accepted | 2026-03-07 |
+| [0008](./0008-strategia-test-backend.md) | Strategia test backend | Accepted | 2026-03-07 |
 
 ## Regole di manutenzione
 
