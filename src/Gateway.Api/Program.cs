@@ -1,10 +1,8 @@
-using Shared.BuildingBlocks.Http;
 using Scalar.AspNetCore;
 using Yarp.ReverseProxy.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDefaultProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
@@ -40,7 +38,7 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseCors("default");
-app.UseCorrelationId();
+
 app.UseSwagger(options =>
 {
     options.RouteTemplate = "openapi/{documentName}.json";
