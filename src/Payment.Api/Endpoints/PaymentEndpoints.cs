@@ -8,8 +8,7 @@ public static class PaymentEndpoints
     public static RouteGroupBuilder MapPaymentEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup(PaymentRoutes.Base)
-            .WithTags("Payment")
-            .AddEndpointFilter<CqrsExceptionEndpointFilter>();
+            .WithTags("Payment");
 
         group.MapPost("/authorize", AuthorizePayment)
             .WithName("AuthorizePayment");

@@ -9,10 +9,4 @@
     <ProjectReference Include="../Order.Domain/Order.Domain.csproj" />
     <ProjectReference Include="../Shared.BuildingBlocks/Shared.BuildingBlocks.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Marten" />
-    <PackageReference Include="MongoDB.Driver" />
-    <PackageReference Include="WolverineFx" />
-    <PackageReference Include="WolverineFx.RabbitMQ" />
-  </ItemGroup>
 </Project>

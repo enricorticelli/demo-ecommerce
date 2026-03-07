@@ -9,9 +9,4 @@
     <ProjectReference Include="../Warehouse.Domain/Warehouse.Domain.csproj" />
     <ProjectReference Include="../Shared.BuildingBlocks/Shared.BuildingBlocks.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Marten" />
-    <PackageReference Include="WolverineFx" />
-    <PackageReference Include="WolverineFx.RabbitMQ" />
-  </ItemGroup>
 </Project>

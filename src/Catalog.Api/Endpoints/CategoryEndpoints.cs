@@ -12,8 +12,7 @@ public static class CategoryEndpoints
     public static RouteGroupBuilder MapCategoryEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup(CatalogRoutes.Categories)
-            .WithTags("Catalog")
-            .AddEndpointFilter<CqrsExceptionEndpointFilter>();
+            .WithTags("Catalog");
 
         group.MapGet("/", GetCategories).WithName("GetCategories");
         group.MapGet("/{id:guid}", GetCategoryById).WithName("GetCategoryById");

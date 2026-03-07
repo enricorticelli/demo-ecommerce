@@ -9,7 +9,6 @@ public static class DefaultApiExtensions
     {
         services.AddEndpointsApiExplorer();
         services.AddHealthChecks();
-        services.AddScoped<CqrsExceptionEndpointFilter>();
         services.AddCors(options =>
         {
             options.AddPolicy("default", policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());

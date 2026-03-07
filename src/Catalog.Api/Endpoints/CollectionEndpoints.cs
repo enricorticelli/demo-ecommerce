@@ -12,8 +12,7 @@ public static class CollectionEndpoints
     public static RouteGroupBuilder MapCollectionEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup(CatalogRoutes.Collections)
-            .WithTags("Catalog")
-            .AddEndpointFilter<CqrsExceptionEndpointFilter>();
+            .WithTags("Catalog");
 
         group.MapGet("/", GetCollections).WithName("GetCollections");
         group.MapGet("/{id:guid}", GetCollectionById).WithName("GetCollectionById");

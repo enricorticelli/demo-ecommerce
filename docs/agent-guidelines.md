@@ -1,14 +1,3 @@
-# Universal AGENTS Guidelines
-
-title: Template universale sotto forma di linee guida per tutti gli agenti
-author: Enrico Corticelli
-tags: [Clean Code, SOLID, Architecture, Design Patterns, Testing, Security]
-last-updated: 2026-01-19
-
-
-# Start of AGENTS.md
-
-
 # AGENTS.md
 
 > Purpose: define standards and principles for producing readable, testable, maintainable, and secure code.
@@ -230,26 +219,13 @@ last-updated: 2026-01-19
 
 ---
 
-## 14) Project-specific conventions (fill in)
-
-- Language(s): <TBD>
-- Formatter: <TBD>
-- Linter: <TBD>
-- Test runner: <TBD>
-- Folder structure: <TBD>
-- Dependency policy: <TBD>
-- Logging standard: <TBD>
-- Error standard: <TBD>
-
----
-
-## 15) Decisions and ADRs
+## 16) Decisions and ADRs
 - Document significant architectural decisions in `docs/adr/`.
 - Each ADR includes: context, decision, alternatives, consequences.
 
 ---
 
-## 16) Final quality bar
+## 17) Final quality bar
 > Code is ready when:
 - Build passes (no meaningful warnings)
 - Relevant tests are green

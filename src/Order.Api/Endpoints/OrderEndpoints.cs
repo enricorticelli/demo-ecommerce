@@ -8,8 +8,7 @@ public static class OrderEndpoints
     public static RouteGroupBuilder MapOrderEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup(OrderRoutes.Base)
-            .WithTags("Order")
-            .AddEndpointFilter<CqrsExceptionEndpointFilter>();
+            .WithTags("Order");
 
         group.MapPost("/", CreateOrder)
             .WithName("CreateOrder");

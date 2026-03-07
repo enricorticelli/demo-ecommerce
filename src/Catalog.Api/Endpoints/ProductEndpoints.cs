@@ -12,8 +12,7 @@ public static class ProductEndpoints
     public static RouteGroupBuilder MapProductEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup(CatalogRoutes.Products)
-            .WithTags("Catalog")
-            .AddEndpointFilter<CqrsExceptionEndpointFilter>();
+            .WithTags("Catalog");
 
         group.MapGet("/", GetProducts).WithName("GetProducts");
         group.MapGet("/new-arrivals", GetNewArrivals).WithName("GetNewArrivals");

@@ -8,8 +8,7 @@ public static class CartEndpoints
     public static RouteGroupBuilder MapCartEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup(CartRoutes.Base)
-            .WithTags("Cart")
-            .AddEndpointFilter<CqrsExceptionEndpointFilter>();
+            .WithTags("Cart");
 
         group.MapPost("/{cartId:guid}/items", AddItem)
             .WithName("AddCartItem");

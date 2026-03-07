@@ -12,8 +12,7 @@ public static class BrandEndpoints
     public static RouteGroupBuilder MapBrandEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup(CatalogRoutes.Brands)
-            .WithTags("Catalog")
-            .AddEndpointFilter<CqrsExceptionEndpointFilter>();
+            .WithTags("Catalog");
 
         group.MapGet("/", GetBrands).WithName("GetBrands");
         group.MapGet("/{id:guid}", GetBrandById).WithName("GetBrandById");

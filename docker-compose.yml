@@ -1,55 +1,4 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: cqrs-postgres-db
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: postgres
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-      - ./deploy/postgres/init:/docker-entrypoint-initdb.d:ro
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d postgres"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-
-  rabbitmq:
-    image: rabbitmq:3.13-management
-    container_name: cqrs-rabbitmq-broker
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
-      interval: 10s
-      timeout: 5s
-      retries: 15
-
-  mongodb:
-    image: mongo:7
-    container_name: cqrs-mongo-readmodels
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-mongo}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-mongo}
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb-data:/data/db
-    healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet -u ${MONGO_USER:-mongo} -p ${MONGO_PASSWORD:-mongo} --authenticationDatabase admin --eval 'db.adminCommand({ ping: 1 }).ok' | grep 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 15
-
   catalog-api:
     container_name: cqrs-catalog-api
     build:
@@ -57,40 +6,11 @@ services:
       dockerfile: src/Catalog.Api/Dockerfile
     environment: &common-env
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      CATALOG_DB: ${CATALOG_DB:-catalogdb}
-      CART_DB: ${CART_DB:-cartdb}
-      ORDER_DB: ${ORDER_DB:-orderdb}
-      WAREHOUSE_DB: ${WAREHOUSE_DB:-warehousedb}
-      PAYMENT_DB: ${PAYMENT_DB:-paymentdb}
-      SHIPPING_DB: ${SHIPPING_DB:-shippingdb}
-      CART_READ_DB: ${CART_READ_DB:-cartread}
-      ORDER_READ_DB: ${ORDER_READ_DB:-orderread}
-      CATALOG_READ_DB: ${CATALOG_READ_DB:-catalogread}
-      PAYMENT_READ_DB: ${PAYMENT_READ_DB:-paymentread}
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
-      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
-      MONGO_HOST: mongodb
-      MONGO_PORT: 27017
-      MONGO_USER: ${MONGO_USER:-mongo}
-      MONGO_PASSWORD: ${MONGO_PASSWORD:-mongo}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
       PAYMENT_HOSTED_GATEWAY_BASE_URL: ${PAYMENT_HOSTED_GATEWAY_BASE_URL:-http://localhost:8080/api/payment}
       PAYMENT_STRIPE_CARD_REDIRECT_URL_TEMPLATE: ${PAYMENT_STRIPE_CARD_REDIRECT_URL_TEMPLATE:-}
       PAYMENT_PAYPAL_REDIRECT_URL_TEMPLATE: ${PAYMENT_PAYPAL_REDIRECT_URL_TEMPLATE:-}
       PAYMENT_SATISPAY_REDIRECT_URL_TEMPLATE: ${PAYMENT_SATISPAY_REDIRECT_URL_TEMPLATE:-}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
     healthcheck: &api-health
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health/ready || exit 1"]
       interval: 10s
@@ -104,13 +24,6 @@ services:
       dockerfile: src/Cart.Api/Dockerfile
     environment:
       <<: *common-env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      mongodb:
-        condition: service_healthy
     healthcheck: *api-health
 
   order-api:
@@ -121,13 +34,7 @@ services:
     environment:
       <<: *common-env
     depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
       cart-api:
-        condition: service_healthy
-      mongodb:
         condition: service_healthy
     healthcheck: *api-health
 
@@ -138,11 +45,6 @@ services:
       dockerfile: src/Warehouse.Api/Dockerfile
     environment:
       <<: *common-env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
     healthcheck: *api-health
 
   payment-api:
@@ -152,11 +54,6 @@ services:
       dockerfile: src/Payment.Api/Dockerfile
     environment:
       <<: *common-env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
     healthcheck: *api-health
 
   shipping-api:
@@ -166,11 +63,6 @@ services:
       dockerfile: src/Shipping.Api/Dockerfile
     environment:
       <<: *common-env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
     healthcheck: *api-health
 
   gateway-api:
@@ -248,8 +140,3 @@ services:
       interval: 10s
       timeout: 3s
       retries: 20
-
-volumes:
-  postgres-data:
-  rabbitmq-data:
-  mongodb-data:

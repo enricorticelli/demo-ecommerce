@@ -8,8 +8,7 @@ public static class WarehouseEndpoints
     public static RouteGroupBuilder MapWarehouseEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup(WarehouseRoutes.Base)
-            .WithTags("Warehouse")
-            .AddEndpointFilter<CqrsExceptionEndpointFilter>();
+            .WithTags("Warehouse");
 
         group.MapPost("/", UpsertStock)
             .WithName("UpsertStock");
