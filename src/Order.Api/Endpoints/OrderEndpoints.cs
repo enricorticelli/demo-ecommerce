@@ -110,7 +110,7 @@ public static class OrderEndpoints
             return TypedResults.NotFound();
         }
 
-        if (orderState.Status is Order.Domain.Enums.OrderStatus.Completed or Order.Domain.Enums.OrderStatus.Failed)
+        if (orderState.Status is Domain.Enums.OrderStatus.Completed or Domain.Enums.OrderStatus.Failed)
         {
             return TypedResults.Problem(
                 title: "Order in terminal state",
@@ -155,7 +155,7 @@ public static class OrderEndpoints
             return TypedResults.NotFound();
         }
 
-        if (orderState.Status is Order.Domain.Enums.OrderStatus.Failed)
+        if (orderState.Status is Domain.Enums.OrderStatus.Failed)
         {
             return TypedResults.Problem(
                 title: "Order in terminal state",

@@ -12,12 +12,17 @@ export const onRequest = defineMiddleware((context, next) => {
   }
 
   if (!isAuthenticated(context.cookies)) {
-    const redirectUrl = new URL('/login', context.url);
+    const redirectParams = new URLSearchParams();
     if (pathname !== '/') {
-      redirectUrl.searchParams.set('next', pathname);
+      redirectParams.set('next', pathname);
     }
 
-    return context.redirect(redirectUrl.toString());
+    const queryString = redirectParams.toString();
+    const redirectPath = queryString.length > 0
+      ? `/login?${queryString}`
+      : '/login';
+
+    return context.redirect(redirectPath);
   }
 
   return next();

@@ -58,7 +58,11 @@
           .slice(0, 12);
       }
     } catch {
-      loadError = 'Impossibile caricare il catalogo. Verifica che i servizi siano attivi.';
+      // Keep storefront usable even when APIs are empty/unavailable: render empty sections.
+      products = [];
+      newArrivals = [];
+      bestSellers = [];
+      loadError = 'Catalogo non disponibile al momento. Lo storefront resta accessibile.';
     } finally {
       isLoading = false;
       loadingStatus = '';
@@ -161,6 +165,10 @@
               </div>
             </div>
           </article>
+        {:else}
+          <div class="surface-card col-span-full p-5 text-sm text-[#5a6472]">
+            Nessun prodotto disponibile in questa sezione.
+          </div>
         {/each}
       </div>
     {/if}
@@ -223,6 +231,10 @@
               </div>
             </div>
           </article>
+        {:else}
+          <div class="surface-card col-span-full p-5 text-sm text-[#5a6472]">
+            Nessun best seller disponibile al momento.
+          </div>
         {/each}
       </div>
     {/if}
@@ -285,6 +297,10 @@
               </div>
             </div>
           </article>
+        {:else}
+          <div class="surface-card col-span-full p-5 text-sm text-[#5a6472]">
+            Nessun prodotto in evidenza disponibile.
+          </div>
         {/each}
       </div>
     {/if}

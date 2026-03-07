@@ -51,7 +51,7 @@ public static class BrandEndpoints
         var errors = command.GetValidationErrors();
         if (errors.Count != 0)
         {
-            return Endpoints.EndpointsHelpers.CreateValidationProblem(errors, "Invalid brand payload");
+            return EndpointsHelpers.CreateValidationProblem(errors, "Invalid brand payload");
         }
 
         var brand = await commandDispatcher.ExecuteAsync(new CreateBrandCatalogCommand(command), cancellationToken);
@@ -67,7 +67,7 @@ public static class BrandEndpoints
         var errors = command.GetValidationErrors();
         if (errors.Count != 0)
         {
-            return Endpoints.EndpointsHelpers.CreateValidationProblem(errors, "Invalid brand payload");
+            return EndpointsHelpers.CreateValidationProblem(errors, "Invalid brand payload");
         }
 
         var brand = await commandDispatcher.ExecuteAsync(new UpdateBrandCatalogCommand(id, command), cancellationToken);

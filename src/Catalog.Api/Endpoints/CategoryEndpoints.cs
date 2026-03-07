@@ -51,7 +51,7 @@ public static class CategoryEndpoints
         var errors = command.GetValidationErrors();
         if (errors.Count != 0)
         {
-            return Endpoints.EndpointsHelpers.CreateValidationProblem(errors, "Invalid category payload");
+            return EndpointsHelpers.CreateValidationProblem(errors, "Invalid category payload");
         }
 
         var category = await commandDispatcher.ExecuteAsync(new CreateCategoryCatalogCommand(command), cancellationToken);
@@ -67,7 +67,7 @@ public static class CategoryEndpoints
         var errors = command.GetValidationErrors();
         if (errors.Count != 0)
         {
-            return Endpoints.EndpointsHelpers.CreateValidationProblem(errors, "Invalid category payload");
+            return EndpointsHelpers.CreateValidationProblem(errors, "Invalid category payload");
         }
 
         var category = await commandDispatcher.ExecuteAsync(new UpdateCategoryCatalogCommand(id, command), cancellationToken);

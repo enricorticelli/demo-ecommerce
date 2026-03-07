@@ -51,7 +51,7 @@ public static class CollectionEndpoints
         var errors = command.GetValidationErrors();
         if (errors.Count != 0)
         {
-            return Endpoints.EndpointsHelpers.CreateValidationProblem(errors, "Invalid collection payload");
+            return EndpointsHelpers.CreateValidationProblem(errors, "Invalid collection payload");
         }
 
         var collection = await commandDispatcher.ExecuteAsync(new CreateCollectionCatalogCommand(command), cancellationToken);
@@ -67,7 +67,7 @@ public static class CollectionEndpoints
         var errors = command.GetValidationErrors();
         if (errors.Count != 0)
         {
-            return Endpoints.EndpointsHelpers.CreateValidationProblem(errors, "Invalid collection payload");
+            return EndpointsHelpers.CreateValidationProblem(errors, "Invalid collection payload");
         }
 
         var collection = await commandDispatcher.ExecuteAsync(new UpdateCollectionCatalogCommand(id, command), cancellationToken);

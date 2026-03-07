@@ -65,7 +65,7 @@ public static class ProductEndpoints
         var errors = command.GetValidationErrors();
         if (errors.Count != 0)
         {
-            return Endpoints.EndpointsHelpers.CreateValidationProblem(errors, "Invalid product payload");
+            return EndpointsHelpers.CreateValidationProblem(errors, "Invalid product payload");
         }
 
         var product = await commandDispatcher.ExecuteAsync(new CreateProductCatalogCommand(command), cancellationToken);
@@ -89,7 +89,7 @@ public static class ProductEndpoints
         var errors = command.GetValidationErrors();
         if (errors.Count != 0)
         {
-            return Endpoints.EndpointsHelpers.CreateValidationProblem(errors, "Invalid product payload");
+            return EndpointsHelpers.CreateValidationProblem(errors, "Invalid product payload");
         }
 
         var product = await commandDispatcher.ExecuteAsync(new UpdateProductCatalogCommand(id, command), cancellationToken);
