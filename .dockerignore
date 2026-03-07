@@ -1,9 +1,0 @@
-.git
-.gitignore
-**/bin
-**/obj
-**/.vs
-**/.vscode
-node_modules
-frontend/web/node_modules
-frontend/web/dist
