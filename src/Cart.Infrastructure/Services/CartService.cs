@@ -21,6 +21,10 @@ public sealed class CartService(
         {
             stream.AppendOne(new CartCreated(cartId, command.UserId));
         }
+        else if (stream.Aggregate?.IsClosed == true)
+        {
+            throw new InvalidOperationException("Cart is closed and cannot be modified.");
+        }
 
         stream.AppendOne(new CartItemAdded(cartId, command.ProductId, command.Sku, command.Name, command.Quantity, command.UnitPrice));
         await documentSession.SaveChangesAsync(cancellationToken);
@@ -30,6 +34,11 @@ public sealed class CartService(
     public async Task RemoveItemAsync(Guid cartId, Guid productId, CancellationToken cancellationToken)
     {
         var stream = await documentSession.Events.FetchForWriting<CartAggregate>(cartId, cancellationToken);
+        if (!stream.Events.Any() || stream.Aggregate?.IsClosed == true)
+        {
+            return;
+        }
+
         stream.AppendOne(new CartItemRemoved(cartId, productId));
         await documentSession.SaveChangesAsync(cancellationToken);
         await ProjectCartAsync(cartId, cancellationToken);
@@ -54,12 +63,38 @@ public sealed class CartService(
             return null;
         }
 
+        var stream = await documentSession.Events.FetchForWriting<CartAggregate>(cartId, cancellationToken);
+        if (!stream.Events.Any() || stream.Aggregate?.IsClosed == true)
+        {
+            return null;
+        }
+
         return new CartCheckedOutV1(
             cartId,
             Guid.NewGuid(),
             readModel.UserId,
             readModel.Items,
             readModel.TotalAmount);
+    }
+
+    public async Task RotateCartAfterOrderCompletionAsync(Guid cartId, Guid userId, Guid orderId, CancellationToken cancellationToken)
+    {
+        var stream = await documentSession.Events.FetchForWriting<CartAggregate>(cartId, cancellationToken);
+        if (stream.Events.Any() && stream.Aggregate?.IsClosed != true)
+        {
+            stream.AppendOne(new CartCheckedOut(cartId, orderId));
+            await documentSession.SaveChangesAsync(cancellationToken);
+            await ProjectCartAsync(cartId, cancellationToken);
+        }
+
+        var newCartId = Guid.NewGuid();
+        var nextCartStream = await documentSession.Events.FetchForWriting<CartAggregate>(newCartId, cancellationToken);
+        if (!nextCartStream.Events.Any())
+        {
+            nextCartStream.AppendOne(new CartCreated(newCartId, userId));
+            await documentSession.SaveChangesAsync(cancellationToken);
+            await ProjectCartAsync(newCartId, cancellationToken);
+        }
     }
 
     private async Task ProjectCartAsync(Guid cartId, CancellationToken cancellationToken)

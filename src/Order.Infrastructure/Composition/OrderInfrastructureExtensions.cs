@@ -35,6 +35,7 @@ public static class OrderInfrastructureExtensions
             options.PublishMessage<OrderPlacedV1>().ToRabbitQueue(IntegrationQueueNames.WarehouseWorkflow);
             options.PublishMessage<PaymentAuthorizeRequestedV1>().ToRabbitQueue(IntegrationQueueNames.PaymentWorkflow);
             options.PublishMessage<ShippingCreateRequestedV1>().ToRabbitQueue(IntegrationQueueNames.ShippingWorkflow);
+            options.PublishMessage<OrderCompletedV1>().ToRabbitQueue(IntegrationQueueNames.CartWorkflow);
 
             options.Discovery.IncludeType<OrderStockReservedHandler>();
             options.Discovery.IncludeType<OrderStockRejectedHandler>();

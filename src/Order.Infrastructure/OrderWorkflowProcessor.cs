@@ -54,7 +54,12 @@ public sealed class OrderWorkflowProcessor(IOrderStateReader orderStateReader, I
         }
 
         await orderStateStore.MarkCompletedAsync(message.OrderId, message.TrackingCode, state.TransactionId, cancellationToken);
-        await eventPublisher.PublishOrderCompletedAsync(message.OrderId, message.TrackingCode, state.TransactionId);
+        await eventPublisher.PublishOrderCompletedAsync(
+            message.OrderId,
+            state.CartId,
+            state.UserId,
+            message.TrackingCode,
+            state.TransactionId);
     }
 
     private static bool IsTerminal(OrderStatus status)

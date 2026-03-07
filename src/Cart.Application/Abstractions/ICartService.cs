@@ -9,4 +9,5 @@ public interface ICartService
     Task RemoveItemAsync(Guid cartId, Guid productId, CancellationToken cancellationToken);
     Task<CartView?> GetCartAsync(Guid cartId, CancellationToken cancellationToken);
     Task<CartCheckedOutV1?> CheckoutAsync(Guid cartId, CancellationToken cancellationToken);
+    Task RotateCartAfterOrderCompletionAsync(Guid cartId, Guid userId, Guid orderId, CancellationToken cancellationToken);
 }

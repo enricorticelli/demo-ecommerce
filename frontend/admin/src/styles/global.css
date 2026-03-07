@@ -85,4 +85,24 @@ a {
     border-color: var(--color-accent);
     box-shadow: 0 0 0 3px rgba(11, 95, 255, 0.15);
   }
+
+  .empty-row {
+    @apply px-3 py-8;
+  }
+
+  .empty-box {
+    @apply rounded-xl border border-dashed px-4 py-5 text-center;
+    border-color: var(--color-border);
+    background: linear-gradient(180deg, #f8fbff 0%, #f3f8ff 100%);
+  }
+
+  .empty-title {
+    @apply text-sm font-semibold;
+    color: var(--color-text);
+  }
+
+  .empty-description {
+    @apply mt-1 text-sm;
+    color: var(--color-muted);
+  }
 }

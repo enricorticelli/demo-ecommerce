@@ -7,6 +7,7 @@ public sealed class CartAggregate
 {
     public Guid Id { get; private set; }
     public Guid UserId { get; private set; }
+    public bool IsClosed { get; private set; }
     public Dictionary<Guid, CartLine> Lines { get; } = [];
     public decimal TotalAmount => Lines.Values.Sum(l => l.UnitPrice * l.Quantity);
 
@@ -37,5 +38,11 @@ public sealed class CartAggregate
     public void Apply(CartItemRemoved @event)
     {
         Lines.Remove(@event.ProductId);
+    }
+
+    public void Apply(CartCheckedOut @event)
+    {
+        IsClosed = true;
+        Lines.Clear();
     }
 }

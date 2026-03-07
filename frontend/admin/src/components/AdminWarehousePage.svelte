@@ -115,6 +115,15 @@
                   <button class="btn-secondary" on:click={() => useProduct(product)}>Usa nel form</button>
                 </td>
               </tr>
+            {:else}
+              <tr>
+                <td class="empty-row" colspan="3">
+                  <div class="empty-box">
+                    <p class="empty-title">Nessun prodotto disponibile</p>
+                    <p class="empty-description">Aggiungi prodotti nel catalogo per gestire lo stock da qui.</p>
+                  </div>
+                </td>
+              </tr>
             {/each}
           </tbody>
         </table>

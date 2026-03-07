@@ -1,10 +1,12 @@
 using Cart.Application;
 using Cart.Application.Abstractions;
+using Cart.Infrastructure.Messaging.Handlers;
 using Cart.Infrastructure.Persistence.ReadModels;
 using Cart.Infrastructure.Services;
 using Marten;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Shared.BuildingBlocks.Contracts.Integration;
 using Shared.BuildingBlocks.Infrastructure;
 using Wolverine;
 using Wolverine.RabbitMQ;
@@ -24,7 +26,10 @@ public static class CartInfrastructureExtensions
 
         builder.Host.UseWolverine(options =>
         {
-            options.UseRabbitMq(InfrastructureConnectionFactory.BuildRabbitMqConnectionString());
+            options.UseRabbitMq(InfrastructureConnectionFactory.BuildRabbitMqConnectionString())
+                .AutoProvision();
+            options.ListenToRabbitQueue(IntegrationQueueNames.CartWorkflow);
+            options.Discovery.IncludeType<OrderCompletedHandler>();
             options.Policies.AutoApplyTransactions();
         });
 

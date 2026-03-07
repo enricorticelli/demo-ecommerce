@@ -192,6 +192,22 @@ export async function fetchOrders(limit = 50, offset = 0): Promise<OrderView[]> 
   );
 }
 
+export async function manualCompleteOrder(
+  orderId: string,
+  payload?: { trackingCode?: string; transactionId?: string }
+): Promise<void> {
+  await postJson(`${gatewayUrl()}/api/order/v1/orders/${orderId}/manual-complete`, {
+    trackingCode: payload?.trackingCode ?? null,
+    transactionId: payload?.transactionId ?? null
+  });
+}
+
+export async function manualCancelOrder(orderId: string, reason?: string): Promise<void> {
+  await postJson(`${gatewayUrl()}/api/order/v1/orders/${orderId}/manual-cancel`, {
+    reason: reason?.trim() ? reason.trim() : null
+  });
+}
+
 export async function upsertStock(payload: { productId: string; sku: string; availableQuantity: number }): Promise<void> {
   await postJson(`${gatewayUrl()}/api/warehouse/v1/stock`, payload);
 }

@@ -364,6 +364,15 @@
                     </div>
                   </td>
                 </tr>
+              {:else}
+                <tr>
+                  <td class="empty-row" colspan="4">
+                    <div class="empty-box">
+                      <p class="empty-title">Nessun prodotto presente</p>
+                      <p class="empty-description">Crea il primo prodotto per popolare il catalogo.</p>
+                    </div>
+                  </td>
+                </tr>
               {/each}
             </tbody>
           </table>
@@ -399,6 +408,15 @@
                           <path d="M10 11v6M14 11v6" />
                         </svg>
                       </button>
+                    </div>
+                  </td>
+                </tr>
+              {:else}
+                <tr>
+                  <td class="empty-row" colspan="4">
+                    <div class="empty-box">
+                      <p class="empty-title">Nessun brand presente</p>
+                      <p class="empty-description">Aggiungi un brand per organizzare meglio i prodotti.</p>
                     </div>
                   </td>
                 </tr>
@@ -440,6 +458,15 @@
                     </div>
                   </td>
                 </tr>
+              {:else}
+                <tr>
+                  <td class="empty-row" colspan="4">
+                    <div class="empty-box">
+                      <p class="empty-title">Nessuna categoria presente</p>
+                      <p class="empty-description">Crea una categoria per classificare i prodotti.</p>
+                    </div>
+                  </td>
+                </tr>
               {/each}
             </tbody>
           </table>
@@ -475,6 +502,15 @@
                           <path d="M10 11v6M14 11v6" />
                         </svg>
                       </button>
+                    </div>
+                  </td>
+                </tr>
+              {:else}
+                <tr>
+                  <td class="empty-row" colspan="4">
+                    <div class="empty-box">
+                      <p class="empty-title">Nessuna collezione presente</p>
+                      <p class="empty-description">Aggiungi una collezione per evidenziare gruppi di prodotti.</p>
                     </div>
                   </td>
                 </tr>

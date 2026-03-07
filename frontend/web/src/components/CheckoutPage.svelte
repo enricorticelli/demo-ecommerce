@@ -58,7 +58,7 @@
   const stepIndex: Record<CheckoutStep, number> = { shipping: 0, payment: 1, review: 2 };
 
   const paymentMethodLabels: Record<'stripe_card' | 'paypal' | 'satispay', string> = {
-    stripe_card: 'Carta di credito (Stripe)',
+    stripe_card: 'Carta di credito',
     paypal: 'PayPal',
     satispay: 'Satispay',
   };
@@ -241,7 +241,7 @@
 
             <div class="space-y-3">
               <label class="flex cursor-pointer items-center justify-between rounded-xl border border-[#d5d9df] px-4 py-3">
-                <span class="font-medium text-[#202223]">Carta di credito (Stripe)</span>
+                <span class="font-medium text-[#202223]">Carta di credito</span>
                 <input type="radio" bind:group={paymentMethod} value="stripe_card" />
               </label>
               <label class="flex cursor-pointer items-center justify-between rounded-xl border border-[#d5d9df] px-4 py-3">

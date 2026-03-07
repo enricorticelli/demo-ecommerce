@@ -108,6 +108,15 @@
                 </div>
               </td>
             </tr>
+          {:else}
+            <tr>
+              <td class="empty-row" colspan="6">
+                <div class="empty-box">
+                  <p class="empty-title">Nessun ordine da mostrare</p>
+                  <p class="empty-description">Quando arriveranno nuovi ordini li vedrai in questa lista.</p>
+                </div>
+              </td>
+            </tr>
           {/each}
         </tbody>
       </table>
