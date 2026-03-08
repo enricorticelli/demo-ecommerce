@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Payment.Application.Handlers;
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.Postgresql;
@@ -18,6 +19,7 @@ public static class PaymentHostBuilderExtensions
         {
             builder.Host.UseWolverine(wolverine =>
             {
+                wolverine.Discovery.IncludeAssembly(typeof(AuthorizePaymentOnOrderCreatedHandler).Assembly);
                 wolverine.UseRabbitMq(options.RabbitMqUri).AutoProvision();
                 wolverine.PersistMessagesWithPostgresql(options.PaymentConnectionString);
                 wolverine.UseEntityFrameworkCoreTransactions();

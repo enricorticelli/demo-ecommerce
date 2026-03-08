@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Warehouse.Application.Handlers;
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.Postgresql;
@@ -18,6 +19,7 @@ public static class WarehouseHostBuilderExtensions
         {
             builder.Host.UseWolverine(wolverine =>
             {
+                wolverine.Discovery.IncludeAssembly(typeof(ReserveStockOnOrderCreatedHandler).Assembly);
                 wolverine.UseRabbitMq(options.RabbitMqUri).AutoProvision();
                 wolverine.PersistMessagesWithPostgresql(options.WarehouseConnectionString);
                 wolverine.UseEntityFrameworkCoreTransactions();

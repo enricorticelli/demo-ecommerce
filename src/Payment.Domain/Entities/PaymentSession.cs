@@ -20,24 +20,65 @@ public sealed class PaymentSession
     {
     }
 
-    public static PaymentSession Create(Guid orderId, string redirectUrl)
+    public static PaymentSession Create(Guid orderId, Guid userId, decimal amount, string paymentMethod, string redirectUrl)
     {
         if (orderId == Guid.Empty)
         {
             throw new ValidationAppException("Order id is required.");
         }
 
+        if (amount < 0)
+        {
+            throw new ValidationAppException("Payment amount cannot be negative.");
+        }
+
         return new PaymentSession
         {
             SessionId = Guid.NewGuid(),
             OrderId = orderId,
-            UserId = Guid.Empty,
-            Amount = 0m,
-            PaymentMethod = "stripe_card",
+            UserId = userId,
+            Amount = amount,
+            PaymentMethod = string.IsNullOrWhiteSpace(paymentMethod) ? "stripe_card" : paymentMethod.Trim(),
             Status = "Pending",
             CreatedAtUtc = DateTimeOffset.UtcNow,
             RedirectUrl = redirectUrl
         };
+    }
+
+    public static PaymentSession Create(Guid orderId, string redirectUrl)
+    {
+        return Create(orderId, Guid.Empty, 0m, "stripe_card", redirectUrl);
+    }
+
+    public bool UpdateCheckoutContext(Guid userId, decimal amount, string paymentMethod)
+    {
+        if (amount < 0)
+        {
+            throw new ValidationAppException("Payment amount cannot be negative.");
+        }
+
+        var normalizedMethod = string.IsNullOrWhiteSpace(paymentMethod) ? "stripe_card" : paymentMethod.Trim();
+        var changed = false;
+
+        if (UserId != userId)
+        {
+            UserId = userId;
+            changed = true;
+        }
+
+        if (Amount != amount)
+        {
+            Amount = amount;
+            changed = true;
+        }
+
+        if (!string.Equals(PaymentMethod, normalizedMethod, StringComparison.Ordinal))
+        {
+            PaymentMethod = normalizedMethod;
+            changed = true;
+        }
+
+        return changed;
     }
 
     public bool UpdateRedirectUrl(string redirectUrl)

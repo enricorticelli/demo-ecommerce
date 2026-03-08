@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Order.Application.Handlers;
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.Postgresql;
@@ -18,6 +19,7 @@ public static class OrderHostBuilderExtensions
         {
             builder.Host.UseWolverine(wolverine =>
             {
+                wolverine.Discovery.IncludeAssembly(typeof(HandlePaymentAuthorizedOnOrderHandler).Assembly);
                 wolverine.UseRabbitMq(options.RabbitMqUri).AutoProvision();
                 wolverine.PersistMessagesWithPostgresql(options.OrderConnectionString);
                 wolverine.UseEntityFrameworkCoreTransactions();

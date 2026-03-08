@@ -85,9 +85,20 @@
       }
 
       await rejectPaymentSession(sessionId, 'Payment cancelled by customer');
-      window.location.href = `/orders/${targetOrderId}`;
+
+      const terminalOrder = await pollOrderUntilDone(targetOrderId, () => undefined, 30, 1000);
+      if (!terminalOrder) {
+        throw new Error('Pagamento rifiutato, ma annullamento ordine non ancora confermato. Riprova tra pochi secondi.');
+      }
+
+      if (terminalOrder.status !== 'Failed') {
+        throw new Error(`Stato ordine inatteso dopo rifiuto pagamento: ${terminalOrder.status}.`);
+      }
+
+      window.location.href = `/checkout?payment=cancelled&orderId=${targetOrderId}`;
     } catch (err) {
       error = err instanceof Error ? err.message : 'Annullamento pagamento non riuscito.';
+    } finally {
       isSubmitting = false;
     }
   }

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Shipping.Application.Handlers;
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.Postgresql;
@@ -18,6 +19,7 @@ public static class ShippingHostBuilderExtensions
         {
             builder.Host.UseWolverine(wolverine =>
             {
+                wolverine.Discovery.IncludeAssembly(typeof(CreateShipmentOnOrderCompletedHandler).Assembly);
                 wolverine.UseRabbitMq(options.RabbitMqUri).AutoProvision();
                 wolverine.PersistMessagesWithPostgresql(options.ShippingConnectionString);
                 wolverine.UseEntityFrameworkCoreTransactions();

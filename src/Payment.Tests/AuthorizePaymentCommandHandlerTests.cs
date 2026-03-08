@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using Payment.Application.Abstractions.Idempotency;
+using Payment.Application.Abstractions.Repositories;
 using Payment.Application.Abstractions.Services;
 using Payment.Application.Handlers;
 using Payment.Application.Services;
@@ -36,6 +37,13 @@ public sealed class AuthorizePaymentCommandHandlerTests
         deduplicationStore
             .Setup(x => x.HasProcessedAsync(orderCreated.Metadata.EventId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
+        var paymentSessionRepository = new Mock<IPaymentSessionRepository>();
+        paymentSessionRepository
+            .Setup(x => x.GetByOrderIdAsync(orderCreated.OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Payment.Domain.Entities.PaymentSession?)null);
+        paymentSessionRepository
+            .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         var publisher = new Mock<IDomainEventPublisher>();
         publisher
@@ -43,13 +51,20 @@ public sealed class AuthorizePaymentCommandHandlerTests
             .Returns(Task.CompletedTask);
 
         var logger = new Mock<ILogger<AuthorizePaymentOnOrderCreatedHandler>>();
-        var sut = new AuthorizePaymentOnOrderCreatedHandler(authorizationService.Object, deduplicationStore.Object, publisher.Object, logger.Object);
+        var sut = new AuthorizePaymentOnOrderCreatedHandler(
+            authorizationService.Object,
+            paymentSessionRepository.Object,
+            deduplicationStore.Object,
+            publisher.Object,
+            logger.Object);
 
         await sut.Handle(orderCreated, CancellationToken.None);
 
         publisher.Verify(
             x => x.PublishAndFlushAsync(It.Is<PaymentAuthorizedV1>(e => e.OrderId == orderCreated.OrderId && e.TransactionId == "TX-1"), It.IsAny<CancellationToken>()),
             Times.Once);
+        paymentSessionRepository.Verify(x => x.Add(It.IsAny<Payment.Domain.Entities.PaymentSession>()), Times.Once);
+        paymentSessionRepository.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         deduplicationStore.Verify(x => x.MarkProcessedAsync(orderCreated.Metadata.EventId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -66,6 +81,7 @@ public sealed class AuthorizePaymentCommandHandlerTests
 
         var authorizationService = new Mock<IPaymentAuthorizationService>();
         var deduplicationStore = new Mock<IPaymentEventDeduplicationStore>();
+        var paymentSessionRepository = new Mock<IPaymentSessionRepository>();
         deduplicationStore
             .Setup(x => x.HasProcessedAsync(orderCreated.Metadata.EventId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
@@ -73,11 +89,17 @@ public sealed class AuthorizePaymentCommandHandlerTests
         var publisher = new Mock<IDomainEventPublisher>();
 
         var logger = new Mock<ILogger<AuthorizePaymentOnOrderCreatedHandler>>();
-        var sut = new AuthorizePaymentOnOrderCreatedHandler(authorizationService.Object, deduplicationStore.Object, publisher.Object, logger.Object);
+        var sut = new AuthorizePaymentOnOrderCreatedHandler(
+            authorizationService.Object,
+            paymentSessionRepository.Object,
+            deduplicationStore.Object,
+            publisher.Object,
+            logger.Object);
 
         await sut.Handle(orderCreated, CancellationToken.None);
 
         authorizationService.Verify(x => x.AuthorizeAsync(It.IsAny<OrderCreatedV1>(), It.IsAny<CancellationToken>()), Times.Never);
+        paymentSessionRepository.Verify(x => x.GetByOrderIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
         publisher.Verify(x => x.PublishAndFlushAsync(It.IsAny<IntegrationEventBase>(), It.IsAny<CancellationToken>()), Times.Never);
         deduplicationStore.Verify(x => x.MarkProcessedAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }

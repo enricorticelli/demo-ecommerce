@@ -124,6 +124,11 @@
   }
 
   onMount(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment') === 'cancelled') {
+      addToast('Pagamento annullato. Puoi riprovare il checkout.', 'info');
+    }
+
     if ($cartItems.length === 0) {
       window.location.href = '/cart';
     }
