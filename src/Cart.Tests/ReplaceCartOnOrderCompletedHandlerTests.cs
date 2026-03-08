@@ -14,13 +14,15 @@ public sealed class ReplaceCartOnOrderCompletedHandlerTests
     [Fact]
     public async Task Should_replace_cart_when_order_is_completed()
     {
-        var cart = Cart.Domain.Entities.Cart.Create(Guid.NewGuid(), Guid.NewGuid());
+        var cart = Domain.Entities.Cart.Create(Guid.NewGuid(), Guid.NewGuid());
         var integrationEvent = new OrderCompletedV1(
             Guid.NewGuid(),
             cart.Id,
             cart.UserId,
             "TRK-1",
             "TX-1",
+            "customer@example.com",
+            149.90m,
             new IntegrationEventMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "corr-1", "Order"));
 
         var repository = new Mock<ICartRepository>();
@@ -53,6 +55,8 @@ public sealed class ReplaceCartOnOrderCompletedHandlerTests
             Guid.NewGuid(),
             "TRK-1",
             "TX-1",
+            "customer@example.com",
+            149.90m,
             new IntegrationEventMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "corr-1", "Order"));
 
         var repository = new Mock<ICartRepository>();

@@ -25,7 +25,6 @@ public static class CommunicationHostBuilderExtensions
                 rabbitMq.BindExchange("order-completed", ExchangeType.Fanout).ToQueue("order-completed-communication");
 
                 wolverine.ListenToRabbitQueue("order-completed-communication");
-                wolverine.ListenToRabbitQueue("shipment-intransit-communication");
 
                 wolverine.PersistMessagesWithPostgresql(options.CommunicationConnectionString);
                 wolverine.UseEntityFrameworkCoreTransactions();

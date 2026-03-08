@@ -20,7 +20,7 @@ public sealed class StockReservationService(IWarehouseReservationRepository rese
         var isReserved = orderCreatedEvent.TotalAmount > 0;
         var failureReason = isReserved ? null : "Invalid order amount.";
 
-        var reservation = Warehouse.Domain.Entities.WarehouseReservation.Create(
+        var reservation = Domain.Entities.WarehouseReservation.Create(
             orderCreatedEvent.OrderId,
             orderCreatedEvent.TotalAmount,
             isReserved,

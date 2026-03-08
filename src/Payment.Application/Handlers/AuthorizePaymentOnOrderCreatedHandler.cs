@@ -27,7 +27,7 @@ public sealed class AuthorizePaymentOnOrderCreatedHandler(
                 var session = await paymentSessionRepository.GetByOrderIdAsync(orderCreatedEvent.OrderId, ct);
                 if (session is null)
                 {
-                    session = Payment.Domain.Entities.PaymentSession.Create(
+                    session = Domain.Entities.PaymentSession.Create(
                         orderCreatedEvent.OrderId,
                         orderCreatedEvent.UserId,
                         orderCreatedEvent.TotalAmount,

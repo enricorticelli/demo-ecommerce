@@ -21,7 +21,7 @@ public sealed class PaymentSessionService(IPaymentSessionRepository paymentSessi
         var session = await paymentSessionRepository.GetByOrderIdAsync(orderId, cancellationToken);
         if (session is null)
         {
-            session = Payment.Domain.Entities.PaymentSession.Create(orderId, string.Empty);
+            session = Domain.Entities.PaymentSession.Create(orderId, string.Empty);
             _ = session.UpdateRedirectUrl(ResolveRedirectUrlTemplate(redirectUrl, session.SessionId));
             paymentSessionRepository.Add(session);
             await paymentSessionRepository.SaveChangesAsync(cancellationToken);
@@ -76,7 +76,7 @@ public sealed class PaymentSessionService(IPaymentSessionRepository paymentSessi
         return new PaymentSessionUpdateResult(ToView(session), statusChanged);
     }
 
-    private static PaymentSessionView ToView(Payment.Domain.Entities.PaymentSession session)
+    private static PaymentSessionView ToView(Domain.Entities.PaymentSession session)
     {
         return new PaymentSessionView(
             session.SessionId,

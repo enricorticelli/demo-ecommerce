@@ -6,7 +6,6 @@ namespace Shipping.Infrastructure.Persistence;
 public sealed class ShippingDbContext(DbContextOptions<ShippingDbContext> options) : DbContext(options)
 {
     public DbSet<Shipping.Domain.Entities.Shipment> Shipments => Set<Shipping.Domain.Entities.Shipment>();
-    public DbSet<ShipmentNotificationSnapshot> ShipmentNotificationSnapshots => Set<ShipmentNotificationSnapshot>();
     public DbSet<ProcessedShippingIntegrationEvent> ProcessedIntegrationEvents => Set<ProcessedShippingIntegrationEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -35,14 +34,6 @@ public sealed class ShippingDbContext(DbContextOptions<ShippingDbContext> option
             entity.ToTable("processed_integration_events");
             entity.HasKey(x => x.EventId);
             entity.Property(x => x.ProcessedAtUtc).IsRequired();
-        });
-
-        modelBuilder.Entity<ShipmentNotificationSnapshot>(entity =>
-        {
-            entity.ToTable("shipment_notification_snapshots");
-            entity.HasKey(x => x.OrderId);
-            entity.Property(x => x.CustomerEmail).HasMaxLength(256).IsRequired();
-            entity.Property(x => x.UpdatedAtUtc).IsRequired();
         });
 
         base.OnModelCreating(modelBuilder);

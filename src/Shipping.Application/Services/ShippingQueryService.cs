@@ -8,7 +8,7 @@ namespace Shipping.Application.Services;
 
 public sealed class ShippingQueryService(
     IShipmentRepository shipmentRepository,
-    IViewMapper<Shipping.Domain.Entities.Shipment, ShipmentView> mapper) : IShippingQueryService
+    IViewMapper<Domain.Entities.Shipment, ShipmentView> mapper) : IShippingQueryService
 {
     public async Task<IReadOnlyList<ShipmentView>> ListAsync(int limit, int offset, string? searchTerm, CancellationToken cancellationToken)
     {

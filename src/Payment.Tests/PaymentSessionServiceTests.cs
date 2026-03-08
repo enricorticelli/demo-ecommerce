@@ -13,7 +13,7 @@ public sealed class PaymentSessionServiceTests
         var repository = new Mock<IPaymentSessionRepository>();
         repository
             .Setup(x => x.GetByOrderIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Payment.Domain.Entities.PaymentSession?)null);
+            .ReturnsAsync((Domain.Entities.PaymentSession?)null);
 
         var sut = new PaymentSessionService(repository.Object);
 
@@ -21,14 +21,14 @@ public sealed class PaymentSessionServiceTests
 
         Assert.NotEqual(Guid.Empty, result.SessionId);
         Assert.Contains(result.SessionId.ToString(), result.RedirectUrl, StringComparison.Ordinal);
-        repository.Verify(x => x.Add(It.IsAny<Payment.Domain.Entities.PaymentSession>()), Times.Once);
+        repository.Verify(x => x.Add(It.IsAny<Domain.Entities.PaymentSession>()), Times.Once);
         repository.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task Reject_should_redact_pan_like_values()
     {
-        var session = Payment.Domain.Entities.PaymentSession.Create(Guid.NewGuid(), "http://localhost/payment/session/1");
+        var session = Domain.Entities.PaymentSession.Create(Guid.NewGuid(), "http://localhost/payment/session/1");
 
         var repository = new Mock<IPaymentSessionRepository>();
         repository

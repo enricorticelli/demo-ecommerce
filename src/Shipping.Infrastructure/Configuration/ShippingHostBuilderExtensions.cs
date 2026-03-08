@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Shipping.Application.Handlers;
 using Shared.BuildingBlocks.Contracts.IntegrationEvents.Order;
-using Shared.BuildingBlocks.Contracts.IntegrationEvents.Shipping;
 using Wolverine;
 using Wolverine.EntityFrameworkCore;
 using Wolverine.Postgresql;
@@ -28,9 +27,6 @@ public static class ShippingHostBuilderExtensions
 
                 // Incoming integration events to Shipping
                 wolverine.ListenToRabbitQueue("order-completed-shipping");
-
-                // Outgoing integration events from Shipping
-                wolverine.PublishMessage<ShipmentInTransitForCommunicationV1>().ToRabbitQueue("shipment-intransit-communication");
 
                 wolverine.PersistMessagesWithPostgresql(options.ShippingConnectionString);
                 wolverine.UseEntityFrameworkCoreTransactions();

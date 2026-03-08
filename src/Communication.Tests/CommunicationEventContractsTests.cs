@@ -16,7 +16,7 @@ public sealed class CommunicationEventContractsTests
                 && type.Namespace is not null
                 && (type.Namespace.Contains("IntegrationEvents.Order", StringComparison.Ordinal)
                     || type.Namespace.Contains("IntegrationEvents.Shipping", StringComparison.Ordinal))
-                && type.Name.Contains("Communication", StringComparison.Ordinal))
+                && typeof(IIntegrationEvent).IsAssignableFrom(type))
             .ToArray();
 
         Assert.NotEmpty(communicationEventTypes);

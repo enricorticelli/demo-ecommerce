@@ -21,7 +21,9 @@ public static class CartHostBuilderExtensions
             builder.Host.UseWolverine(wolverine =>
             {
                 wolverine.Discovery.IncludeAssembly(typeof(SyncCartOnProductUpdatedHandler).Assembly);
-                wolverine.UseRabbitMq(options.RabbitMqUri).AutoProvision();
+                var rabbitMq = wolverine.UseRabbitMq(options.RabbitMqUri);
+                rabbitMq.AutoProvision();
+                rabbitMq.BindExchange("order-completed", ExchangeType.Fanout).ToQueue("order-completed-cart");
 
                 wolverine.ListenToRabbitQueue("catalog-product-updated-cart");
                 wolverine.ListenToRabbitQueue("order-completed-cart");

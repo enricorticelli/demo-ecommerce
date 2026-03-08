@@ -15,7 +15,7 @@ public sealed class WarehouseCommandService(
         var stockItem = await stockRepository.GetByProductIdAsync(command.ProductId, cancellationToken);
         if (stockItem is null)
         {
-            stockItem = Warehouse.Domain.Entities.WarehouseStockItem.Create(command.ProductId, command.Sku, command.AvailableQuantity);
+            stockItem = Domain.Entities.WarehouseStockItem.Create(command.ProductId, command.Sku, command.AvailableQuantity);
             stockRepository.Add(stockItem);
         }
         else
@@ -63,7 +63,7 @@ public sealed class WarehouseCommandService(
         }
 
         var amount = command.Items.Sum(x => x.Quantity * x.UnitPrice);
-        var reservation = Warehouse.Domain.Entities.WarehouseReservation.Create(command.OrderId, amount, true, null);
+        var reservation = Domain.Entities.WarehouseReservation.Create(command.OrderId, amount, true, null);
         reservationRepository.Add(reservation);
 
         await stockRepository.SaveChangesAsync(cancellationToken);
@@ -78,7 +78,7 @@ public sealed class WarehouseCommandService(
         CancellationToken cancellationToken)
     {
         var amount = command.Items.Sum(x => x.Quantity * x.UnitPrice);
-        var reservation = Warehouse.Domain.Entities.WarehouseReservation.Create(command.OrderId, amount, false, reason);
+        var reservation = Domain.Entities.WarehouseReservation.Create(command.OrderId, amount, false, reason);
         reservationRepository.Add(reservation);
         await reservationRepository.SaveChangesAsync(cancellationToken);
         return new WarehouseReserveView(command.OrderId, false, reason);

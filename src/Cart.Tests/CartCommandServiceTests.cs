@@ -49,8 +49,8 @@ public sealed class CartCommandServiceTests
     [Fact]
     public async Task Checkout_should_keep_items_until_order_completion()
     {
-        var cart = Cart.Domain.Entities.Cart.Create(Guid.NewGuid(), Guid.NewGuid());
-        cart.AddItem(Cart.Domain.Entities.CartItem.Create(Guid.NewGuid(), "SKU-1", "Item 1", 2, 10m));
+        var cart = Domain.Entities.Cart.Create(Guid.NewGuid(), Guid.NewGuid());
+        cart.AddItem(Domain.Entities.CartItem.Create(Guid.NewGuid(), "SKU-1", "Item 1", 2, 10m));
 
         var repository = new Mock<ICartRepository>();
         repository.Setup(x => x.GetByIdAsync(cart.Id, It.IsAny<CancellationToken>())).ReturnsAsync(cart);

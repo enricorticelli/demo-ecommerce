@@ -30,9 +30,6 @@ public sealed class OrderIntegrationHandlersTests
         publisher
             .Setup(x => x.PublishAndFlushAsync(It.IsAny<IntegrationEventBase>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        publisher
-            .Setup(x => x.PublishBatchAndFlushAsync(It.IsAny<IReadOnlyCollection<IntegrationEventBase>>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
 
         var logger = new Mock<ILogger<HandlePaymentAuthorizedOnOrderHandler>>();
         var sut = new HandlePaymentAuthorizedOnOrderHandler(repository.Object, deduplication.Object, publisher.Object, logger.Object);
@@ -61,9 +58,6 @@ public sealed class OrderIntegrationHandlersTests
         publisher
             .Setup(x => x.PublishAndFlushAsync(It.IsAny<IntegrationEventBase>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        publisher
-            .Setup(x => x.PublishBatchAndFlushAsync(It.IsAny<IReadOnlyCollection<IntegrationEventBase>>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
 
         var logger = new Mock<ILogger<HandleStockReservedOnOrderHandler>>();
         var sut = new HandleStockReservedOnOrderHandler(repository.Object, deduplication.Object, publisher.Object, logger.Object);
@@ -73,10 +67,11 @@ public sealed class OrderIntegrationHandlersTests
         Assert.Equal(Domain.Entities.OrderStatus.Completed, order.Status);
         Assert.True(order.IsStockReserved);
         publisher.Verify(
-            x => x.PublishBatchAndFlushAsync(
-                It.Is<IReadOnlyCollection<IntegrationEventBase>>(events =>
-                    events.OfType<OrderCompletedV1>().Any(e => e.OrderId == order.Id)
-                    && events.OfType<OrderCompletedForCommunicationV1>().Any(e => e.OrderId == order.Id && e.CustomerEmail == order.Customer.Email)),
+            x => x.PublishAndFlushAsync(
+                It.Is<OrderCompletedV1>(e =>
+                    e.OrderId == order.Id
+                    && e.CustomerEmail == order.Customer.Email
+                    && e.TotalAmount == order.TotalAmount),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }

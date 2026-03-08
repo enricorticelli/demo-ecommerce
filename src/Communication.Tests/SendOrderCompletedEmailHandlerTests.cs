@@ -14,9 +14,12 @@ public sealed class SendOrderCompletedEmailHandlerTests
     [Fact]
     public async Task Should_send_email_and_mark_event_processed_once()
     {
-        var integrationEvent = new OrderCompletedForCommunicationV1(
+        var integrationEvent = new OrderCompletedV1(
             Guid.NewGuid(),
             Guid.NewGuid(),
+            Guid.NewGuid(),
+            "TRK-1",
+            "TX-1",
             "customer@example.com",
             149.90m,
             new IntegrationEventMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "corr-1", "Order"));
@@ -37,9 +40,12 @@ public sealed class SendOrderCompletedEmailHandlerTests
     [Fact]
     public async Task Should_skip_duplicate_event()
     {
-        var integrationEvent = new OrderCompletedForCommunicationV1(
+        var integrationEvent = new OrderCompletedV1(
             Guid.NewGuid(),
             Guid.NewGuid(),
+            Guid.NewGuid(),
+            "TRK-1",
+            "TX-1",
             "customer@example.com",
             149.90m,
             new IntegrationEventMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "corr-1", "Order"));

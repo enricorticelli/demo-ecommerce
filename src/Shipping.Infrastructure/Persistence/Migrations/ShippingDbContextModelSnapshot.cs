@@ -78,25 +78,6 @@ namespace Shipping.Infrastructure.Persistence.Migrations
 
                     b.ToTable("processed_integration_events", "shipping");
                 });
-
-            modelBuilder.Entity("Shipping.Infrastructure.Persistence.Entities.ShipmentNotificationSnapshot", b =>
-                {
-                    b.Property<Guid>("OrderId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CustomerEmail")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<DateTimeOffset>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("OrderId");
-
-                    b.ToTable("shipment_notification_snapshots", "shipping");
-                });
 #pragma warning restore 612, 618
         }
     }

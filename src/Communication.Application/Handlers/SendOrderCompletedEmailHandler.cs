@@ -11,9 +11,9 @@ public sealed class SendOrderCompletedEmailHandler(
     IEmailSender emailSender,
     ICommunicationEventDeduplicationStore deduplicationStore,
     ILogger<SendOrderCompletedEmailHandler> logger)
-    : IntegrationEventHandlerBase<OrderCompletedForCommunicationV1>(deduplicationStore, logger)
+    : IntegrationEventHandlerBase<OrderCompletedV1>(deduplicationStore, logger)
 {
-    public Task Handle(OrderCompletedForCommunicationV1 integrationEvent, CancellationToken cancellationToken)
+    public Task Handle(OrderCompletedV1 integrationEvent, CancellationToken cancellationToken)
     {
         var message = CommunicationEmailMessage.ForOrderCompleted(
             integrationEvent.OrderId,

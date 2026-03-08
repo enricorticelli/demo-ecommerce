@@ -6,4 +6,6 @@ public sealed record OrderCompletedV1(
     Guid UserId,
     string TrackingCode,
     string TransactionId,
+    string CustomerEmail,
+    decimal TotalAmount,
     IntegrationEventMetadata Metadata) : IntegrationEventBase(Metadata);

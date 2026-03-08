@@ -14,7 +14,7 @@ public sealed class WarehouseCommandServiceTests
         var stockRepository = new Mock<IWarehouseStockRepository>();
         stockRepository
             .Setup(x => x.GetByProductIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Warehouse.Domain.Entities.WarehouseStockItem?)null);
+            .ReturnsAsync((Domain.Entities.WarehouseStockItem?)null);
 
         var reservationRepository = new Mock<IWarehouseReservationRepository>();
 
@@ -23,7 +23,7 @@ public sealed class WarehouseCommandServiceTests
 
         Assert.Equal("SKU-1", result.Sku);
         Assert.Equal(10, result.AvailableQuantity);
-        stockRepository.Verify(x => x.Add(It.IsAny<Warehouse.Domain.Entities.WarehouseStockItem>()), Times.Once);
+        stockRepository.Verify(x => x.Add(It.IsAny<Domain.Entities.WarehouseStockItem>()), Times.Once);
         stockRepository.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -35,12 +35,12 @@ public sealed class WarehouseCommandServiceTests
         var stockRepository = new Mock<IWarehouseStockRepository>();
         stockRepository
             .Setup(x => x.GetByProductIdsAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Array.Empty<Warehouse.Domain.Entities.WarehouseStockItem>());
+            .ReturnsAsync(Array.Empty<Domain.Entities.WarehouseStockItem>());
 
         var reservationRepository = new Mock<IWarehouseReservationRepository>();
         reservationRepository
             .Setup(x => x.GetByOrderIdAsync(orderId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Warehouse.Domain.Entities.WarehouseReservation?)null);
+            .ReturnsAsync((Domain.Entities.WarehouseReservation?)null);
 
         var sut = new WarehouseCommandService(stockRepository.Object, reservationRepository.Object);
 
@@ -50,14 +50,14 @@ public sealed class WarehouseCommandServiceTests
 
         Assert.False(result.Reserved);
         Assert.Contains("Missing stock", result.Reason, StringComparison.Ordinal);
-        reservationRepository.Verify(x => x.Add(It.Is<Warehouse.Domain.Entities.WarehouseReservation>(r => !r.IsReserved)), Times.Once);
+        reservationRepository.Verify(x => x.Add(It.Is<Domain.Entities.WarehouseReservation>(r => !r.IsReserved)), Times.Once);
     }
 
     [Fact]
     public async Task Reserve_should_decrement_stock_when_available()
     {
         var productId = Guid.NewGuid();
-        var stock = Warehouse.Domain.Entities.WarehouseStockItem.Create(productId, "SKU-1", 5);
+        var stock = Domain.Entities.WarehouseStockItem.Create(productId, "SKU-1", 5);
 
         var stockRepository = new Mock<IWarehouseStockRepository>();
         stockRepository
@@ -67,7 +67,7 @@ public sealed class WarehouseCommandServiceTests
         var reservationRepository = new Mock<IWarehouseReservationRepository>();
         reservationRepository
             .Setup(x => x.GetByOrderIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Warehouse.Domain.Entities.WarehouseReservation?)null);
+            .ReturnsAsync((Domain.Entities.WarehouseReservation?)null);
 
         var sut = new WarehouseCommandService(stockRepository.Object, reservationRepository.Object);
 

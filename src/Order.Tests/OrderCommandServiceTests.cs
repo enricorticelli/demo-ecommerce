@@ -83,7 +83,7 @@ public sealed class OrderCommandServiceTests
 
         var publisher = new Mock<IDomainEventPublisher>();
         publisher
-            .Setup(x => x.PublishBatchAndFlushAsync(It.IsAny<IReadOnlyCollection<IntegrationEventBase>>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.PublishAndFlushAsync(It.IsAny<IntegrationEventBase>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         var mapper = new Mock<IViewMapper<Order.Domain.Entities.Order, OrderView>>();
         mapper.Setup(x => x.Map(existing)).Returns(() => new OrderView(
@@ -112,10 +112,11 @@ public sealed class OrderCommandServiceTests
         Assert.Equal("TRK-1", result.TrackingCode);
         Assert.Equal("TX-1", result.TransactionId);
         publisher.Verify(
-            x => x.PublishBatchAndFlushAsync(
-                It.Is<IReadOnlyCollection<IntegrationEventBase>>(events =>
-                    events.OfType<OrderCompletedForCommunicationV1>().Any(e => e.OrderId == existing.Id && e.CustomerEmail == existing.Customer.Email)
-                    && events.OfType<OrderCompletedV1>().Any(e => e.OrderId == existing.Id)),
+            x => x.PublishAndFlushAsync(
+                It.Is<OrderCompletedV1>(e =>
+                    e.OrderId == existing.Id
+                    && e.CustomerEmail == existing.Customer.Email
+                    && e.TotalAmount == existing.TotalAmount),
                 It.IsAny<CancellationToken>()),
             Times.Once);
         repository.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -180,7 +181,7 @@ public sealed class OrderCommandServiceTests
 
     private static Order.Domain.Entities.Order BuildOrderEntity()
     {
-        return Order.Domain.Entities.Order.Create(
+        return Domain.Entities.Order.Create(
             Guid.NewGuid(),
             Guid.NewGuid(),
             "authenticated",

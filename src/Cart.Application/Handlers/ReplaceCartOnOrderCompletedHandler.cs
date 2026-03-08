@@ -25,7 +25,7 @@ public sealed class ReplaceCartOnOrderCompletedHandler(
                 }
 
                 cartRepository.Remove(cart);
-                cartRepository.Add(Cart.Domain.Entities.Cart.Create(Guid.NewGuid(), integrationEvent.UserId));
+                cartRepository.Add(Domain.Entities.Cart.Create(Guid.NewGuid(), integrationEvent.UserId));
                 await cartRepository.SaveChangesAsync(ct);
             },
             cancellationToken);

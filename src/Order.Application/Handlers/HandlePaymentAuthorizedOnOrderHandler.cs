@@ -44,16 +44,11 @@ public sealed class HandlePaymentAuthorizedOnOrderHandler(
                         order.UserId,
                         order.TrackingCode,
                         order.TransactionId,
-                        CreateMetadata(integrationEvent.Metadata.CorrelationId, "Order"));
-
-                    var communicationEvent = new OrderCompletedForCommunicationV1(
-                        order.Id,
-                        order.UserId,
                         order.Customer.Email,
                         order.TotalAmount,
                         CreateMetadata(integrationEvent.Metadata.CorrelationId, "Order"));
 
-                    await eventPublisher.PublishBatchAndFlushAsync([completedEvent, communicationEvent], ct);
+                    await eventPublisher.PublishAndFlushAsync(completedEvent, ct);
                 }
 
                 await orderRepository.SaveChangesAsync(ct);

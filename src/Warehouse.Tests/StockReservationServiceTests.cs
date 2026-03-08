@@ -23,13 +23,13 @@ public sealed class StockReservationServiceTests
         var repository = new Mock<IWarehouseReservationRepository>();
         repository
             .Setup(x => x.GetByOrderIdAsync(orderCreated.OrderId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Warehouse.Domain.Entities.WarehouseReservation?)null);
+            .ReturnsAsync((Domain.Entities.WarehouseReservation?)null);
 
         var sut = new StockReservationService(repository.Object);
         var result = await sut.ReserveAsync(orderCreated, CancellationToken.None);
 
         Assert.True(result.IsReserved);
-        repository.Verify(x => x.Add(It.IsAny<Warehouse.Domain.Entities.WarehouseReservation>()), Times.Once);
+        repository.Verify(x => x.Add(It.IsAny<Domain.Entities.WarehouseReservation>()), Times.Once);
         repository.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -37,7 +37,7 @@ public sealed class StockReservationServiceTests
     public async Task Reserve_should_be_idempotent_for_existing_order()
     {
         var orderId = Guid.NewGuid();
-        var existing = Warehouse.Domain.Entities.WarehouseReservation.Create(orderId, 100m, true, null);
+        var existing = Domain.Entities.WarehouseReservation.Create(orderId, 100m, true, null);
 
         var orderCreated = new OrderCreatedV1(
             orderId,
@@ -56,7 +56,7 @@ public sealed class StockReservationServiceTests
         var result = await sut.ReserveAsync(orderCreated, CancellationToken.None);
 
         Assert.True(result.IsReserved);
-        repository.Verify(x => x.Add(It.IsAny<Warehouse.Domain.Entities.WarehouseReservation>()), Times.Never);
+        repository.Verify(x => x.Add(It.IsAny<Domain.Entities.WarehouseReservation>()), Times.Never);
         repository.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }

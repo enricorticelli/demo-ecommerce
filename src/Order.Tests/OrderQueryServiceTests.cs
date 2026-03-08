@@ -63,7 +63,7 @@ public sealed class OrderQueryServiceTests
 
     private static Order.Domain.Entities.Order BuildOrderEntity()
     {
-        return Order.Domain.Entities.Order.Create(
+        return Domain.Entities.Order.Create(
             Guid.NewGuid(),
             Guid.NewGuid(),
             "authenticated",

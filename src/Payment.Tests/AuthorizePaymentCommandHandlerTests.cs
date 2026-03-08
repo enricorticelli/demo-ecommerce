@@ -40,7 +40,7 @@ public sealed class AuthorizePaymentCommandHandlerTests
         var paymentSessionRepository = new Mock<IPaymentSessionRepository>();
         paymentSessionRepository
             .Setup(x => x.GetByOrderIdAsync(orderCreated.OrderId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Payment.Domain.Entities.PaymentSession?)null);
+            .ReturnsAsync((Domain.Entities.PaymentSession?)null);
         paymentSessionRepository
             .Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
@@ -63,7 +63,7 @@ public sealed class AuthorizePaymentCommandHandlerTests
         publisher.Verify(
             x => x.PublishAndFlushAsync(It.Is<PaymentAuthorizedV1>(e => e.OrderId == orderCreated.OrderId && e.TransactionId == "TX-1"), It.IsAny<CancellationToken>()),
             Times.Once);
-        paymentSessionRepository.Verify(x => x.Add(It.IsAny<Payment.Domain.Entities.PaymentSession>()), Times.Once);
+        paymentSessionRepository.Verify(x => x.Add(It.IsAny<Domain.Entities.PaymentSession>()), Times.Once);
         paymentSessionRepository.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
         deduplicationStore.Verify(x => x.MarkProcessedAsync(orderCreated.Metadata.EventId, It.IsAny<CancellationToken>()), Times.Once);
     }
