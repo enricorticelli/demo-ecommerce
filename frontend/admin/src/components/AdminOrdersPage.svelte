@@ -61,7 +61,7 @@
     <div class="flex flex-wrap items-end gap-2">
       <div class="min-w-[320px] flex-1">
         <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]" for="orders-search">
-          Ricerca ordini (searchTerm server-side)
+          Ricerca ordini
         </label>
         <input
           id="orders-search"

@@ -26,7 +26,7 @@ public static class ShippingInfrastructureServiceCollectionExtensions
         services.AddDbContextWithWolverineIntegration<ShippingDbContext>(options => options.UseNpgsql(connectionString));
         services.AddTracedScoped<IShipmentRepository, ShipmentRepository>();
         services.AddTracedScoped<IShippingEventDeduplicationStore, PersistentShippingEventDeduplicationStore>();
-        services.AddTracedScoped<IViewMapper<Shipping.Domain.Entities.Shipment, ShipmentView>, ShipmentViewMapper>();
+        services.AddScoped<IViewMapper<Shipping.Domain.Entities.Shipment, ShipmentView>, ShipmentViewMapper>();
         services.AddTracedScoped<IShippingCommandService, ShippingCommandService>();
         services.AddTracedScoped<IShippingQueryService, ShippingQueryService>();
 

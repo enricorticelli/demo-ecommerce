@@ -26,7 +26,7 @@ public static class CartInfrastructureServiceCollectionExtensions
         services.AddDbContextWithWolverineIntegration<CartDbContext>(options => options.UseNpgsql(connectionString));
         services.AddTracedScoped<ICartRepository, CartRepository>();
         services.AddTracedScoped<ICartEventDeduplicationStore, InMemoryCartEventDeduplicationStore>();
-        services.AddTracedScoped<IViewMapper<Cart.Domain.Entities.Cart, CartView>, CartViewMapper>();
+        services.AddScoped<IViewMapper<Cart.Domain.Entities.Cart, CartView>, CartViewMapper>();
         services.AddTracedScoped<ICartCommandService, CartCommandService>();
         services.AddTracedScoped<ICartQueryService, CartQueryService>();
 

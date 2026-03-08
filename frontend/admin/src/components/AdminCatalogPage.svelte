@@ -355,7 +355,7 @@
       <div class="mb-3 flex flex-wrap items-end gap-2">
         <div class="min-w-[320px] flex-1">
           <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]" for="catalog-search">
-            Ricerca {tabLabels[activeTab].toLowerCase()} (searchTerm server-side)
+            Ricerca {tabLabels[activeTab].toLowerCase()}
           </label>
           <input
             id="catalog-search"

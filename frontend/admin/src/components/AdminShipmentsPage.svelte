@@ -103,7 +103,7 @@
     <div class="flex flex-wrap items-end gap-2">
       <div class="min-w-[280px] flex-1">
         <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]" for="shipments-search">
-          Ricerca spedizioni (searchTerm server-side)
+          Ricerca spedizioni
         </label>
         <input
           id="shipments-search"

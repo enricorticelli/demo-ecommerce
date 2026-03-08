@@ -31,8 +31,8 @@ public static class OrderInfrastructureServiceCollectionExtensions
         services.AddTracedScoped<IOrderRepository, OrderRepository>();
         services.AddTracedScoped<IOrderEventDeduplicationStore, PersistentOrderEventDeduplicationStore>();
         services.AddTracedScoped<IDomainEventPublisher, OutboxDomainEventPublisher>();
-        services.AddTracedScoped<IOrderRules, OrderRules>();
-        services.AddTracedScoped<IViewMapper<Order.Domain.Entities.Order, OrderView>, OrderViewMapper>();
+        services.AddScoped<IOrderRules, OrderRules>();
+        services.AddScoped<IViewMapper<Order.Domain.Entities.Order, OrderView>, OrderViewMapper>();
         services.AddTracedScoped<IOrderCommandService, OrderCommandService>();
         services.AddTracedScoped<IOrderQueryService, OrderQueryService>();
 

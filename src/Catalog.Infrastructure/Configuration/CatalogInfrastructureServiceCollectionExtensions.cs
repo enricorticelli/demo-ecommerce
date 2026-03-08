@@ -36,15 +36,15 @@ public static class CatalogInfrastructureServiceCollectionExtensions
         services.AddTracedScoped<IProductRepository, ProductRepository>();
         services.AddTracedScoped<IDomainEventPublisher, OutboxDomainEventPublisher>();
 
-        services.AddTracedScoped<IBrandRules, BrandRules>();
-        services.AddTracedScoped<ICategoryRules, CategoryRules>();
-        services.AddTracedScoped<ICollectionRules, CollectionRules>();
-        services.AddTracedScoped<IProductRules, ProductRules>();
+        services.AddScoped<IBrandRules, BrandRules>();
+        services.AddScoped<ICategoryRules, CategoryRules>();
+        services.AddScoped<ICollectionRules, CollectionRules>();
+        services.AddScoped<IProductRules, ProductRules>();
 
-        services.AddTracedScoped<IViewMapper<Brand, BrandView>, BrandViewMapper>();
-        services.AddTracedScoped<IViewMapper<Category, CategoryView>, CategoryViewMapper>();
-        services.AddTracedScoped<IViewMapper<CatalogCollection, CollectionView>, CollectionViewMapper>();
-        services.AddTracedScoped<IViewMapper<Product, ProductView>, ProductViewMapper>();
+        services.AddScoped<IViewMapper<Brand, BrandView>, BrandViewMapper>();
+        services.AddScoped<IViewMapper<Category, CategoryView>, CategoryViewMapper>();
+        services.AddScoped<IViewMapper<CatalogCollection, CollectionView>, CollectionViewMapper>();
+        services.AddScoped<IViewMapper<Product, ProductView>, ProductViewMapper>();
 
         services.AddTracedScoped<IBrandCommandService, BrandCommandService>();
         services.AddTracedScoped<ICategoryCommandService, CategoryCommandService>();

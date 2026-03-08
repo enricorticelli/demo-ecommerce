@@ -154,7 +154,7 @@
     <div class="flex flex-wrap items-end gap-2">
       <div class="min-w-[320px] flex-1">
         <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]" for="warehouse-search">
-          Ricerca prodotti (searchTerm server-side)
+          Ricerca prodotti
         </label>
         <input
           id="warehouse-search"

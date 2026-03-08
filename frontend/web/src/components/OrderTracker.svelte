@@ -70,6 +70,9 @@
         : canCustomerCancel
           ? 'Puoi ancora annullare questo ordine.'
           : 'Ordine in lavorazione: annullamento non disponibile.';
+  $: itemsSubtotal = order
+    ? order.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+    : 0;
   $: paymentMethodLabel = order ? paymentMethodLabels[order.paymentMethod] ?? order.paymentMethod : '-';
   $: trackingCode = shipment?.trackingCode || order?.trackingCode || '';
   $: shippingIsCancelled = shipment?.status === 'Cancelled';
@@ -162,9 +165,21 @@
 </script>
 
 <div class="space-y-6 reveal">
-  <div>
-    <a href="/" class="text-sm text-[#616161] hover:text-[#202223]">← Torna al catalogo</a>
-    <h1 class="mt-2 font-title text-4xl font-extrabold text-[#202223]">Tracciamento ordine</h1>
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <a href="/" class="text-sm text-[#616161] hover:text-[#202223]">← Torna al catalogo</a>
+      <h1 class="mt-2 font-title text-4xl font-extrabold text-[#202223]">Tracciamento ordine</h1>
+    </div>
+
+    {#if !isLoading && !notFound && !loadError && order && canCustomerCancel}
+      <button
+        class="inline-flex items-center justify-center rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-200 disabled:text-rose-500"
+        disabled={isCancelling}
+        on:click={cancelOrderByCustomer}
+      >
+        {isCancelling ? 'Annullamento in corso...' : 'Annulla ordine'}
+      </button>
+    {/if}
   </div>
 
   {#if isLoading}
@@ -181,18 +196,6 @@
   {:else if loadError}
     <div class="surface-card border-rose-200 bg-rose-50 p-5 text-sm text-rose-700">{loadError}</div>
   {:else if order}
-    <div class="flex justify-end">
-      {#if canCustomerCancel}
-        <button
-          class="inline-flex items-center justify-center rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-rose-200 disabled:text-rose-500"
-          disabled={isCancelling}
-          on:click={cancelOrderByCustomer}
-        >
-          {isCancelling ? 'Annullamento in corso...' : 'Annulla ordine'}
-        </button>
-      {/if}
-    </div>
-
     {#if cancelSuccess}
       <p class="text-right text-xs text-emerald-700">{cancelSuccess}</p>
     {/if}
@@ -326,6 +329,20 @@
               <p class="font-semibold text-[#202223]">{formatCurrency(item.quantity * item.unitPrice)}</p>
             </div>
           {/each}
+        </div>
+
+        <div class="mt-4 border-t border-[#e1e3e5] pt-4">
+          <h4 class="text-xs font-semibold uppercase tracking-[0.16em] text-[#6d7175]">Resoconto totali</h4>
+          <div class="mt-2 space-y-1 text-sm text-[#4a4f55]">
+            <div class="flex items-center justify-between gap-3">
+              <span>Subtotale articoli</span>
+              <span class="font-medium text-[#202223]">{formatCurrency(itemsSubtotal)}</span>
+            </div>
+            <div class="flex items-center justify-between gap-3 border-t border-[#eef1f3] pt-2 text-base font-bold text-[#202223]">
+              <span>Totale ordine</span>
+              <span>{formatCurrency(order.totalAmount)}</span>
+            </div>
+          </div>
         </div>
       </div>
     {/if}
