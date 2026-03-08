@@ -1,48 +1,55 @@
+using Microsoft.Extensions.Logging;
 using Order.Application.Abstractions.Idempotency;
 using Order.Application.Abstractions.Repositories;
-using Shared.BuildingBlocks.Contracts.IntegrationEvents;
 using Shared.BuildingBlocks.Contracts.IntegrationEvents.Order;
-using Shared.BuildingBlocks.Contracts.Messaging;
 using Shared.BuildingBlocks.Contracts.IntegrationEvents.Warehouse;
+using Shared.BuildingBlocks.Contracts.Messaging;
 using Shared.BuildingBlocks.Exceptions;
+using Shared.BuildingBlocks.Messaging;
 
 namespace Order.Application.Handlers;
 
 public sealed class HandleStockReservedOnOrderHandler(
     IOrderRepository orderRepository,
     IOrderEventDeduplicationStore deduplicationStore,
-    IDomainEventPublisher eventPublisher)
+    IDomainEventPublisher eventPublisher,
+    ILogger<HandleStockReservedOnOrderHandler> logger)
+    : IntegrationEventHandlerBase<StockReservedV1>(deduplicationStore, logger)
 {
-    public async Task HandleAsync(StockReservedV1 integrationEvent, CancellationToken cancellationToken)
+    public Task Handle(StockReservedV1 integrationEvent, CancellationToken cancellationToken)
     {
-        if (await deduplicationStore.HasProcessedAsync(integrationEvent.Metadata.EventId, cancellationToken))
-        {
-            return;
-        }
+        return HandleDeduplicatedAsync(
+            integrationEvent,
+            async ct =>
+            {
+                var order = await orderRepository.GetByIdAsync(integrationEvent.OrderId, ct)
+                    ?? throw new NotFoundAppException($"Order '{integrationEvent.OrderId}' not found.");
 
-        var order = await orderRepository.GetByIdAsync(integrationEvent.OrderId, cancellationToken)
-            ?? throw new NotFoundAppException($"Order '{integrationEvent.OrderId}' not found.");
+                var initialStatus = order.Status.ToString();
+                var stateChanged = order.ApplyStockReserved();
+                var finalStatus = order.Status.ToString();
 
-        var stateChanged = order.ApplyStockReserved();
+                logger.LogInformation(
+                    "Applied StockReservedV1 on order. orderId={OrderId} stateChanged={StateChanged} statusBefore={StatusBefore} statusAfter={StatusAfter}",
+                    order.Id,
+                    stateChanged,
+                    initialStatus,
+                    finalStatus);
 
-        if (stateChanged && string.Equals(order.Status.ToString(), "Completed", StringComparison.OrdinalIgnoreCase))
-        {
-            var completedEvent = new OrderCompletedV1(
-                order.Id,
-                order.UserId,
-                order.TrackingCode,
-                order.TransactionId,
-                CreateMetadata(integrationEvent.Metadata.CorrelationId));
+                if (stateChanged && string.Equals(finalStatus, "Completed", StringComparison.OrdinalIgnoreCase))
+                {
+                    var completedEvent = new OrderCompletedV1(
+                        order.Id,
+                        order.UserId,
+                        order.TrackingCode,
+                        order.TransactionId,
+                        CreateMetadata(integrationEvent.Metadata.CorrelationId, "Order"));
 
-            await eventPublisher.PublishAndFlushAsync(completedEvent, cancellationToken);
-        }
+                    await eventPublisher.PublishAndFlushAsync(completedEvent, ct);
+                }
 
-        await orderRepository.SaveChangesAsync(cancellationToken);
-        await deduplicationStore.MarkProcessedAsync(integrationEvent.Metadata.EventId, cancellationToken);
-    }
-
-    private static IntegrationEventMetadata CreateMetadata(string correlationId)
-    {
-        return new IntegrationEventMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, correlationId, "Order");
+                await orderRepository.SaveChangesAsync(ct);
+            },
+            cancellationToken);
     }
 }

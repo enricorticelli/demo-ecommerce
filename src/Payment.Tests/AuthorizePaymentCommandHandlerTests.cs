@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Moq;
 using Payment.Application.Abstractions.Idempotency;
 using Payment.Application.Abstractions.Services;
@@ -41,9 +42,10 @@ public sealed class AuthorizePaymentCommandHandlerTests
             .Setup(x => x.PublishAndFlushAsync(It.IsAny<IntegrationEventBase>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var sut = new AuthorizePaymentOnOrderCreatedHandler(authorizationService.Object, deduplicationStore.Object, publisher.Object);
+        var logger = new Mock<ILogger<AuthorizePaymentOnOrderCreatedHandler>>();
+        var sut = new AuthorizePaymentOnOrderCreatedHandler(authorizationService.Object, deduplicationStore.Object, publisher.Object, logger.Object);
 
-        await sut.HandleAsync(orderCreated, CancellationToken.None);
+        await sut.Handle(orderCreated, CancellationToken.None);
 
         publisher.Verify(
             x => x.PublishAndFlushAsync(It.Is<PaymentAuthorizedV1>(e => e.OrderId == orderCreated.OrderId && e.TransactionId == "TX-1"), It.IsAny<CancellationToken>()),
@@ -70,9 +72,10 @@ public sealed class AuthorizePaymentCommandHandlerTests
 
         var publisher = new Mock<IDomainEventPublisher>();
 
-        var sut = new AuthorizePaymentOnOrderCreatedHandler(authorizationService.Object, deduplicationStore.Object, publisher.Object);
+        var logger = new Mock<ILogger<AuthorizePaymentOnOrderCreatedHandler>>();
+        var sut = new AuthorizePaymentOnOrderCreatedHandler(authorizationService.Object, deduplicationStore.Object, publisher.Object, logger.Object);
 
-        await sut.HandleAsync(orderCreated, CancellationToken.None);
+        await sut.Handle(orderCreated, CancellationToken.None);
 
         authorizationService.Verify(x => x.AuthorizeAsync(It.IsAny<OrderCreatedV1>(), It.IsAny<CancellationToken>()), Times.Never);
         publisher.Verify(x => x.PublishAndFlushAsync(It.IsAny<IntegrationEventBase>(), It.IsAny<CancellationToken>()), Times.Never);

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Moq;
 using Shared.BuildingBlocks.Contracts.IntegrationEvents;
 using Shared.BuildingBlocks.Contracts.IntegrationEvents.Order;
@@ -41,9 +42,10 @@ public sealed class ReserveStockCommandHandlerTests
             .Setup(x => x.PublishAndFlushAsync(It.IsAny<IntegrationEventBase>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var sut = new ReserveStockOnOrderCreatedHandler(reservationService.Object, deduplicationStore.Object, publisher.Object);
+        var logger = new Mock<ILogger<ReserveStockOnOrderCreatedHandler>>();
+        var sut = new ReserveStockOnOrderCreatedHandler(reservationService.Object, deduplicationStore.Object, publisher.Object, logger.Object);
 
-        await sut.HandleAsync(orderCreated, CancellationToken.None);
+        await sut.Handle(orderCreated, CancellationToken.None);
 
         publisher.Verify(
             x => x.PublishAndFlushAsync(It.Is<StockReservedV1>(e => e.OrderId == orderCreated.OrderId), It.IsAny<CancellationToken>()),
@@ -70,9 +72,10 @@ public sealed class ReserveStockCommandHandlerTests
 
         var publisher = new Mock<IDomainEventPublisher>();
 
-        var sut = new ReserveStockOnOrderCreatedHandler(reservationService.Object, deduplicationStore.Object, publisher.Object);
+        var logger = new Mock<ILogger<ReserveStockOnOrderCreatedHandler>>();
+        var sut = new ReserveStockOnOrderCreatedHandler(reservationService.Object, deduplicationStore.Object, publisher.Object, logger.Object);
 
-        await sut.HandleAsync(orderCreated, CancellationToken.None);
+        await sut.Handle(orderCreated, CancellationToken.None);
 
         reservationService.Verify(x => x.ReserveAsync(It.IsAny<OrderCreatedV1>(), It.IsAny<CancellationToken>()), Times.Never);
         publisher.Verify(x => x.PublishAndFlushAsync(It.IsAny<IntegrationEventBase>(), It.IsAny<CancellationToken>()), Times.Never);

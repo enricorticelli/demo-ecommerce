@@ -49,15 +49,27 @@
 
       await authorizePaymentSession(sessionId);
 
-      const completedOrder = await pollOrderUntilDone(targetOrderId, () => undefined, 45, 1000);
-      if (completedOrder?.status === 'Completed') {
+      const terminalOrder = await pollOrderUntilDone(targetOrderId, () => undefined, 45, 1000);
+      if (!terminalOrder) {
+        throw new Error('Pagamento autorizzato, ma conferma ordine non ricevuta in tempo. Riprova tra pochi secondi.');
+      }
+
+      if (terminalOrder.status === 'Completed') {
         window.location.href = `/orders/${targetOrderId}`;
         return;
       }
 
-      throw new Error('Pagamento autorizzato, ma ordine non ancora completato. Riprova tra pochi secondi.');
+      if (terminalOrder.status === 'Failed') {
+        error = terminalOrder.failureReason
+          ? `Ordine non completato: ${terminalOrder.failureReason}`
+          : 'Ordine non completato. Riprova il checkout mantenendo il carrello corrente.';
+        return;
+      }
+
+      throw new Error(`Stato ordine inatteso: ${terminalOrder.status}.`);
     } catch (err) {
       error = err instanceof Error ? err.message : 'Autorizzazione pagamento non riuscita.';
+    } finally {
       isSubmitting = false;
     }
   }

@@ -1,4 +1,6 @@
+using Microsoft.Extensions.Logging;
 using Shared.BuildingBlocks.Contracts.IntegrationEvents.Order;
+using Shared.BuildingBlocks.Messaging;
 using Shipping.Application.Abstractions.Commands;
 using Shipping.Application.Abstractions.Idempotency;
 using Shipping.Application.Commands;
@@ -7,19 +9,17 @@ namespace Shipping.Application.Handlers;
 
 public sealed class CreateShipmentOnOrderCompletedHandler(
     IShippingCommandService shippingCommandService,
-    IShippingEventDeduplicationStore deduplicationStore)
+    IShippingEventDeduplicationStore deduplicationStore,
+    ILogger<CreateShipmentOnOrderCompletedHandler> logger)
+    : IntegrationEventHandlerBase<OrderCompletedV1>(deduplicationStore, logger)
 {
-    public async Task HandleAsync(OrderCompletedV1 integrationEvent, CancellationToken cancellationToken)
+    public Task Handle(OrderCompletedV1 integrationEvent, CancellationToken cancellationToken)
     {
-        if (await deduplicationStore.HasProcessedAsync(integrationEvent.Metadata.EventId, cancellationToken))
-        {
-            return;
-        }
-
-        await shippingCommandService.CreateAsync(
-            new CreateShipmentCommand(integrationEvent.OrderId, integrationEvent.UserId),
+        return HandleDeduplicatedAsync(
+            integrationEvent,
+            ct => shippingCommandService.CreateAsync(
+                new CreateShipmentCommand(integrationEvent.OrderId, integrationEvent.UserId),
+                ct),
             cancellationToken);
-
-        await deduplicationStore.MarkProcessedAsync(integrationEvent.Metadata.EventId, cancellationToken);
     }
 }

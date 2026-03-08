@@ -1,4 +1,5 @@
 using Moq;
+using Microsoft.Extensions.Logging;
 using Order.Application.Abstractions.Idempotency;
 using Order.Application.Abstractions.Repositories;
 using Order.Application.Handlers;
@@ -30,9 +31,10 @@ public sealed class OrderIntegrationHandlersTests
             .Setup(x => x.PublishAndFlushAsync(It.IsAny<IntegrationEventBase>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var sut = new HandlePaymentAuthorizedOnOrderHandler(repository.Object, deduplication.Object, publisher.Object);
+        var logger = new Mock<ILogger<HandlePaymentAuthorizedOnOrderHandler>>();
+        var sut = new HandlePaymentAuthorizedOnOrderHandler(repository.Object, deduplication.Object, publisher.Object, logger.Object);
 
-        await sut.HandleAsync(integrationEvent, CancellationToken.None);
+        await sut.Handle(integrationEvent, CancellationToken.None);
 
         Assert.True(order.IsPaymentAuthorized);
         Assert.Equal("TX-1", order.TransactionId);
@@ -57,9 +59,10 @@ public sealed class OrderIntegrationHandlersTests
             .Setup(x => x.PublishAndFlushAsync(It.IsAny<IntegrationEventBase>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var sut = new HandleStockReservedOnOrderHandler(repository.Object, deduplication.Object, publisher.Object);
+        var logger = new Mock<ILogger<HandleStockReservedOnOrderHandler>>();
+        var sut = new HandleStockReservedOnOrderHandler(repository.Object, deduplication.Object, publisher.Object, logger.Object);
 
-        await sut.HandleAsync(integrationEvent, CancellationToken.None);
+        await sut.Handle(integrationEvent, CancellationToken.None);
 
         Assert.Equal(Domain.Entities.OrderStatus.Completed, order.Status);
         Assert.True(order.IsStockReserved);
@@ -76,9 +79,10 @@ public sealed class OrderIntegrationHandlersTests
         var publisher = new Mock<IDomainEventPublisher>();
         deduplication.Setup(x => x.HasProcessedAsync(integrationEvent.Metadata.EventId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
-        var sut = new HandlePaymentRejectedOnOrderHandler(repository.Object, deduplication.Object, publisher.Object);
+        var logger = new Mock<ILogger<HandlePaymentRejectedOnOrderHandler>>();
+        var sut = new HandlePaymentRejectedOnOrderHandler(repository.Object, deduplication.Object, publisher.Object, logger.Object);
 
-        await sut.HandleAsync(integrationEvent, CancellationToken.None);
+        await sut.Handle(integrationEvent, CancellationToken.None);
 
         repository.Verify(x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
         repository.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -102,9 +106,10 @@ public sealed class OrderIntegrationHandlersTests
             .Setup(x => x.PublishAndFlushAsync(It.IsAny<IntegrationEventBase>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var sut = new HandleStockRejectedOnOrderHandler(repository.Object, deduplication.Object, publisher.Object);
+        var logger = new Mock<ILogger<HandleStockRejectedOnOrderHandler>>();
+        var sut = new HandleStockRejectedOnOrderHandler(repository.Object, deduplication.Object, publisher.Object, logger.Object);
 
-        await sut.HandleAsync(integrationEvent, CancellationToken.None);
+        await sut.Handle(integrationEvent, CancellationToken.None);
 
         Assert.Equal(Domain.Entities.OrderStatus.Cancelled, order.Status);
         Assert.Equal("Out of stock", order.FailureReason);

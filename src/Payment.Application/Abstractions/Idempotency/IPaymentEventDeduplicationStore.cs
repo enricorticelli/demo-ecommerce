@@ -1,7 +1,7 @@
+using Shared.BuildingBlocks.Contracts.Messaging;
+
 namespace Payment.Application.Abstractions.Idempotency;
 
-public interface IPaymentEventDeduplicationStore
+public interface IPaymentEventDeduplicationStore : IIntegrationEventDeduplicationStore
 {
-    Task<bool> HasProcessedAsync(Guid eventId, CancellationToken cancellationToken);
-    Task MarkProcessedAsync(Guid eventId, CancellationToken cancellationToken);
 }

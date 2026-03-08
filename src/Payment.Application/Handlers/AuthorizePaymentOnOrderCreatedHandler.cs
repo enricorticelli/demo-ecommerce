@@ -1,43 +1,41 @@
+using Microsoft.Extensions.Logging;
 using Payment.Application.Abstractions.Idempotency;
 using Payment.Application.Abstractions.Services;
-using Payment.Application.Services;
 using Shared.BuildingBlocks.Contracts.IntegrationEvents;
 using Shared.BuildingBlocks.Contracts.IntegrationEvents.Order;
 using Shared.BuildingBlocks.Contracts.IntegrationEvents.Payment;
 using Shared.BuildingBlocks.Contracts.Messaging;
+using Shared.BuildingBlocks.Messaging;
 
 namespace Payment.Application.Handlers;
 
 public sealed class AuthorizePaymentOnOrderCreatedHandler(
     IPaymentAuthorizationService paymentAuthorizationService,
     IPaymentEventDeduplicationStore deduplicationStore,
-    IDomainEventPublisher eventPublisher)
+    IDomainEventPublisher eventPublisher,
+    ILogger<AuthorizePaymentOnOrderCreatedHandler> logger)
+    : IntegrationEventHandlerBase<OrderCreatedV1>(deduplicationStore, logger)
 {
-    public async Task HandleAsync(OrderCreatedV1 orderCreatedEvent, CancellationToken cancellationToken)
+    public Task Handle(OrderCreatedV1 orderCreatedEvent, CancellationToken cancellationToken)
     {
-        if (await deduplicationStore.HasProcessedAsync(orderCreatedEvent.Metadata.EventId, cancellationToken))
-        {
-            return;
-        }
+        return HandleDeduplicatedAsync(
+            orderCreatedEvent,
+            async ct =>
+            {
+                var result = await paymentAuthorizationService.AuthorizeAsync(orderCreatedEvent, ct);
 
-        var result = await paymentAuthorizationService.AuthorizeAsync(orderCreatedEvent, cancellationToken);
+                IntegrationEventBase integrationEvent = result.IsAuthorized
+                    ? new PaymentAuthorizedV1(
+                        result.OrderId,
+                        result.TransactionId ?? string.Empty,
+                        CreateMetadata(orderCreatedEvent.Metadata.CorrelationId, "Payment"))
+                    : new PaymentRejectedV1(
+                        result.OrderId,
+                        result.FailureReason ?? "Payment authorization rejected.",
+                        CreateMetadata(orderCreatedEvent.Metadata.CorrelationId, "Payment"));
 
-        IntegrationEventBase integrationEvent = result.IsAuthorized
-            ? new PaymentAuthorizedV1(
-                result.OrderId,
-                result.TransactionId ?? string.Empty,
-                CreateMetadata(orderCreatedEvent.Metadata.CorrelationId))
-            : new PaymentRejectedV1(
-                result.OrderId,
-                result.FailureReason ?? "Payment authorization rejected.",
-                CreateMetadata(orderCreatedEvent.Metadata.CorrelationId));
-
-        await eventPublisher.PublishAndFlushAsync(integrationEvent, cancellationToken);
-        await deduplicationStore.MarkProcessedAsync(orderCreatedEvent.Metadata.EventId, cancellationToken);
-    }
-
-    private static IntegrationEventMetadata CreateMetadata(string correlationId)
-    {
-        return new IntegrationEventMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, correlationId, "Payment");
+                await eventPublisher.PublishAndFlushAsync(integrationEvent, ct);
+            },
+            cancellationToken);
     }
 }

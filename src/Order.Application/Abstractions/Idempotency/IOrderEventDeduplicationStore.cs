@@ -1,7 +1,7 @@
+using Shared.BuildingBlocks.Contracts.Messaging;
+
 namespace Order.Application.Abstractions.Idempotency;
 
-public interface IOrderEventDeduplicationStore
+public interface IOrderEventDeduplicationStore : IIntegrationEventDeduplicationStore
 {
-    Task<bool> HasProcessedAsync(Guid eventId, CancellationToken cancellationToken);
-    Task MarkProcessedAsync(Guid eventId, CancellationToken cancellationToken);
 }

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Moq;
 using Shared.BuildingBlocks.Contracts.IntegrationEvents;
 using Shared.BuildingBlocks.Contracts.IntegrationEvents.Order;
@@ -40,9 +41,10 @@ public sealed class CreateShipmentOnOrderCompletedHandlerTests
             .Setup(x => x.HasProcessedAsync(integrationEvent.Metadata.EventId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var sut = new CreateShipmentOnOrderCompletedHandler(commandService.Object, deduplicationStore.Object);
+        var logger = new Mock<ILogger<CreateShipmentOnOrderCompletedHandler>>();
+        var sut = new CreateShipmentOnOrderCompletedHandler(commandService.Object, deduplicationStore.Object, logger.Object);
 
-        await sut.HandleAsync(integrationEvent, CancellationToken.None);
+        await sut.Handle(integrationEvent, CancellationToken.None);
 
         commandService.Verify(
             x => x.CreateAsync(
@@ -68,9 +70,10 @@ public sealed class CreateShipmentOnOrderCompletedHandlerTests
             .Setup(x => x.HasProcessedAsync(integrationEvent.Metadata.EventId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var sut = new CreateShipmentOnOrderCompletedHandler(commandService.Object, deduplicationStore.Object);
+        var logger = new Mock<ILogger<CreateShipmentOnOrderCompletedHandler>>();
+        var sut = new CreateShipmentOnOrderCompletedHandler(commandService.Object, deduplicationStore.Object, logger.Object);
 
-        await sut.HandleAsync(integrationEvent, CancellationToken.None);
+        await sut.Handle(integrationEvent, CancellationToken.None);
 
         commandService.Verify(x => x.CreateAsync(It.IsAny<CreateShipmentCommand>(), It.IsAny<CancellationToken>()), Times.Never);
         deduplicationStore.Verify(x => x.MarkProcessedAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
