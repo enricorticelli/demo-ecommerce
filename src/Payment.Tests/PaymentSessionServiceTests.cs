@@ -1,0 +1,46 @@
+using Moq;
+using Payment.Application.Abstractions.Repositories;
+using Payment.Application.Services;
+using Xunit;
+
+namespace Payment.Tests;
+
+public sealed class PaymentSessionServiceTests
+{
+    [Fact]
+    public async Task Get_or_create_should_create_session_when_missing()
+    {
+        var repository = new Mock<IPaymentSessionRepository>();
+        repository
+            .Setup(x => x.GetByOrderIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Payment.Domain.Entities.PaymentSession?)null);
+
+        var sut = new PaymentSessionService(repository.Object);
+
+        var result = await sut.GetOrCreateByOrderIdAsync(Guid.NewGuid(), "http://localhost/payment/session/{sessionId}", CancellationToken.None);
+
+        Assert.NotEqual(Guid.Empty, result.SessionId);
+        Assert.Contains(result.SessionId.ToString(), result.RedirectUrl, StringComparison.Ordinal);
+        repository.Verify(x => x.Add(It.IsAny<Payment.Domain.Entities.PaymentSession>()), Times.Once);
+        repository.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Reject_should_redact_pan_like_values()
+    {
+        var session = Payment.Domain.Entities.PaymentSession.Create(Guid.NewGuid(), "http://localhost/payment/session/1");
+
+        var repository = new Mock<IPaymentSessionRepository>();
+        repository
+            .Setup(x => x.GetBySessionIdAsync(session.SessionId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(session);
+
+        var sut = new PaymentSessionService(repository.Object);
+
+        var result = await sut.RejectAsync(session.SessionId, "Card 4111111111111111 refused", CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.Equal("Rejected", result!.Session.Status);
+        Assert.Contains("[REDACTED]", result.Session.FailureReason, StringComparison.Ordinal);
+    }
+}

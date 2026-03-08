@@ -1,6 +1,12 @@
 using Payment.Api.Contracts;
 using Payment.Api.Contracts.Requests;
 using Payment.Api.Contracts.Responses;
+using Payment.Application.Abstractions.Services;
+using Payment.Application.Views;
+using Shared.BuildingBlocks.Api.Correlation;
+using Shared.BuildingBlocks.Contracts.IntegrationEvents;
+using Shared.BuildingBlocks.Contracts.IntegrationEvents.Payment;
+using Shared.BuildingBlocks.Contracts.Messaging;
 
 namespace Payment.Api.Endpoints;
 
@@ -11,8 +17,6 @@ public static class PaymentEndpoints
         var group = app.MapGroup(PaymentRoutes.Base)
             .WithTags("Payment");
 
-        group.MapPost("/authorize", AuthorizePayment)
-            .WithName("AuthorizePayment");
         group.MapGet("/sessions", ListPaymentSessions)
             .WithName("ListPaymentSessions");
         group.MapGet("/sessions/orders/{orderId:guid}", GetPaymentSessionByOrderId)
@@ -28,55 +32,136 @@ public static class PaymentEndpoints
         return group;
     }
 
-    private static IResult AuthorizePayment(AuthorizePaymentRequest request)
+    private static async Task<IResult> ListPaymentSessions(
+        IPaymentSessionService paymentSessionService,
+        CancellationToken cancellationToken)
     {
-        return Results.Ok(new PaymentAuthorizeResponse(request.OrderId, true, "TX-STUB"));
+        var sessions = await paymentSessionService.ListAsync(cancellationToken);
+
+        return Results.Ok(sessions.Select(ToResponse));
     }
 
-    private static IResult ListPaymentSessions()
+    private static async Task<IResult> GetPaymentSessionByOrderId(
+        Guid orderId,
+        IConfiguration configuration,
+        IPaymentSessionService paymentSessionService,
+        CancellationToken cancellationToken)
     {
-        return Results.Ok(new[] { BuildSession(Guid.NewGuid(), Guid.NewGuid()) });
+        var redirectUrl = BuildHostedRedirectUrlTemplate(configuration, orderId);
+        var session = await paymentSessionService.GetOrCreateByOrderIdAsync(orderId, redirectUrl, cancellationToken);
+
+        return Results.Ok(ToResponse(session));
     }
 
-    private static IResult GetPaymentSessionByOrderId(Guid orderId)
+    private static async Task<IResult> GetPaymentSessionById(
+        Guid sessionId,
+        IPaymentSessionService paymentSessionService,
+        CancellationToken cancellationToken)
     {
-        return Results.Ok(BuildSession(Guid.NewGuid(), orderId));
+        var session = await paymentSessionService.GetBySessionIdAsync(sessionId, cancellationToken);
+        if (session is null)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.Ok(ToResponse(session));
     }
 
-    private static IResult GetPaymentSessionById(Guid sessionId)
+    private static IResult RenderHostedPaymentPage(string paymentMethod, Guid? sessionId, Guid? orderId)
     {
-        return Results.Ok(BuildSession(sessionId, Guid.NewGuid()));
+        var safeSessionId = sessionId?.ToString() ?? "n/a";
+        var safeOrderId = orderId?.ToString() ?? "n/a";
+
+        return Results.Content(
+            $"Hosted endpoint placeholder for payment method '{paymentMethod}'. sessionId={safeSessionId}, orderId={safeOrderId}",
+            "text/plain");
     }
 
-    private static IResult RenderHostedPaymentPage(string paymentMethod)
+    private static async Task<IResult> AuthorizePaymentSession(
+        Guid sessionId,
+        IPaymentSessionService paymentSessionService,
+        IDomainEventPublisher eventPublisher,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
     {
-        return Results.Content($"Stub hosted page for payment method '{paymentMethod}'.", "text/plain");
+        var update = await paymentSessionService.AuthorizeAsync(sessionId, cancellationToken);
+        if (update is null)
+        {
+            return Results.NotFound();
+        }
+
+        if (update.StatusChanged)
+        {
+            var correlationId = CorrelationIdResolver.Resolve(httpContext);
+            var integrationEvent = new PaymentAuthorizedV1(
+                update.Session.OrderId,
+                update.Session.TransactionId ?? string.Empty,
+                CreateMetadata(correlationId));
+
+            await eventPublisher.PublishAndFlushAsync(integrationEvent, cancellationToken);
+        }
+
+        return Results.Ok(new PaymentSessionStatusResponse(sessionId, update.Session.Status));
     }
 
-    private static IResult AuthorizePaymentSession(Guid sessionId)
+    private static async Task<IResult> RejectPaymentSession(
+        Guid sessionId,
+        RejectPaymentSessionRequest request,
+        IPaymentSessionService paymentSessionService,
+        IDomainEventPublisher eventPublisher,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
     {
-        return Results.Ok(new PaymentSessionStatusResponse(sessionId, "Authorized"));
+        var update = await paymentSessionService.RejectAsync(sessionId, request.Reason, cancellationToken);
+        if (update is null)
+        {
+            return Results.NotFound();
+        }
+
+        if (update.StatusChanged)
+        {
+            var correlationId = CorrelationIdResolver.Resolve(httpContext);
+            var integrationEvent = new PaymentRejectedV1(
+                update.Session.OrderId,
+                update.Session.FailureReason ?? "Payment rejected.",
+                CreateMetadata(correlationId));
+
+            await eventPublisher.PublishAndFlushAsync(integrationEvent, cancellationToken);
+        }
+
+        return Results.Ok(new PaymentSessionStatusResponse(sessionId, update.Session.Status));
     }
 
-    private static IResult RejectPaymentSession(Guid sessionId, RejectPaymentSessionRequest request)
-    {
-        _ = request;
-        return Results.Ok(new PaymentSessionStatusResponse(sessionId, "Rejected"));
-    }
-
-    private static PaymentSessionResponse BuildSession(Guid sessionId, Guid orderId)
+    private static PaymentSessionResponse ToResponse(PaymentSessionView session)
     {
         return new PaymentSessionResponse(
-            sessionId,
-            orderId,
-            Guid.NewGuid(),
-            10m,
-            "card",
-            "Pending",
-            null,
-            null,
-            DateTimeOffset.UtcNow,
-            null,
-            $"http://localhost:8080/v1/payments/hosted/card?sessionId={sessionId}");
+            session.SessionId,
+            session.OrderId,
+            session.UserId,
+            session.Amount,
+            session.PaymentMethod,
+            session.Status,
+            session.TransactionId,
+            session.FailureReason,
+            session.CreatedAtUtc,
+            session.CompletedAtUtc,
+            session.RedirectUrl);
     }
+
+    private static string BuildHostedRedirectUrlTemplate(IConfiguration configuration, Guid orderId)
+    {
+        var baseUrl = configuration["Payment:HostedReturnBaseUrl"];
+        if (string.IsNullOrWhiteSpace(baseUrl))
+        {
+            baseUrl = "http://localhost:3000";
+        }
+
+        return $"{baseUrl.TrimEnd('/')}/payment/session/{{sessionId}}?orderId={orderId}";
+    }
+
+    private static IntegrationEventMetadata CreateMetadata(string correlationId)
+    {
+        return new IntegrationEventMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, correlationId, "Payment");
+    }
+
 }

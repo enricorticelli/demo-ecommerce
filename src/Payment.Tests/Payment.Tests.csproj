@@ -12,6 +12,8 @@
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="../Payment.Api/Payment.Api.csproj" />
     <ProjectReference Include="../Payment.Application/Payment.Application.csproj" />
+    <ProjectReference Include="../Shared.BuildingBlocks/Shared.BuildingBlocks.csproj" />
   </ItemGroup>
 </Project>
