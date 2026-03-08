@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Order.Application.Abstractions.Commands;
+using Order.Application.Abstractions.Idempotency;
 using Order.Application.Abstractions.Queries;
 using Order.Application.Abstractions.Repositories;
 using Order.Application.Abstractions.Rules;
@@ -10,6 +11,7 @@ using Order.Application.Mappers;
 using Order.Application.Services;
 using Order.Application.Services.Rules;
 using Order.Application.Views;
+using Order.Infrastructure.Idempotency;
 using Order.Infrastructure.Messaging;
 using Order.Infrastructure.Persistence;
 using Order.Infrastructure.Persistence.Repositories;
@@ -27,6 +29,7 @@ public static class OrderInfrastructureServiceCollectionExtensions
 
         services.AddDbContextWithWolverineIntegration<OrderDbContext>(options => options.UseNpgsql(connectionString));
         services.AddTracedScoped<IOrderRepository, OrderRepository>();
+        services.AddTracedScoped<IOrderEventDeduplicationStore, PersistentOrderEventDeduplicationStore>();
         services.AddTracedScoped<IDomainEventPublisher, OutboxDomainEventPublisher>();
         services.AddTracedScoped<IOrderRules, OrderRules>();
         services.AddTracedScoped<IViewMapper<Order.Domain.Entities.Order, OrderView>, OrderViewMapper>();

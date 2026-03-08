@@ -34,18 +34,63 @@ public static class OrderMapper
 			view.Id,
 			view.CartId,
 			view.UserId,
-			view.IdentityType,
-			view.PaymentMethod,
+			NormalizeIdentityType(view.IdentityType),
+			NormalizePaymentMethod(view.PaymentMethod),
 			view.AuthenticatedUserId,
 			view.AnonymousId,
 			new OrderCustomerResponse(view.Customer.FirstName, view.Customer.LastName, view.Customer.Email, view.Customer.Phone),
 			new OrderAddressResponse(view.ShippingAddress.Street, view.ShippingAddress.City, view.ShippingAddress.PostalCode, view.ShippingAddress.Country),
 			new OrderAddressResponse(view.BillingAddress.Street, view.BillingAddress.City, view.BillingAddress.PostalCode, view.BillingAddress.Country),
-			view.Status,
+			NormalizeStatus(view.Status),
 			view.TotalAmount,
 			view.Items.Select(x => new OrderItemResponse(x.ProductId, x.Sku, x.Name, x.Quantity, x.UnitPrice)).ToArray(),
-			view.TrackingCode,
-			view.TransactionId,
-			view.FailureReason);
+			NullIfWhiteSpace(view.TrackingCode),
+			NullIfWhiteSpace(view.TransactionId),
+			NullIfWhiteSpace(view.FailureReason));
+	}
+
+	private static string NormalizeStatus(string value)
+	{
+		if (string.Equals(value, "Cancelled", StringComparison.OrdinalIgnoreCase))
+		{
+			return "Failed";
+		}
+
+		return value;
+	}
+
+	private static string NormalizeIdentityType(string value)
+	{
+		if (string.Equals(value, "authenticated", StringComparison.OrdinalIgnoreCase) ||
+			string.Equals(value, "registered", StringComparison.OrdinalIgnoreCase))
+		{
+			return "Registered";
+		}
+
+		if (string.Equals(value, "anonymous", StringComparison.OrdinalIgnoreCase) ||
+			string.Equals(value, "guest", StringComparison.OrdinalIgnoreCase))
+		{
+			return "Anonymous";
+		}
+
+		return value;
+	}
+
+	private static string NormalizePaymentMethod(string value)
+	{
+		var normalized = value.Trim().ToLowerInvariant().Replace("-", string.Empty).Replace("_", string.Empty).Replace(" ", string.Empty);
+
+		return normalized switch
+		{
+			"card" or "creditcard" or "stripecard" => "stripe_card",
+			"paypal" => "paypal",
+			"satispay" => "satispay",
+			_ => value
+		};
+	}
+
+	private static string? NullIfWhiteSpace(string value)
+	{
+		return string.IsNullOrWhiteSpace(value) ? null : value;
 	}
 }

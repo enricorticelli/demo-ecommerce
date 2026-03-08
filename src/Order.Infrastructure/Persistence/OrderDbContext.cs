@@ -1,11 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Order.Domain.ValueObjects;
+using Order.Infrastructure.Persistence.Entities;
 
 namespace Order.Infrastructure.Persistence;
 
 public sealed class OrderDbContext(DbContextOptions<OrderDbContext> options) : DbContext(options)
 {
     public DbSet<Order.Domain.Entities.Order> Orders => Set<Order.Domain.Entities.Order>();
+    public DbSet<ProcessedOrderIntegrationEvent> ProcessedIntegrationEvents => Set<ProcessedOrderIntegrationEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -24,6 +26,8 @@ public sealed class OrderDbContext(DbContextOptions<OrderDbContext> options) : D
             entity.Property(x => x.TrackingCode).HasMaxLength(128).IsRequired();
             entity.Property(x => x.TransactionId).HasMaxLength(128).IsRequired();
             entity.Property(x => x.FailureReason).HasMaxLength(256).IsRequired();
+            entity.Property(x => x.IsPaymentAuthorized).IsRequired();
+            entity.Property(x => x.IsStockReserved).IsRequired();
             entity.Property(x => x.CreatedAtUtc).IsRequired();
 
             entity.OwnsOne(x => x.Customer, customer =>
@@ -62,6 +66,13 @@ public sealed class OrderDbContext(DbContextOptions<OrderDbContext> options) : D
                 item.Property(x => x.Quantity).HasColumnName("quantity").IsRequired();
                 item.Property(x => x.UnitPrice).HasColumnName("unit_price").HasPrecision(18, 2).IsRequired();
             });
+        });
+
+        modelBuilder.Entity<ProcessedOrderIntegrationEvent>(entity =>
+        {
+            entity.ToTable("processed_integration_events");
+            entity.HasKey(x => x.EventId);
+            entity.Property(x => x.ProcessedAtUtc).IsRequired();
         });
 
         base.OnModelCreating(modelBuilder);

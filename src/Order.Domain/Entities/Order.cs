@@ -21,6 +21,8 @@ public sealed class Order
     public string TrackingCode { get; private set; } = string.Empty;
     public string TransactionId { get; private set; } = string.Empty;
     public string FailureReason { get; private set; } = string.Empty;
+    public bool IsPaymentAuthorized { get; private set; }
+    public bool IsStockReserved { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; }
 
     private Order()
@@ -56,6 +58,8 @@ public sealed class Order
         Status = OrderStatus.Pending;
         CreatedAtUtc = createdAtUtc;
         Items = items.ToList();
+        IsPaymentAuthorized = false;
+        IsStockReserved = false;
     }
 
     public static Order Create(
@@ -134,6 +138,8 @@ public sealed class Order
         TrackingCode = trackingCode;
         TransactionId = transactionId;
         FailureReason = string.Empty;
+        IsPaymentAuthorized = true;
+        IsStockReserved = true;
     }
 
     public void MarkCancelled(string reason)
@@ -145,5 +151,63 @@ public sealed class Order
 
         Status = OrderStatus.Cancelled;
         FailureReason = reason;
+    }
+
+    public bool ApplyPaymentAuthorized(string transactionId)
+    {
+        if (Status != OrderStatus.Pending || IsPaymentAuthorized)
+        {
+            return false;
+        }
+
+        IsPaymentAuthorized = true;
+        TransactionId = transactionId;
+        TryComplete();
+        return true;
+    }
+
+    public bool ApplyStockReserved()
+    {
+        if (Status != OrderStatus.Pending || IsStockReserved)
+        {
+            return false;
+        }
+
+        IsStockReserved = true;
+        TryComplete();
+        return true;
+    }
+
+    public bool ApplyPaymentRejected(string reason)
+    {
+        if (Status != OrderStatus.Pending)
+        {
+            return false;
+        }
+
+        Status = OrderStatus.Cancelled;
+        FailureReason = reason;
+        return true;
+    }
+
+    public bool ApplyStockRejected(string reason)
+    {
+        if (Status != OrderStatus.Pending)
+        {
+            return false;
+        }
+
+        Status = OrderStatus.Cancelled;
+        FailureReason = reason;
+        return true;
+    }
+
+    private void TryComplete()
+    {
+        if (IsPaymentAuthorized && IsStockReserved)
+        {
+            Status = OrderStatus.Completed;
+            FailureReason = string.Empty;
+        }
     }
 }

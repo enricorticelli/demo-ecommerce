@@ -63,6 +63,15 @@ public sealed class OrderCommandService(
             ?? throw new NotFoundAppException($"Order '{command.OrderId}' not found.");
 
         order.MarkCompleted(orderRules.NormalizeTrackingCode(command.TrackingCode), orderRules.NormalizeTransactionId(command.TransactionId));
+
+        var completedEvent = new OrderCompletedV1(
+            order.Id,
+            order.UserId,
+            order.TrackingCode,
+            order.TransactionId,
+            CreateMetadata("manual"));
+
+        await eventPublisher.PublishAndFlushAsync(completedEvent, cancellationToken);
         await orderRepository.SaveChangesAsync(cancellationToken);
 
         return mapper.Map(order);

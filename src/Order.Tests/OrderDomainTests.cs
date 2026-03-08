@@ -81,4 +81,32 @@ public sealed class OrderDomainTests
 
         Assert.Throws<ConflictAppException>(action);
     }
+
+    [Fact]
+    public void Order_should_move_to_completed_when_payment_and_stock_are_confirmed()
+    {
+        var item = OrderItem.Create(Guid.NewGuid(), "SKU-1", "Item 1", 1, 10m);
+        var customer = OrderCustomer.Create("Mario", "Rossi", "mario@example.com", "+39000000000");
+        var address = OrderAddress.Create("Street 1", "Rome", "00100", "IT");
+        var order = Order.Domain.Entities.Order.Create(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "authenticated",
+            "card",
+            Guid.NewGuid(),
+            null,
+            customer,
+            address,
+            address,
+            [item],
+            10m);
+
+        order.ApplyPaymentAuthorized("TX-1");
+        order.ApplyStockReserved();
+
+        Assert.Equal(OrderStatus.Completed, order.Status);
+        Assert.True(order.IsPaymentAuthorized);
+        Assert.True(order.IsStockReserved);
+        Assert.Equal("TX-1", order.TransactionId);
+    }
 }

@@ -14,6 +14,6 @@ public sealed record OrderResponse(
     string Status,
     decimal TotalAmount,
     IReadOnlyList<OrderItemResponse> Items,
-    string TrackingCode,
-    string TransactionId,
-    string FailureReason);
+    string? TrackingCode,
+    string? TransactionId,
+    string? FailureReason);
