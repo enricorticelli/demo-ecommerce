@@ -1,6 +1,7 @@
 using Payment.Api.Contracts;
 using Payment.Api.Contracts.Requests;
 using Payment.Api.Contracts.Responses;
+using Payment.Api.Mappers;
 using Payment.Application.Abstractions.Services;
 using Payment.Application.Views;
 using Shared.BuildingBlocks.Api.Correlation;
@@ -38,7 +39,7 @@ public static class PaymentEndpoints
     {
         var sessions = await paymentSessionService.ListAsync(cancellationToken);
 
-        return Results.Ok(sessions.Select(ToResponse));
+        return Results.Ok(sessions.Select(PaymentMapper.ToResponse));
     }
 
     private static async Task<IResult> GetPaymentSessionByOrderId(
@@ -50,7 +51,7 @@ public static class PaymentEndpoints
         var redirectUrl = BuildHostedRedirectUrlTemplate(configuration, orderId);
         var session = await paymentSessionService.GetOrCreateByOrderIdAsync(orderId, redirectUrl, cancellationToken);
 
-        return Results.Ok(ToResponse(session));
+        return Results.Ok(PaymentMapper.ToResponse(session));
     }
 
     private static async Task<IResult> GetPaymentSessionById(
@@ -64,7 +65,7 @@ public static class PaymentEndpoints
             return Results.NotFound();
         }
 
-        return Results.Ok(ToResponse(session));
+        return Results.Ok(PaymentMapper.ToResponse(session));
     }
 
     private static IResult RenderHostedPaymentPage(string paymentMethod, Guid? sessionId, Guid? orderId)
@@ -130,22 +131,6 @@ public static class PaymentEndpoints
         }
 
         return Results.Ok(new PaymentSessionStatusResponse(sessionId, update.Session.Status));
-    }
-
-    private static PaymentSessionResponse ToResponse(PaymentSessionView session)
-    {
-        return new PaymentSessionResponse(
-            session.SessionId,
-            session.OrderId,
-            session.UserId,
-            session.Amount,
-            session.PaymentMethod,
-            session.Status,
-            session.TransactionId,
-            session.FailureReason,
-            session.CreatedAtUtc,
-            session.CompletedAtUtc,
-            session.RedirectUrl);
     }
 
     private static string BuildHostedRedirectUrlTemplate(IConfiguration configuration, Guid orderId)
