@@ -1,6 +1,11 @@
 using Cart.Api.Contracts;
 using Cart.Api.Contracts.Requests;
 using Cart.Api.Contracts.Responses;
+using Cart.Api.Mappers;
+using Cart.Application.Abstractions.Commands;
+using Cart.Application.Abstractions.Queries;
+using Cart.Application.Commands;
+using Shared.BuildingBlocks.Api.Errors;
 
 namespace Cart.Api.Endpoints;
 
@@ -22,32 +27,69 @@ public static class CartEndpoints
         return group;
     }
 
-    private static IResult AddItem(Guid cartId, AddCartItemRequest request)
+    private static async Task<IResult> AddItem(
+        Guid cartId,
+        AddCartItemRequest request,
+        ICartCommandService service,
+        CancellationToken cancellationToken)
     {
-        _ = request;
-        return Results.Ok(new AddCartItemResponse(cartId, "Item added (stub)."));
-    }
-
-    private static IResult RemoveItem(Guid cartId, Guid productId)
-    {
-        return Results.Ok(new RemoveCartItemResponse(cartId, productId, "Item removed (stub)."));
-    }
-
-    private static IResult GetCart(Guid cartId)
-    {
-        var items = new[]
+        try
         {
-            new CartItemResponse(Guid.NewGuid(), "STUB-SKU", "Stub item", 1, 10m)
-        };
-        return Results.Ok(new CartResponse(cartId, Guid.NewGuid(), items, items.Sum(i => i.Quantity * i.UnitPrice)));
+            await service.AddItemAsync(request.ToCommand(cartId), cancellationToken);
+            return Results.Ok(new AddCartItemResponse(cartId, "Item added."));
+        }
+        catch (Exception exception)
+        {
+            return ExceptionHttpResultMapper.Map(exception);
+        }
     }
 
-    private static IResult CheckoutCart(Guid cartId)
+    private static async Task<IResult> RemoveItem(
+        Guid cartId,
+        Guid productId,
+        ICartCommandService service,
+        CancellationToken cancellationToken)
     {
-        var items = new[]
+        try
         {
-            new CartItemResponse(Guid.NewGuid(), "STUB-SKU", "Stub item", 1, 10m)
-        };
-        return Results.Ok(new CheckoutCartResponse(cartId, Guid.NewGuid(), Guid.NewGuid(), items, items.Sum(i => i.Quantity * i.UnitPrice)));
+            await service.RemoveItemAsync(new RemoveCartItemCommand(cartId, productId), cancellationToken);
+            return Results.Ok(new RemoveCartItemResponse(cartId, productId, "Item removed."));
+        }
+        catch (Exception exception)
+        {
+            return ExceptionHttpResultMapper.Map(exception);
+        }
+    }
+
+    private static async Task<IResult> GetCart(
+        Guid cartId,
+        ICartQueryService service,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var cart = await service.GetByIdAsync(cartId, cancellationToken);
+            return Results.Ok(cart.ToResponse());
+        }
+        catch (Exception exception)
+        {
+            return ExceptionHttpResultMapper.Map(exception);
+        }
+    }
+
+    private static async Task<IResult> CheckoutCart(
+        Guid cartId,
+        ICartCommandService service,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var checkout = await service.CheckoutAsync(new CheckoutCartCommand(cartId), cancellationToken);
+            return Results.Ok(checkout.ToResponse());
+        }
+        catch (Exception exception)
+        {
+            return ExceptionHttpResultMapper.Map(exception);
+        }
     }
 }
