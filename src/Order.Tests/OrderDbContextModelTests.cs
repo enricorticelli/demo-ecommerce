@@ -7,7 +7,7 @@ namespace Order.Tests;
 public sealed class OrderDbContextModelTests
 {
     [Fact]
-    public void Model_should_define_expected_order_table()
+    public void Model_WhenBuilt_DefinesOrderTable()
     {
         var options = new DbContextOptionsBuilder<OrderDbContext>()
             .UseInMemoryDatabase("order-model-test")
@@ -21,3 +21,4 @@ public sealed class OrderDbContextModelTests
         Assert.Equal("orders", entityType!.GetTableName());
     }
 }
+

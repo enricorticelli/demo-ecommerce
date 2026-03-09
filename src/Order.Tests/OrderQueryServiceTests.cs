@@ -11,7 +11,7 @@ namespace Order.Tests;
 public sealed class OrderQueryServiceTests
 {
     [Fact]
-    public async Task List_should_return_mapped_orders()
+    public async Task ListAsync_OrdersExist_ReturnsMappedOrders()
     {
         var order = BuildOrderEntity();
 
@@ -48,7 +48,7 @@ public sealed class OrderQueryServiceTests
     }
 
     [Fact]
-    public async Task GetById_should_throw_when_order_does_not_exist()
+    public async Task GetByIdAsync_OrderMissing_ThrowsNotFound()
     {
         var repository = new Mock<IOrderRepository>();
         repository.Setup(x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Order.Domain.Entities.Order?)null);

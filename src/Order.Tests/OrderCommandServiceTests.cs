@@ -16,7 +16,7 @@ namespace Order.Tests;
 public sealed class OrderCommandServiceTests
 {
     [Fact]
-    public async Task Create_should_add_order_publish_event_and_return_view()
+    public async Task CreateAsync_ValidCommand_AddsOrderPublishesEventAndReturnsView()
     {
         var command = BuildCreateCommand();
 
@@ -70,7 +70,7 @@ public sealed class OrderCommandServiceTests
     }
 
     [Fact]
-    public async Task Manual_complete_should_save_changes_and_return_completed_view()
+    public async Task ManualCompleteAsync_ValidCommand_SavesChangesAndReturnsCompletedView()
     {
         var existing = BuildOrderEntity();
 
@@ -123,7 +123,7 @@ public sealed class OrderCommandServiceTests
     }
 
     [Fact]
-    public async Task Manual_cancel_should_save_changes_and_return_cancelled_view()
+    public async Task ManualCancelAsync_ValidCommand_SavesChangesAndReturnsCancelledView()
     {
         var existing = BuildOrderEntity();
 
@@ -195,3 +195,4 @@ public sealed class OrderCommandServiceTests
             20m);
     }
 }
+

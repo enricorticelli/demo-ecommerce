@@ -8,7 +8,7 @@ namespace Order.Tests;
 public sealed class OrderDomainTests
 {
     [Fact]
-    public void Create_should_set_pending_status_for_valid_order()
+    public void Create_ValidOrder_SetsPendingStatus()
     {
         var item = OrderItem.Create(Guid.NewGuid(), "SKU-1", "Item 1", 2, 10m);
         var customer = OrderCustomer.Create("Mario", "Rossi", "mario@example.com", "+39000000000");
@@ -34,7 +34,7 @@ public sealed class OrderDomainTests
     }
 
     [Fact]
-    public void Create_should_throw_when_total_does_not_match_items_sum()
+    public void Create_TotalMismatch_ThrowsValidationException()
     {
         var item = OrderItem.Create(Guid.NewGuid(), "SKU-1", "Item 1", 1, 10m);
         var customer = OrderCustomer.Create("Mario", "Rossi", "mario@example.com", "+39000000000");
@@ -57,7 +57,7 @@ public sealed class OrderDomainTests
     }
 
     [Fact]
-    public void MarkCompleted_should_throw_for_non_pending_order()
+    public void MarkCompleted_NonPendingOrder_ThrowsConflictException()
     {
         var item = OrderItem.Create(Guid.NewGuid(), "SKU-1", "Item 1", 1, 10m);
         var customer = OrderCustomer.Create("Mario", "Rossi", "mario@example.com", "+39000000000");
@@ -83,7 +83,7 @@ public sealed class OrderDomainTests
     }
 
     [Fact]
-    public void Order_should_move_to_completed_when_payment_and_stock_are_confirmed()
+    public void ApplySignals_PaymentAndStockConfirmed_MovesToCompleted()
     {
         var item = OrderItem.Create(Guid.NewGuid(), "SKU-1", "Item 1", 1, 10m);
         var customer = OrderCustomer.Create("Mario", "Rossi", "mario@example.com", "+39000000000");
@@ -110,3 +110,4 @@ public sealed class OrderDomainTests
         Assert.Equal("TX-1", order.TransactionId);
     }
 }
+

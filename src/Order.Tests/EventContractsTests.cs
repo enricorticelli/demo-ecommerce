@@ -6,7 +6,7 @@ namespace Order.Tests;
 public sealed class EventContractsTests
 {
     [Fact]
-    public void Integration_events_should_be_versioned_with_V1_suffix()
+    public void IntegrationEvents_WhenEnumerated_HaveV1Suffix()
     {
         var orderEventTypes = typeof(IntegrationEventMetadata).Assembly
             .GetTypes()
@@ -23,7 +23,7 @@ public sealed class EventContractsTests
     }
 
     [Fact]
-    public void Integration_event_metadata_should_have_required_fields()
+    public void IntegrationEventMetadata_WhenCreated_HasRequiredFields()
     {
         var metadata = new IntegrationEventMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "corr-123", "Order");
 
@@ -32,3 +32,4 @@ public sealed class EventContractsTests
         Assert.False(string.IsNullOrWhiteSpace(metadata.SourceContext));
     }
 }
+

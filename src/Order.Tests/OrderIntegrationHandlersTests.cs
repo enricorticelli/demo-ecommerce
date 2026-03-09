@@ -16,7 +16,7 @@ namespace Order.Tests;
 public sealed class OrderIntegrationHandlersTests
 {
     [Fact]
-    public async Task Payment_authorized_handler_should_update_order_and_mark_event_processed()
+    public async Task HandlePaymentAuthorized_ValidEvent_UpdatesOrderAndMarksProcessed()
     {
         var order = BuildOrder();
         var integrationEvent = new PaymentAuthorizedV1(order.Id, "TX-1", new IntegrationEventMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "corr-1", "Payment"));
@@ -43,7 +43,7 @@ public sealed class OrderIntegrationHandlersTests
     }
 
     [Fact]
-    public async Task Stock_reserved_handler_should_complete_order_when_payment_was_already_authorized()
+    public async Task HandleStockReserved_PaymentAlreadyAuthorized_CompletesOrder()
     {
         var order = BuildOrder();
         order.ApplyPaymentAuthorized("TX-1");
@@ -77,7 +77,7 @@ public sealed class OrderIntegrationHandlersTests
     }
 
     [Fact]
-    public async Task Rejection_handler_should_be_idempotent_for_duplicates()
+    public async Task HandlePaymentRejected_DuplicateEvent_SkipsProcessing()
     {
         var order = BuildOrder();
         var integrationEvent = new PaymentRejectedV1(order.Id, "Rejected", new IntegrationEventMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "corr-1", "Payment"));
@@ -100,7 +100,7 @@ public sealed class OrderIntegrationHandlersTests
     }
 
     [Fact]
-    public async Task Stock_rejected_handler_should_cancel_order()
+    public async Task HandleStockRejected_ValidEvent_CancelsOrder()
     {
         var order = BuildOrder();
         var integrationEvent = new StockRejectedV1(order.Id, "Out of stock", new IntegrationEventMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "corr-1", "Warehouse"));
@@ -144,3 +144,4 @@ public sealed class OrderIntegrationHandlersTests
             20m);
     }
 }
+

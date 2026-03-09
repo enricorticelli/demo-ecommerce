@@ -9,7 +9,7 @@ namespace Warehouse.Tests;
 public sealed class WarehouseCommandServiceTests
 {
     [Fact]
-    public async Task Upsert_should_create_stock_item_when_missing()
+    public async Task UpsertStockAsync_StockItemMissing_CreatesStockItem()
     {
         var stockRepository = new Mock<IWarehouseStockRepository>();
         stockRepository
@@ -28,7 +28,7 @@ public sealed class WarehouseCommandServiceTests
     }
 
     [Fact]
-    public async Task Reserve_should_fail_when_stock_is_missing()
+    public async Task ReserveStockAsync_StockMissing_ReturnsFailedReservation()
     {
         var orderId = Guid.NewGuid();
 
@@ -54,7 +54,7 @@ public sealed class WarehouseCommandServiceTests
     }
 
     [Fact]
-    public async Task Reserve_should_decrement_stock_when_available()
+    public async Task ReserveStockAsync_StockAvailable_DecrementsQuantity()
     {
         var productId = Guid.NewGuid();
         var stock = Domain.Entities.WarehouseStockItem.Create(productId, "SKU-1", 5);
@@ -81,3 +81,4 @@ public sealed class WarehouseCommandServiceTests
         reservationRepository.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }
+

@@ -15,7 +15,7 @@ namespace Warehouse.Tests;
 public sealed class ReserveStockCommandHandlerTests
 {
     [Fact]
-    public async Task Order_created_handler_should_publish_stock_reserved()
+    public async Task HandleOrderCreated_NewEvent_PublishesStockReserved()
     {
         var orderCreated = new OrderCreatedV1(
             Guid.NewGuid(),
@@ -55,7 +55,7 @@ public sealed class ReserveStockCommandHandlerTests
     }
 
     [Fact]
-    public async Task Order_created_handler_should_be_idempotent_for_duplicates()
+    public async Task HandleOrderCreated_DuplicateEvent_SkipsProcessing()
     {
         var orderCreated = new OrderCreatedV1(
             Guid.NewGuid(),
@@ -84,3 +84,4 @@ public sealed class ReserveStockCommandHandlerTests
         deduplicationStore.Verify(x => x.MarkProcessedAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
+

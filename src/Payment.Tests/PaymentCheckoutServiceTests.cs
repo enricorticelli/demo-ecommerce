@@ -9,7 +9,7 @@ namespace Payment.Tests;
 public sealed class PaymentCheckoutServiceTests
 {
     [Fact]
-    public async Task Ensure_checkout_should_call_provider_and_persist_redirect_when_pending()
+    public async Task EnsureCheckoutByOrderIdAsync_PendingSession_CallsProviderAndPersistsRedirect()
     {
         var session = Domain.Entities.PaymentSession.Create(
             Guid.NewGuid(),
@@ -51,4 +51,5 @@ public sealed class PaymentCheckoutServiceTests
         repository.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }
+
 

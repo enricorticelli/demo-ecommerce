@@ -12,7 +12,7 @@ namespace Communication.Tests;
 public sealed class SendOrderCompletedEmailHandlerTests
 {
     [Fact]
-    public async Task Should_send_email_and_mark_event_processed_once()
+    public async Task HandleAsync_NewEvent_SendsEmailAndMarksProcessed()
     {
         var integrationEvent = new OrderCompletedV1(
             Guid.NewGuid(),
@@ -38,7 +38,7 @@ public sealed class SendOrderCompletedEmailHandlerTests
     }
 
     [Fact]
-    public async Task Should_skip_duplicate_event()
+    public async Task HandleAsync_EventDuplicate_SkipsProcessing()
     {
         var integrationEvent = new OrderCompletedV1(
             Guid.NewGuid(),
@@ -63,3 +63,4 @@ public sealed class SendOrderCompletedEmailHandlerTests
         deduplicationStore.Verify(x => x.MarkProcessedAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
+

@@ -14,7 +14,7 @@ namespace Shipping.Tests;
 public sealed class CreateShipmentOnOrderCompletedHandlerTests
 {
     [Fact]
-    public async Task Should_create_shipment_and_mark_event_processed()
+    public async Task HandleAsync_OrderCompleted_CreatesShipmentAndMarksProcessed()
     {
         var integrationEvent = new OrderCompletedV1(
             Guid.NewGuid(),
@@ -60,7 +60,7 @@ public sealed class CreateShipmentOnOrderCompletedHandlerTests
     }
 
     [Fact]
-    public async Task Should_skip_duplicate_event()
+    public async Task HandleAsync_EventDuplicate_SkipsProcessing()
     {
         var integrationEvent = new OrderCompletedV1(
             Guid.NewGuid(),
@@ -87,3 +87,4 @@ public sealed class CreateShipmentOnOrderCompletedHandlerTests
         deduplicationStore.Verify(x => x.MarkProcessedAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
+

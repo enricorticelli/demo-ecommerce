@@ -45,6 +45,15 @@ Implementare logica di business reale nei layer `Application` e `Domain`, manten
 3. Endpoint con test integrazione minimi.
 4. Nessun comportamento mock/stub nel percorso critico rilasciato.
 
+## Convenzione naming test
+
+Usare sempre il formato `Metodo_Scenario_ComportamentoAtteso` per i nomi dei test, in modo auto-descrittivo e ricercabile.
+
+Esempi:
+
+1. `GetBooks_EmptyDatabase_ReturnsEmptyList`
+2. `Add_TwoPositiveNumbers_ReturnsSum`
+
 ## ADR correlate
 
 - `../adr/0001-microservices-pragmatici.md`

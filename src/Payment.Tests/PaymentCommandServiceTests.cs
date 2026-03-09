@@ -12,7 +12,7 @@ namespace Payment.Tests;
 public sealed class PaymentCommandServiceTests
 {
     [Fact]
-    public async Task Authorize_should_publish_payment_authorized_when_status_changes()
+    public async Task AuthorizeAsync_StatusChanged_PublishesPaymentAuthorized()
     {
         var sessionId = Guid.NewGuid();
         var orderId = Guid.NewGuid();
@@ -58,7 +58,7 @@ public sealed class PaymentCommandServiceTests
     }
 
     [Fact]
-    public async Task Reject_should_not_publish_when_status_is_unchanged()
+    public async Task RejectAsync_StatusUnchanged_DoesNotPublishEvent()
     {
         var sessionId = Guid.NewGuid();
 
@@ -94,3 +94,4 @@ public sealed class PaymentCommandServiceTests
             Times.Never);
     }
 }
+

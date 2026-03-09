@@ -12,7 +12,7 @@ namespace Cart.Tests;
 public sealed class ReplaceCartOnOrderCompletedHandlerTests
 {
     [Fact]
-    public async Task Should_replace_cart_when_order_is_completed()
+    public async Task HandleAsync_OrderCompleted_ReplacesCart()
     {
         var cart = Domain.Entities.Cart.Create(Guid.NewGuid(), Guid.NewGuid());
         var integrationEvent = new OrderCompletedV1(
@@ -47,7 +47,7 @@ public sealed class ReplaceCartOnOrderCompletedHandlerTests
     }
 
     [Fact]
-    public async Task Should_skip_when_event_is_duplicate()
+    public async Task HandleAsync_EventDuplicate_SkipsProcessing()
     {
         var integrationEvent = new OrderCompletedV1(
             Guid.NewGuid(),
@@ -77,3 +77,4 @@ public sealed class ReplaceCartOnOrderCompletedHandlerTests
         deduplicationStore.Verify(x => x.MarkProcessedAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
+

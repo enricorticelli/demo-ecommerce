@@ -12,7 +12,7 @@ namespace Cart.Tests;
 public sealed class CartCommandServiceTests
 {
     [Fact]
-    public async Task Add_item_should_create_new_cart_when_missing()
+    public async Task AddItemAsync_CartMissing_CreatesNewCart()
     {
         var repository = new Mock<ICartRepository>();
         repository.Setup(x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Cart.Domain.Entities.Cart?)null);
@@ -33,7 +33,7 @@ public sealed class CartCommandServiceTests
     }
 
     [Fact]
-    public async Task Remove_item_should_throw_when_cart_missing()
+    public async Task RemoveItemAsync_CartMissing_ThrowsNotFound()
     {
         var repository = new Mock<ICartRepository>();
         repository.Setup(x => x.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>())).ReturnsAsync((Cart.Domain.Entities.Cart?)null);
@@ -47,7 +47,7 @@ public sealed class CartCommandServiceTests
     }
 
     [Fact]
-    public async Task Checkout_should_keep_items_until_order_completion()
+    public async Task CheckoutAsync_OrderNotCompleted_KeepsItemsInCart()
     {
         var cart = Domain.Entities.Cart.Create(Guid.NewGuid(), Guid.NewGuid());
         cart.AddItem(Domain.Entities.CartItem.Create(Guid.NewGuid(), "SKU-1", "Item 1", 2, 10m));

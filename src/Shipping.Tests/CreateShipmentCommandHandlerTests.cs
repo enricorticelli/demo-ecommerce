@@ -12,7 +12,7 @@ namespace Shipping.Tests;
 public sealed class CreateShipmentCommandHandlerTests
 {
     [Fact]
-    public async Task Create_should_return_existing_shipment_if_order_already_exists()
+    public async Task CreateAsync_OrderAlreadyExists_ReturnsExistingShipment()
     {
         var existing = Domain.Entities.Shipment.Create(Guid.NewGuid(), Guid.NewGuid());
         var repository = new Mock<IShipmentRepository>();
@@ -32,7 +32,7 @@ public sealed class CreateShipmentCommandHandlerTests
     }
 
     [Fact]
-    public async Task Update_status_should_throw_when_shipment_does_not_exist()
+    public async Task UpdateStatusAsync_ShipmentMissing_ThrowsNotFound()
     {
         var repository = new Mock<IShipmentRepository>();
         repository
@@ -48,7 +48,7 @@ public sealed class CreateShipmentCommandHandlerTests
     }
 
     [Fact]
-    public async Task Update_status_should_persist_status_transition()
+    public async Task UpdateStatusAsync_ValidTransition_PersistsStatus()
     {
         var shipment = Domain.Entities.Shipment.Create(Guid.NewGuid(), Guid.NewGuid());
         var repository = new Mock<IShipmentRepository>();
@@ -67,7 +67,7 @@ public sealed class CreateShipmentCommandHandlerTests
     }
 
     [Fact]
-    public async Task List_should_map_shipments()
+    public async Task ListAsync_ShipmentsExist_ReturnsMappedShipments()
     {
         var shipment = Domain.Entities.Shipment.Create(Guid.NewGuid(), Guid.NewGuid());
         var repository = new Mock<IShipmentRepository>();
@@ -98,3 +98,4 @@ public sealed class CreateShipmentCommandHandlerTests
             shipment.DeliveredAtUtc);
     }
 }
+

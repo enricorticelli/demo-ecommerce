@@ -8,7 +8,7 @@ namespace Payment.Tests;
 public sealed class PaymentSessionServiceTests
 {
     [Fact]
-    public async Task Get_by_order_should_return_null_when_missing()
+    public async Task GetByOrderIdAsync_OrderMissing_ReturnsNull()
     {
         var repository = new Mock<IPaymentSessionRepository>();
         repository
@@ -23,7 +23,7 @@ public sealed class PaymentSessionServiceTests
     }
 
     [Fact]
-    public async Task Reject_should_redact_pan_like_values()
+    public async Task RejectAsync_FailureReasonContainsPanLikeValue_RedactsSensitiveDigits()
     {
         var session = Domain.Entities.PaymentSession.Create(Guid.NewGuid(), "http://localhost/payment/session/1");
 
@@ -41,3 +41,4 @@ public sealed class PaymentSessionServiceTests
         Assert.Contains("[REDACTED]", result.Session.FailureReason, StringComparison.Ordinal);
     }
 }
+

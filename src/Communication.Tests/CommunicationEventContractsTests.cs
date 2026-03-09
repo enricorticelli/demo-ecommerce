@@ -6,7 +6,7 @@ namespace Communication.Tests;
 public sealed class CommunicationEventContractsTests
 {
     [Fact]
-    public void Integration_events_should_be_versioned_with_V1_suffix()
+    public void IntegrationEvents_WhenEnumerated_HaveV1Suffix()
     {
         var communicationEventTypes = typeof(IntegrationEventMetadata).Assembly
             .GetTypes()
@@ -23,3 +23,4 @@ public sealed class CommunicationEventContractsTests
         Assert.All(communicationEventTypes, type => Assert.EndsWith("V1", type.Name, StringComparison.Ordinal));
     }
 }
+

@@ -13,7 +13,7 @@ namespace Cart.Tests;
 public sealed class CartCatalogSyncHandlersTests
 {
     [Fact]
-    public async Task Product_updated_should_sync_sku_in_open_carts()
+    public async Task HandleProductUpdated_OpenCartsContainProduct_SyncsSku()
     {
         var productId = Guid.NewGuid();
         var cart = Cart.Domain.Entities.Cart.Create(Guid.NewGuid(), Guid.NewGuid());
@@ -51,7 +51,7 @@ public sealed class CartCatalogSyncHandlersTests
     }
 
     [Fact]
-    public async Task Product_deleted_should_be_idempotent_for_duplicates()
+    public async Task HandleProductDeleted_DuplicateEvent_SkipsProcessing()
     {
         var integrationEvent = new ProductDeletedV1(
             Guid.NewGuid(),
@@ -73,3 +73,4 @@ public sealed class CartCatalogSyncHandlersTests
         deduplicationStore.Verify(x => x.MarkProcessedAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
+

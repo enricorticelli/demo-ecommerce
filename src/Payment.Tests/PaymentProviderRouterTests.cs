@@ -7,7 +7,7 @@ namespace Payment.Tests;
 public sealed class PaymentProviderRouterTests
 {
     [Fact]
-    public void Router_should_resolve_provider_by_payment_method()
+    public void ResolveByPaymentMethod_ProviderExists_ReturnsMatchingProvider()
     {
         var stripeClient = new StubProviderClient("stripe", new HashSet<string>() { "stripe_card" });
         var paypalClient = new StubProviderClient("paypal", new HashSet<string>() { "paypal" });
@@ -38,4 +38,5 @@ public sealed class PaymentProviderRouterTests
         public bool VerifySignature(string rawPayload, IReadOnlyDictionary<string, string> headers) => true;
     }
 }
+
 

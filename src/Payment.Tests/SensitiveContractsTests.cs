@@ -7,7 +7,7 @@ namespace Payment.Tests;
 public sealed class SensitiveContractsTests
 {
     [Fact]
-    public void Payment_contracts_should_not_expose_card_fields()
+    public void Contracts_WhenInspected_DoNotExposeCardFields()
     {
         var forbiddenTokens = new[]
         {
@@ -36,3 +36,4 @@ public sealed class SensitiveContractsTests
         }
     }
 }
+

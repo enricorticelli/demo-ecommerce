@@ -22,7 +22,7 @@ public sealed class CommonArchitectureTests
     private static readonly string RepositoryRoot = ResolveRepositoryRoot();
 
     [Fact]
-    public void Module_should_have_all_layer_projects()
+    public void Module_WhenValidated_HasAllLayerProjects()
     {
         Assert.Contains(ModuleName, ContextNames);
 
@@ -33,7 +33,7 @@ public sealed class CommonArchitectureTests
     }
 
     [Fact]
-    public void Layer_project_references_should_follow_common_rules()
+    public void LayerProjectReferences_WhenValidated_FollowCommonRules()
     {
         var apiReferences = GetProjectReferences(GetModuleProjectPath("Api"));
         var applicationReferences = GetProjectReferences(GetModuleProjectPath("Application"));
@@ -60,7 +60,7 @@ public sealed class CommonArchitectureTests
     }
 
     [Fact]
-    public void Layer_assemblies_should_respect_dependency_direction()
+    public void LayerAssemblies_WhenValidated_RespectDependencyDirection()
     {
         var apiAssembly = LoadAssembly("Api");
         var applicationAssembly = LoadAssembly("Application");
@@ -89,7 +89,7 @@ public sealed class CommonArchitectureTests
     }
 
     [Fact]
-    public void Repository_conventions_should_be_consistent()
+    public void RepositoryConventions_WhenValidated_AreConsistent()
     {
         var applicationAssembly = LoadAssembly("Application");
         var infrastructureAssembly = LoadAssembly("Infrastructure");
@@ -135,7 +135,7 @@ public sealed class CommonArchitectureTests
     }
 
     [Fact]
-    public void Api_endpoints_should_not_use_infrastructure_or_direct_event_publishing()
+    public void ApiEndpoints_WhenInspected_DoNotUseInfrastructureOrDirectEventPublishing()
     {
         var endpointsDirectoryPath = Path.Combine(RepositoryRoot, "src", $"{ModuleName}.Api", "Endpoints");
         if (!Directory.Exists(endpointsDirectoryPath))
@@ -158,7 +158,7 @@ public sealed class CommonArchitectureTests
     }
 
     [Fact]
-    public void Program_bootstrap_should_not_contain_low_level_technical_wiring()
+    public void ProgramBootstrap_WhenInspected_DoesNotContainLowLevelTechnicalWiring()
     {
         var programPath = Path.Combine(RepositoryRoot, "src", $"{ModuleName}.Api", "Program.cs");
         Assert.True(File.Exists(programPath), $"Missing Program.cs for module '{ModuleName}'.");
@@ -300,3 +300,4 @@ public sealed class CommonArchitectureTests
         throw new InvalidOperationException("Unable to locate repository root from test runtime directory.");
     }
 }
+

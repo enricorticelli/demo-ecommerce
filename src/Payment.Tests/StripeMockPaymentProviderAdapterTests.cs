@@ -13,7 +13,7 @@ namespace Payment.Tests;
 public sealed class StripeMockPaymentProviderAdapterTests
 {
     [Fact]
-    public async Task Create_checkout_should_return_redirect_url_from_mock_gateway()
+    public async Task CreateCheckoutAsync_MockGatewayReturnsCheckout_ReturnsRedirectUrl()
     {
         var config = BuildConfiguration();
         var handler = new StubHttpMessageHandler(_ =>
@@ -47,7 +47,7 @@ public sealed class StripeMockPaymentProviderAdapterTests
     }
 
     [Fact]
-    public void Verify_signature_should_validate_hmac_header()
+    public void VerifySignature_ValidHmacHeader_ReturnsTrue()
     {
         var config = BuildConfiguration();
         var httpClientFactory = new Mock<IHttpClientFactory>();
@@ -77,7 +77,7 @@ public sealed class StripeMockPaymentProviderAdapterTests
     }
 
     [Fact]
-    public void Parse_webhook_should_map_completed_status_to_authorized_decision()
+    public void ParseWebhook_CompletedStatus_ReturnsAuthorizedDecision()
     {
         var config = BuildConfiguration();
         var httpClientFactory = new Mock<IHttpClientFactory>();
@@ -135,4 +135,5 @@ public sealed class StripeMockPaymentProviderAdapterTests
         }
     }
 }
+
 

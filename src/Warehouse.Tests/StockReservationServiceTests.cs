@@ -10,7 +10,7 @@ namespace Warehouse.Tests;
 public sealed class StockReservationServiceTests
 {
     [Fact]
-    public async Task Reserve_should_persist_new_reservation_for_new_order()
+    public async Task ReserveAsync_NewOrder_PersistsReservation()
     {
         var orderCreated = new OrderCreatedV1(
             Guid.NewGuid(),
@@ -35,7 +35,7 @@ public sealed class StockReservationServiceTests
     }
 
     [Fact]
-    public async Task Reserve_should_be_idempotent_for_existing_order()
+    public async Task ReserveAsync_ExistingOrder_ReturnsExistingReservation()
     {
         var orderId = Guid.NewGuid();
         var existing = Domain.Entities.WarehouseReservation.Create(orderId, 100m, true, null);
@@ -62,3 +62,4 @@ public sealed class StockReservationServiceTests
         repository.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 }
+

@@ -12,7 +12,7 @@ namespace Payment.Tests;
 public sealed class AuthorizePaymentCommandHandlerTests
 {
     [Fact]
-    public async Task Order_created_handler_should_create_payment_session_without_publishing_payment_result()
+    public async Task HandleOrderCreated_NewEvent_CreatesPaymentSessionWithoutPublishingResult()
     {
         var orderCreated = new OrderCreatedV1(
             Guid.NewGuid(),
@@ -50,7 +50,7 @@ public sealed class AuthorizePaymentCommandHandlerTests
     }
 
     [Fact]
-    public async Task Order_created_handler_should_be_idempotent_for_duplicates()
+    public async Task HandleOrderCreated_DuplicateEvent_SkipsProcessing()
     {
         var orderCreated = new OrderCreatedV1(
             Guid.NewGuid(),
@@ -80,3 +80,4 @@ public sealed class AuthorizePaymentCommandHandlerTests
         deduplicationStore.Verify(x => x.MarkProcessedAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }
+

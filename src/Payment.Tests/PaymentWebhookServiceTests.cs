@@ -11,7 +11,7 @@ namespace Payment.Tests;
 public sealed class PaymentWebhookServiceTests
 {
     [Fact]
-    public async Task Process_should_reject_invalid_signature()
+    public async Task ProcessAsync_InvalidSignature_ReturnsInvalidSignatureStatus()
     {
         var sessionRepository = new Mock<IPaymentSessionRepository>();
         var dedupStore = new Mock<IPaymentWebhookDeduplicationStore>();
@@ -39,7 +39,7 @@ public sealed class PaymentWebhookServiceTests
     }
 
     [Fact]
-    public async Task Process_should_authorize_session_and_mark_webhook_as_processed()
+    public async Task ProcessAsync_AuthorizedWebhook_AuthorizesSessionAndMarksProcessed()
     {
         var session = Domain.Entities.PaymentSession.Create(
             Guid.NewGuid(),
@@ -115,3 +115,4 @@ public sealed class PaymentWebhookServiceTests
         public PaymentWebhookNotification ParseWebhook(string rawPayload) => notification;
     }
 }
+
