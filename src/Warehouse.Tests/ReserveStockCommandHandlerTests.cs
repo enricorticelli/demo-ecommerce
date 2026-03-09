@@ -21,6 +21,7 @@ public sealed class ReserveStockCommandHandlerTests
             Guid.NewGuid(),
             Guid.NewGuid(),
             Guid.NewGuid(),
+            "stripe_card",
             120m,
             "Pending",
             new IntegrationEventMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "corr-1", "Order"));
@@ -60,6 +61,7 @@ public sealed class ReserveStockCommandHandlerTests
             Guid.NewGuid(),
             Guid.NewGuid(),
             Guid.NewGuid(),
+            "stripe_card",
             120m,
             "Pending",
             new IntegrationEventMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "corr-1", "Order"));

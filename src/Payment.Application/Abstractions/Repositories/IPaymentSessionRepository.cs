@@ -6,6 +6,7 @@ public interface IPaymentSessionRepository
 {
     Task<PaymentSessionEntity?> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken);
     Task<PaymentSessionEntity?> GetBySessionIdAsync(Guid sessionId, CancellationToken cancellationToken);
+    Task<PaymentSessionEntity?> GetByExternalCheckoutIdAsync(string externalCheckoutId, CancellationToken cancellationToken);
     Task<IReadOnlyList<PaymentSessionEntity>> ListAsync(CancellationToken cancellationToken);
     void Add(PaymentSessionEntity session);
     Task SaveChangesAsync(CancellationToken cancellationToken);

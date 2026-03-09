@@ -36,8 +36,9 @@ var routes = new List<RouteConfig>
     // store/payment
     CreateContextRoute("store-payment-session-by-order-route", "payment-cluster", "store", "payment", "/api/store/payment/v1/payments/sessions/orders/{orderId}", "GET"),
     CreateContextRoute("store-payment-session-by-id-route", "payment-cluster", "store", "payment", "/api/store/payment/v1/payments/sessions/{sessionId}", "GET"),
-    CreateContextRoute("store-payment-authorize-route", "payment-cluster", "store", "payment", "/api/store/payment/v1/payments/sessions/{sessionId}/authorize", "POST"),
-    CreateContextRoute("store-payment-reject-route", "payment-cluster", "store", "payment", "/api/store/payment/v1/payments/sessions/{sessionId}/reject", "POST"),
+    CreateContextRoute("store-payment-webhook-stripe-route", "payment-cluster", "store", "payment", "/api/store/payment/v1/payments/webhooks/stripe", "POST"),
+    CreateContextRoute("store-payment-webhook-paypal-route", "payment-cluster", "store", "payment", "/api/store/payment/v1/payments/webhooks/paypal", "POST"),
+    CreateContextRoute("store-payment-webhook-satispay-route", "payment-cluster", "store", "payment", "/api/store/payment/v1/payments/webhooks/satispay", "POST"),
 
     // store/shipping
     CreateContextRoute("store-shipping-by-order-route", "shipping-cluster", "store", "shipping", "/api/store/shipping/v1/shipments/orders/{orderId}", "GET"),

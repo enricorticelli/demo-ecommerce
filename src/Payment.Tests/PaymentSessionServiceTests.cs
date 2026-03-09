@@ -8,7 +8,7 @@ namespace Payment.Tests;
 public sealed class PaymentSessionServiceTests
 {
     [Fact]
-    public async Task Get_or_create_should_create_session_when_missing()
+    public async Task Get_by_order_should_return_null_when_missing()
     {
         var repository = new Mock<IPaymentSessionRepository>();
         repository
@@ -17,12 +17,9 @@ public sealed class PaymentSessionServiceTests
 
         var sut = new PaymentSessionService(repository.Object);
 
-        var result = await sut.GetOrCreateByOrderIdAsync(Guid.NewGuid(), "http://localhost/payment/session/{sessionId}", CancellationToken.None);
+        var result = await sut.GetByOrderIdAsync(Guid.NewGuid(), CancellationToken.None);
 
-        Assert.NotEqual(Guid.Empty, result.SessionId);
-        Assert.Contains(result.SessionId.ToString(), result.RedirectUrl, StringComparison.Ordinal);
-        repository.Verify(x => x.Add(It.IsAny<Domain.Entities.PaymentSession>()), Times.Once);
-        repository.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Null(result);
     }
 
     [Fact]

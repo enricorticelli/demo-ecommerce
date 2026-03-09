@@ -1,10 +1,11 @@
 using Payment.Api.Contracts;
-using Payment.Api.Contracts.Requests;
 using Payment.Api.Contracts.Responses;
 using Payment.Api.Mappers;
-using Payment.Application.Abstractions.Commands;
 using Payment.Application.Abstractions.Queries;
+using Payment.Application.Abstractions.Services;
+using Payment.Application.Services;
 using Shared.BuildingBlocks.Api.Correlation;
+using System.Text;
 
 namespace Payment.Api.Endpoints;
 
@@ -19,21 +20,25 @@ public static class PaymentEndpoints
             .WithName("StoreGetPaymentSessionByOrderId");
         group.MapGet("/sessions/{sessionId:guid}", GetPaymentSessionById)
             .WithName("StoreGetPaymentSessionById");
-        group.MapPost("/sessions/{sessionId:guid}/authorize", AuthorizePaymentSession)
-            .WithName("StoreAuthorizePaymentSession");
-        group.MapPost("/sessions/{sessionId:guid}/reject", RejectPaymentSession)
-            .WithName("StoreRejectPaymentSession");
+        group.MapPost("/webhooks/stripe", ProcessStripeWebhook)
+            .WithName("StoreProcessStripeWebhook");
+        group.MapPost("/webhooks/paypal", ProcessPayPalWebhook)
+            .WithName("StoreProcessPayPalWebhook");
+        group.MapPost("/webhooks/satispay", ProcessSatispayWebhook)
+            .WithName("StoreProcessSatispayWebhook");
         return group;
     }
 
     private static async Task<IResult> GetPaymentSessionByOrderId(
         Guid orderId,
-        IConfiguration configuration,
         IPaymentQueryService queryService,
         CancellationToken cancellationToken)
     {
-        var redirectUrl = BuildHostedRedirectUrlTemplate(configuration, orderId);
-        var session = await queryService.GetOrCreateByOrderIdAsync(orderId, redirectUrl, cancellationToken);
+        var session = await queryService.GetOrCreateByOrderIdAsync(orderId, cancellationToken);
+        if (session is null)
+        {
+            return Results.NotFound();
+        }
 
         return Results.Ok(PaymentMapper.ToResponse(session));
     }
@@ -52,47 +57,71 @@ public static class PaymentEndpoints
         return Results.Ok(PaymentMapper.ToResponse(session));
     }
 
-    private static async Task<IResult> AuthorizePaymentSession(
-        Guid sessionId,
-        IPaymentCommandService commandService,
+    private static Task<IResult> ProcessStripeWebhook(
         HttpContext httpContext,
+        IPaymentWebhookService webhookService,
         CancellationToken cancellationToken)
     {
-        var correlationId = CorrelationIdResolver.Resolve(httpContext);
-        var update = await commandService.AuthorizeAsync(sessionId, correlationId, cancellationToken);
-        if (update is null)
-        {
-            return Results.NotFound();
-        }
-
-        return Results.Ok(new PaymentSessionStatusResponse(sessionId, update.Session.Status));
+        return ProcessWebhook("stripe", httpContext, webhookService, cancellationToken);
     }
 
-    private static async Task<IResult> RejectPaymentSession(
-        Guid sessionId,
-        RejectPaymentSessionRequest request,
-        IPaymentCommandService commandService,
+    private static Task<IResult> ProcessPayPalWebhook(
         HttpContext httpContext,
+        IPaymentWebhookService webhookService,
         CancellationToken cancellationToken)
     {
-        var correlationId = CorrelationIdResolver.Resolve(httpContext);
-        var update = await commandService.RejectAsync(sessionId, request.Reason, correlationId, cancellationToken);
-        if (update is null)
-        {
-            return Results.NotFound();
-        }
-
-        return Results.Ok(new PaymentSessionStatusResponse(sessionId, update.Session.Status));
+        return ProcessWebhook("paypal", httpContext, webhookService, cancellationToken);
     }
 
-    private static string BuildHostedRedirectUrlTemplate(IConfiguration configuration, Guid orderId)
+    private static Task<IResult> ProcessSatispayWebhook(
+        HttpContext httpContext,
+        IPaymentWebhookService webhookService,
+        CancellationToken cancellationToken)
     {
-        var baseUrl = configuration["Payment:HostedReturnBaseUrl"];
-        if (string.IsNullOrWhiteSpace(baseUrl))
+        return ProcessWebhook("satispay", httpContext, webhookService, cancellationToken);
+    }
+
+    private static async Task<IResult> ProcessWebhook(
+        string providerCode,
+        HttpContext httpContext,
+        IPaymentWebhookService webhookService,
+        CancellationToken cancellationToken)
+    {
+        string rawPayload;
+        using (var reader = new StreamReader(httpContext.Request.Body, Encoding.UTF8))
         {
-            baseUrl = "http://localhost:3000";
+            rawPayload = await reader.ReadToEndAsync(cancellationToken);
         }
 
-        return $"{baseUrl.TrimEnd('/')}/payment/session/{{sessionId}}?orderId={orderId}";
+        if (string.IsNullOrWhiteSpace(rawPayload))
+        {
+            return Results.BadRequest(new PaymentWebhookResponse(providerCode, "InvalidPayload", "Empty payload."));
+        }
+
+        var headers = httpContext.Request.Headers
+            .ToDictionary(
+                x => x.Key,
+                x => x.Value.ToString(),
+                StringComparer.OrdinalIgnoreCase);
+
+        var correlationId = CorrelationIdResolver.Resolve(httpContext);
+        var result = await webhookService.ProcessAsync(
+            providerCode,
+            rawPayload,
+            headers,
+            correlationId,
+            cancellationToken);
+
+        if (result.Status == PaymentWebhookProcessStatus.InvalidSignature)
+        {
+            return Results.Unauthorized();
+        }
+
+        if (result.Status == PaymentWebhookProcessStatus.InvalidPayload)
+        {
+            return Results.BadRequest(new PaymentWebhookResponse(providerCode, result.Status.ToString(), result.Message));
+        }
+
+        return Results.Ok(new PaymentWebhookResponse(providerCode, result.Status.ToString(), result.Message));
     }
 }

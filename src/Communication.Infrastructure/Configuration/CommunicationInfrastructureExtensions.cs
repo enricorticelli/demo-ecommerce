@@ -11,7 +11,7 @@ using Wolverine.EntityFrameworkCore;
 
 namespace Communication.Infrastructure.Configuration;
 
-public static class CommunicationInfrastructureServiceCollectionExtensions
+public static class CommunicationInfrastructureExtensions
 {
     public static IServiceCollection AddCommunicationInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {

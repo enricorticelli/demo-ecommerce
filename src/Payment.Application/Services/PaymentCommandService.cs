@@ -10,9 +10,13 @@ public sealed class PaymentCommandService(
     IPaymentSessionService paymentSessionService,
     IDomainEventPublisher eventPublisher) : IPaymentCommandService
 {
-    public async Task<PaymentSessionUpdateResult?> AuthorizeAsync(Guid sessionId, string correlationId, CancellationToken cancellationToken)
+    public async Task<PaymentSessionUpdateResult?> AuthorizeAsync(
+        Guid sessionId,
+        string correlationId,
+        string? transactionId,
+        CancellationToken cancellationToken)
     {
-        var update = await paymentSessionService.AuthorizeAsync(sessionId, cancellationToken);
+        var update = await paymentSessionService.AuthorizeAsync(sessionId, transactionId, cancellationToken);
         if (update is null)
         {
             return null;

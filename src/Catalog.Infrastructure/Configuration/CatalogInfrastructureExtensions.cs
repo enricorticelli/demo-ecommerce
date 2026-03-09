@@ -23,7 +23,7 @@ using Wolverine.EntityFrameworkCore;
 
 namespace Catalog.Infrastructure.Configuration;
 
-public static class CatalogInfrastructureServiceCollectionExtensions
+public static class CatalogInfrastructureExtensions
 {
     public static IServiceCollection AddCatalogInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {

@@ -17,7 +17,7 @@ using Wolverine.EntityFrameworkCore;
 
 namespace Shipping.Infrastructure.Configuration;
 
-public static class ShippingInfrastructureServiceCollectionExtensions
+public static class ShippingInfrastructureExtensions
 {
     public static IServiceCollection AddShippingInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {

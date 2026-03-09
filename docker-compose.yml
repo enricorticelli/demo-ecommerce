@@ -6,8 +6,16 @@ x-api-infra-dependencies: &api-infra-dependencies
   aspire-dashboard:
     condition: service_healthy
 
+x-container-logging: &container-logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
 services:
   postgres:
+    <<: *container-logging
     container_name: postgres
     image: postgres:17-alpine
     environment:
@@ -26,6 +34,7 @@ services:
       retries: 20
 
   rabbitmq:
+    <<: *container-logging
     container_name: rabbitmq
     image: rabbitmq:4.1-management-alpine
     environment:
@@ -43,6 +52,7 @@ services:
       retries: 20
 
   aspire-dashboard:
+    <<: *container-logging
     container_name: aspire-dashboard
     image: mcr.microsoft.com/dotnet/aspire-dashboard:13
     environment:
@@ -57,6 +67,7 @@ services:
       retries: 20
 
   catalog-api:
+    <<: *container-logging
     container_name: catalog-api
     build:
       context: .
@@ -74,6 +85,7 @@ services:
       retries: 20
 
   cart-api:
+    <<: *container-logging
     container_name: cart-api
     build:
       context: .
@@ -87,6 +99,7 @@ services:
     healthcheck: *api-health
 
   order-api:
+    <<: *container-logging
     container_name: order-api
     build:
       context: .
@@ -102,6 +115,7 @@ services:
     healthcheck: *api-health
 
   warehouse-api:
+    <<: *container-logging
     container_name: warehouse-api
     build:
       context: .
@@ -115,6 +129,7 @@ services:
     healthcheck: *api-health
 
   payment-api:
+    <<: *container-logging
     container_name: payment-api
     build:
       context: .
@@ -127,7 +142,26 @@ services:
       <<: *api-infra-dependencies
     healthcheck: *api-health
 
+  payment-mock-gateway:
+    <<: *container-logging
+    container_name: payment-mock-gateway
+    build:
+      context: .
+      dockerfile: frontend/payment-mock-gateway/Dockerfile
+    env_file:
+      - .env
+    environment:
+      OTEL_SERVICE_NAME: payment-mock-gateway
+    ports:
+      - "8082:8080"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health/ready',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+
   shipping-api:
+    <<: *container-logging
     container_name: shipping-api
     build:
       context: .
@@ -141,6 +175,7 @@ services:
     healthcheck: *api-health
 
   communication-api:
+    <<: *container-logging
     container_name: communication-api
     build:
       context: .
@@ -156,6 +191,7 @@ services:
     healthcheck: *api-health
 
   mailpit:
+    <<: *container-logging
     container_name: mailpit
     image: axllent/mailpit:v1.26.2
     ports:
@@ -163,6 +199,7 @@ services:
       - "8025:8025"
 
   gateway-api:
+    <<: *container-logging
     container_name: gateway-api
     build:
       context: .
@@ -192,6 +229,7 @@ services:
     healthcheck: *api-health
 
   frontend-web:
+    <<: *container-logging
     container_name: frontend-web
     build:
       context: .
@@ -214,6 +252,7 @@ services:
       retries: 20
 
   frontend-admin:
+    <<: *container-logging
     container_name: frontend-admin
     build:
       context: .

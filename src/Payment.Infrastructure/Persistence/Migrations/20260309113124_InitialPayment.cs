@@ -24,9 +24,15 @@ namespace Payment.Infrastructure.Persistence.Migrations
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     Amount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     PaymentMethod = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    ProviderCode = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    ExternalCheckoutId = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    ProviderStatus = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     Status = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     TransactionId = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
                     FailureReason = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    LastWebhookEventId = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    LastProviderPayload = table.Column<string>(type: "character varying(4096)", maxLength: 4096, nullable: false),
+                    LastWebhookReceivedAtUtc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     CreatedAtUtc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     CompletedAtUtc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     RedirectUrl = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false)
@@ -49,6 +55,26 @@ namespace Payment.Infrastructure.Persistence.Migrations
                     table.PrimaryKey("PK_processed_integration_events", x => x.EventId);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "processed_webhook_events",
+                schema: "payment",
+                columns: table => new
+                {
+                    ProviderCode = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    ExternalEventId = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    ProcessedAtUtc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_processed_webhook_events", x => new { x.ProviderCode, x.ExternalEventId });
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_payment_sessions_ExternalCheckoutId",
+                schema: "payment",
+                table: "payment_sessions",
+                column: "ExternalCheckoutId");
+
             migrationBuilder.CreateIndex(
                 name: "IX_payment_sessions_OrderId",
                 schema: "payment",
@@ -66,6 +92,10 @@ namespace Payment.Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "processed_integration_events",
+                schema: "payment");
+
+            migrationBuilder.DropTable(
+                name: "processed_webhook_events",
                 schema: "payment");
         }
     }

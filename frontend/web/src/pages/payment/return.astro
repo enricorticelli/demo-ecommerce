@@ -1,0 +1,21 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import PaymentReturnPage from '../../components/PaymentReturnPage.svelte';
+
+const orderId = Astro.url.searchParams.get('orderId') ?? '';
+const sessionId = Astro.url.searchParams.get('sessionId') ?? '';
+const provider = Astro.url.searchParams.get('provider') ?? '';
+const result = Astro.url.searchParams.get('result') ?? '';
+const webhook = Astro.url.searchParams.get('webhook') ?? '';
+---
+
+<MainLayout title="Ritorno pagamento">
+  <PaymentReturnPage
+    client:load
+    orderId={orderId}
+    sessionId={sessionId}
+    provider={provider}
+    result={result}
+    webhook={webhook}
+  />
+</MainLayout>

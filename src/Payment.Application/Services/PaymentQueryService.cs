@@ -4,16 +4,18 @@ using Payment.Application.Views;
 
 namespace Payment.Application.Services;
 
-public sealed class PaymentQueryService(IPaymentSessionService paymentSessionService) : IPaymentQueryService
+public sealed class PaymentQueryService(
+    IPaymentSessionService paymentSessionService,
+    IPaymentCheckoutService paymentCheckoutService) : IPaymentQueryService
 {
     public Task<IReadOnlyList<PaymentSessionView>> ListAsync(CancellationToken cancellationToken)
     {
         return paymentSessionService.ListAsync(cancellationToken);
     }
 
-    public Task<PaymentSessionView> GetOrCreateByOrderIdAsync(Guid orderId, string redirectUrl, CancellationToken cancellationToken)
+    public Task<PaymentSessionView?> GetOrCreateByOrderIdAsync(Guid orderId, CancellationToken cancellationToken)
     {
-        return paymentSessionService.GetOrCreateByOrderIdAsync(orderId, redirectUrl, cancellationToken);
+        return paymentCheckoutService.EnsureCheckoutByOrderIdAsync(orderId, cancellationToken);
     }
 
     public Task<PaymentSessionView?> GetBySessionIdAsync(Guid sessionId, CancellationToken cancellationToken)

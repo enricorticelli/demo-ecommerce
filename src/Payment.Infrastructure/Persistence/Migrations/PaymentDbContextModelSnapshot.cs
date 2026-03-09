@@ -39,14 +39,42 @@ namespace Payment.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("ExternalCheckoutId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
                     b.Property<string>("FailureReason")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<string>("LastProviderPayload")
+                        .IsRequired()
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.Property<string>("LastWebhookEventId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset?>("LastWebhookReceivedAtUtc")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ProviderCode")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("ProviderStatus")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
@@ -70,6 +98,8 @@ namespace Payment.Infrastructure.Persistence.Migrations
 
                     b.HasKey("SessionId");
 
+                    b.HasIndex("ExternalCheckoutId");
+
                     b.HasIndex("OrderId")
                         .IsUnique();
 
@@ -88,6 +118,24 @@ namespace Payment.Infrastructure.Persistence.Migrations
                     b.HasKey("EventId");
 
                     b.ToTable("processed_integration_events", "payment");
+                });
+
+            modelBuilder.Entity("Payment.Infrastructure.Persistence.Entities.ProcessedPaymentWebhookEvent", b =>
+                {
+                    b.Property<string>("ProviderCode")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("ExternalEventId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("ProcessedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ProviderCode", "ExternalEventId");
+
+                    b.ToTable("processed_webhook_events", "payment");
                 });
 #pragma warning restore 612, 618
         }

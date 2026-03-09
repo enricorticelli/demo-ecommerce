@@ -16,6 +16,7 @@ public sealed class StockReservationServiceTests
             Guid.NewGuid(),
             Guid.NewGuid(),
             Guid.NewGuid(),
+            "stripe_card",
             100m,
             "Pending",
             new IntegrationEventMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "corr-1", "Order"));
@@ -43,6 +44,7 @@ public sealed class StockReservationServiceTests
             orderId,
             Guid.NewGuid(),
             Guid.NewGuid(),
+            "stripe_card",
             100m,
             "Pending",
             new IntegrationEventMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "corr-1", "Order"));

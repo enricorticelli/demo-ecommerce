@@ -21,7 +21,7 @@ using Wolverine.EntityFrameworkCore;
 
 namespace Order.Infrastructure.Configuration;
 
-public static class OrderInfrastructureServiceCollectionExtensions
+public static class OrderInfrastructureExtensions
 {
     public static IServiceCollection AddOrderInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {

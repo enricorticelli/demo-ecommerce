@@ -17,7 +17,7 @@ using Wolverine.EntityFrameworkCore;
 
 namespace Cart.Infrastructure.Configuration;
 
-public static class CartInfrastructureServiceCollectionExtensions
+public static class CartInfrastructureExtensions
 {
     public static IServiceCollection AddCartInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {

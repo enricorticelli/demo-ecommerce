@@ -19,7 +19,7 @@ public sealed class PaymentCommandServiceTests
 
         var sessionService = new Mock<IPaymentSessionService>();
         sessionService
-            .Setup(x => x.AuthorizeAsync(sessionId, It.IsAny<CancellationToken>()))
+            .Setup(x => x.AuthorizeAsync(sessionId, "TX-123", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new PaymentSessionUpdateResult(
                 new PaymentSessionView(
                     sessionId,
@@ -27,6 +27,9 @@ public sealed class PaymentCommandServiceTests
                     Guid.NewGuid(),
                     120m,
                     "stripe_card",
+                    "stripe",
+                    "chk_1",
+                    "checkout.session.completed",
                     "Authorized",
                     "TX-123",
                     null,
@@ -41,7 +44,7 @@ public sealed class PaymentCommandServiceTests
             .Returns(Task.CompletedTask);
 
         var sut = new PaymentCommandService(sessionService.Object, publisher.Object);
-        var update = await sut.AuthorizeAsync(sessionId, "corr-123", CancellationToken.None);
+        var update = await sut.AuthorizeAsync(sessionId, "corr-123", "TX-123", CancellationToken.None);
 
         Assert.NotNull(update);
         publisher.Verify(
@@ -69,6 +72,9 @@ public sealed class PaymentCommandServiceTests
                     Guid.NewGuid(),
                     120m,
                     "stripe_card",
+                    "stripe",
+                    "chk_1",
+                    "checkout.session.expired",
                     "Rejected",
                     null,
                     "already rejected",

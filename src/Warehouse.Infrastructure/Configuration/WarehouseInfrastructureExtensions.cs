@@ -16,7 +16,7 @@ using Wolverine.EntityFrameworkCore;
 
 namespace Warehouse.Infrastructure.Configuration;
 
-public static class WarehouseInfrastructureServiceCollectionExtensions
+public static class WarehouseInfrastructureExtensions
 {
     public static IServiceCollection AddWarehouseInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {

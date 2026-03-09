@@ -47,6 +47,7 @@ node scripts/seeding/seed-catalog.js
 I servizi saranno disponibili tramite il gateway su `http://localhost:8080`.
 L'Aspire Dashboard per l'osservabilità è raggiungibile su `http://localhost:18888`.
 Mailpit (mock SMTP + inbox UI) è disponibile su `http://localhost:8025`.
+Payment mock gateway (hosted checkout esterno) è disponibile su `http://localhost:8082`.
 
 ### Contesti API
 

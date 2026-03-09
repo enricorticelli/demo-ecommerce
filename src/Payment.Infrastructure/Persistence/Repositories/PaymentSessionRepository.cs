@@ -18,6 +18,13 @@ public sealed class PaymentSessionRepository(PaymentDbContext dbContext) : IPaym
             .FirstOrDefaultAsync(x => x.SessionId == sessionId, cancellationToken);
     }
 
+    public Task<PaymentSessionEntity?> GetByExternalCheckoutIdAsync(string externalCheckoutId, CancellationToken cancellationToken)
+    {
+        var normalizedExternalCheckoutId = externalCheckoutId.Trim();
+        return dbContext.PaymentSessions
+            .FirstOrDefaultAsync(x => x.ExternalCheckoutId == normalizedExternalCheckoutId, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<PaymentSessionEntity>> ListAsync(CancellationToken cancellationToken)
     {
         return await dbContext.PaymentSessions

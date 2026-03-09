@@ -9,9 +9,15 @@ public sealed class PaymentSession
     public Guid UserId { get; private set; }
     public decimal Amount { get; private set; }
     public string PaymentMethod { get; private set; } = "stripe_card";
+    public string ProviderCode { get; private set; } = string.Empty;
+    public string ExternalCheckoutId { get; private set; } = string.Empty;
+    public string ProviderStatus { get; private set; } = string.Empty;
     public string Status { get; private set; } = "Pending";
     public string? TransactionId { get; private set; }
     public string? FailureReason { get; private set; }
+    public string LastWebhookEventId { get; private set; } = string.Empty;
+    public string LastProviderPayload { get; private set; } = string.Empty;
+    public DateTimeOffset? LastWebhookReceivedAtUtc { get; private set; }
     public DateTimeOffset CreatedAtUtc { get; private set; }
     public DateTimeOffset? CompletedAtUtc { get; private set; }
     public string RedirectUrl { get; private set; } = string.Empty;
@@ -75,6 +81,55 @@ public sealed class PaymentSession
         if (!string.Equals(PaymentMethod, normalizedMethod, StringComparison.Ordinal))
         {
             PaymentMethod = normalizedMethod;
+            ProviderCode = string.Empty;
+            ExternalCheckoutId = string.Empty;
+            ProviderStatus = string.Empty;
+            RedirectUrl = string.Empty;
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    public bool ConfigureProviderCheckout(
+        string providerCode,
+        string externalCheckoutId,
+        string redirectUrl,
+        string providerStatus)
+    {
+        var normalizedProviderCode = string.IsNullOrWhiteSpace(providerCode)
+            ? string.Empty
+            : providerCode.Trim().ToLowerInvariant();
+        var normalizedExternalCheckoutId = string.IsNullOrWhiteSpace(externalCheckoutId)
+            ? string.Empty
+            : externalCheckoutId.Trim();
+        var normalizedProviderStatus = string.IsNullOrWhiteSpace(providerStatus)
+            ? string.Empty
+            : providerStatus.Trim();
+
+        var changed = false;
+
+        if (!string.Equals(ProviderCode, normalizedProviderCode, StringComparison.Ordinal))
+        {
+            ProviderCode = normalizedProviderCode;
+            changed = true;
+        }
+
+        if (!string.Equals(ExternalCheckoutId, normalizedExternalCheckoutId, StringComparison.Ordinal))
+        {
+            ExternalCheckoutId = normalizedExternalCheckoutId;
+            changed = true;
+        }
+
+        if (!string.Equals(ProviderStatus, normalizedProviderStatus, StringComparison.Ordinal))
+        {
+            ProviderStatus = normalizedProviderStatus;
+            changed = true;
+        }
+
+        if (!string.Equals(RedirectUrl, redirectUrl, StringComparison.Ordinal))
+        {
+            RedirectUrl = redirectUrl;
             changed = true;
         }
 
@@ -90,6 +145,72 @@ public sealed class PaymentSession
 
         RedirectUrl = redirectUrl;
         return true;
+    }
+
+    public bool RegisterProviderWebhook(
+        string providerCode,
+        string? externalCheckoutId,
+        string providerStatus,
+        string externalEventId,
+        string rawPayload)
+    {
+        var changed = false;
+
+        var normalizedProviderCode = string.IsNullOrWhiteSpace(providerCode)
+            ? string.Empty
+            : providerCode.Trim().ToLowerInvariant();
+        if (!string.Equals(ProviderCode, normalizedProviderCode, StringComparison.Ordinal))
+        {
+            ProviderCode = normalizedProviderCode;
+            changed = true;
+        }
+
+        var normalizedExternalCheckoutId = string.IsNullOrWhiteSpace(externalCheckoutId)
+            ? string.Empty
+            : externalCheckoutId.Trim();
+        if (!string.Equals(ExternalCheckoutId, normalizedExternalCheckoutId, StringComparison.Ordinal))
+        {
+            ExternalCheckoutId = normalizedExternalCheckoutId;
+            changed = true;
+        }
+
+        var normalizedProviderStatus = string.IsNullOrWhiteSpace(providerStatus)
+            ? string.Empty
+            : providerStatus.Trim();
+        if (!string.Equals(ProviderStatus, normalizedProviderStatus, StringComparison.Ordinal))
+        {
+            ProviderStatus = normalizedProviderStatus;
+            changed = true;
+        }
+
+        var normalizedExternalEventId = string.IsNullOrWhiteSpace(externalEventId)
+            ? string.Empty
+            : externalEventId.Trim();
+        if (!string.Equals(LastWebhookEventId, normalizedExternalEventId, StringComparison.Ordinal))
+        {
+            LastWebhookEventId = normalizedExternalEventId;
+            changed = true;
+        }
+
+        var sanitizedPayload = string.IsNullOrWhiteSpace(rawPayload) ? string.Empty : rawPayload.Trim();
+        if (sanitizedPayload.Length > 4096)
+        {
+            sanitizedPayload = sanitizedPayload[..4096];
+        }
+
+        if (!string.Equals(LastProviderPayload, sanitizedPayload, StringComparison.Ordinal))
+        {
+            LastProviderPayload = sanitizedPayload;
+            changed = true;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        if (!LastWebhookReceivedAtUtc.HasValue || LastWebhookReceivedAtUtc.Value != now)
+        {
+            changed = true;
+        }
+        LastWebhookReceivedAtUtc = now;
+        return changed;
     }
 
     public bool Authorize(string transactionId)

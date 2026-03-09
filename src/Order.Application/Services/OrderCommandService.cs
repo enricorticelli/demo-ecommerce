@@ -45,6 +45,7 @@ public sealed class OrderCommandService(
             order.Id,
             order.CartId,
             order.UserId,
+            order.PaymentMethod,
             order.TotalAmount,
             order.Status.ToString(),
             CreateMetadata(command.CorrelationId));

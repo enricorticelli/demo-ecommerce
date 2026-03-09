@@ -16,24 +16,10 @@ public sealed class PaymentSessionService(IPaymentSessionRepository paymentSessi
             .ToArray();
     }
 
-    public async Task<PaymentSessionView> GetOrCreateByOrderIdAsync(Guid orderId, string redirectUrl, CancellationToken cancellationToken)
+    public async Task<PaymentSessionView?> GetByOrderIdAsync(Guid orderId, CancellationToken cancellationToken)
     {
         var session = await paymentSessionRepository.GetByOrderIdAsync(orderId, cancellationToken);
-        if (session is null)
-        {
-            session = Domain.Entities.PaymentSession.Create(orderId, string.Empty);
-            _ = session.UpdateRedirectUrl(ResolveRedirectUrlTemplate(redirectUrl, session.SessionId));
-            paymentSessionRepository.Add(session);
-            await paymentSessionRepository.SaveChangesAsync(cancellationToken);
-            return ToView(session);
-        }
-
-        if (session.UpdateRedirectUrl(ResolveRedirectUrlTemplate(redirectUrl, session.SessionId)))
-        {
-            await paymentSessionRepository.SaveChangesAsync(cancellationToken);
-        }
-
-        return ToView(session);
+        return session is null ? null : ToView(session);
     }
 
     public async Task<PaymentSessionView?> GetBySessionIdAsync(Guid sessionId, CancellationToken cancellationToken)
@@ -42,7 +28,7 @@ public sealed class PaymentSessionService(IPaymentSessionRepository paymentSessi
         return session is null ? null : ToView(session);
     }
 
-    public async Task<PaymentSessionUpdateResult?> AuthorizeAsync(Guid sessionId, CancellationToken cancellationToken)
+    public async Task<PaymentSessionUpdateResult?> AuthorizeAsync(Guid sessionId, string? transactionId, CancellationToken cancellationToken)
     {
         var session = await paymentSessionRepository.GetBySessionIdAsync(sessionId, cancellationToken);
         if (session is null)
@@ -50,7 +36,11 @@ public sealed class PaymentSessionService(IPaymentSessionRepository paymentSessi
             return null;
         }
 
-        var statusChanged = session.Authorize($"TX-{Guid.NewGuid():N}");
+        var effectiveTransactionId = string.IsNullOrWhiteSpace(transactionId)
+            ? $"TX-{Guid.NewGuid():N}"
+            : transactionId.Trim();
+
+        var statusChanged = session.Authorize(effectiveTransactionId);
         if (statusChanged)
         {
             await paymentSessionRepository.SaveChangesAsync(cancellationToken);
@@ -84,6 +74,9 @@ public sealed class PaymentSessionService(IPaymentSessionRepository paymentSessi
             session.UserId,
             session.Amount,
             session.PaymentMethod,
+            session.ProviderCode,
+            string.IsNullOrWhiteSpace(session.ExternalCheckoutId) ? null : session.ExternalCheckoutId,
+            session.ProviderStatus,
             session.Status,
             session.TransactionId,
             session.FailureReason,
@@ -108,8 +101,4 @@ public sealed class PaymentSessionService(IPaymentSessionRepository paymentSessi
         return sanitized;
     }
 
-    private static string ResolveRedirectUrlTemplate(string redirectUrl, Guid sessionId)
-    {
-        return redirectUrl.Replace("{sessionId}", sessionId.ToString(), StringComparison.Ordinal);
-    }
 }

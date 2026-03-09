@@ -153,6 +153,9 @@ export type PaymentSession = {
   userId: string;
   amount: number;
   paymentMethod: 'stripe_card' | 'paypal' | 'satispay';
+  providerCode: string;
+  externalCheckoutId: string | null;
+  providerStatus: string;
   status: string;
   transactionId: string | null;
   failureReason: string | null;
@@ -361,24 +364,6 @@ export async function getPaymentSessionById(sessionId: string): Promise<PaymentS
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Payment session error: ${res.status}`);
   return res.json();
-}
-
-export async function authorizePaymentSession(sessionId: string): Promise<void> {
-  const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/payment/v1/payments/sessions/${sessionId}/authorize`, {
-    method: 'POST',
-  });
-
-  if (!res.ok) throw new Error(`Payment authorize error: ${res.status}`);
-}
-
-export async function rejectPaymentSession(sessionId: string, reason = 'Payment declined'): Promise<void> {
-  const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/payment/v1/payments/sessions/${sessionId}/reject`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ reason }),
-  });
-
-  if (!res.ok) throw new Error(`Payment reject error: ${res.status}`);
 }
 
 export async function fetchShipmentByOrder(orderId: string): Promise<ShipmentView | null> {

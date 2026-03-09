@@ -1,16 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import {
-    authorizePaymentSession,
-    fetchOrder,
-    getPaymentSessionById,
-    pollOrderUntilDone,
-    rejectPaymentSession,
-    type OrderView,
-    type PaymentSession,
-  } from '../lib/api';
+  import { fetchOrder, getPaymentSessionById, type OrderView, type PaymentSession } from '../lib/api';
   import { formatCurrency } from '../lib/format';
-  import { startNewCart } from '../stores/cart';
 
   export let sessionId: string;
   export let orderId: string;
@@ -18,7 +9,6 @@
   let session: PaymentSession | null = null;
   let order: OrderView | null = null;
   let isLoading = true;
-  let isSubmitting = false;
   let error = '';
 
   function resolveOrderId(): string {
@@ -43,71 +33,14 @@
     }
   }
 
-  async function confirmPayment() {
-    isSubmitting = true;
-    error = '';
-
-    try {
-      const targetOrderId = resolveOrderId();
-      if (!targetOrderId) {
-        throw new Error('Ordine non associato alla sessione di pagamento.');
-      }
-
-      await authorizePaymentSession(sessionId);
-
-      const terminalOrder = await pollOrderUntilDone(targetOrderId, () => undefined, 15, 1000);
-      if (!terminalOrder) {
-        throw new Error('Pagamento autorizzato, ma conferma ordine non ricevuta in tempo. Riprova tra pochi secondi.');
-      }
-
-      if (terminalOrder.status === 'Completed') {
-        startNewCart();
-        window.location.href = `/orders/${targetOrderId}`;
-        return;
-      }
-
-      if (terminalOrder.status === 'Failed') {
-        error = terminalOrder.failureReason
-          ? `Ordine non completato: ${terminalOrder.failureReason}`
-          : 'Ordine non completato. Riprova il checkout mantenendo il carrello corrente.';
-        return;
-      }
-
-      throw new Error(`Stato ordine inatteso: ${terminalOrder.status}.`);
-    } catch (err) {
-      error = err instanceof Error ? err.message : 'Autorizzazione pagamento non riuscita.';
-    } finally {
-      isSubmitting = false;
+  function goToReturnPage() {
+    const targetOrderId = resolveOrderId();
+    if (!targetOrderId) {
+      error = 'Ordine non associato alla sessione di pagamento.';
+      return;
     }
-  }
 
-  async function cancelPayment() {
-    isSubmitting = true;
-    error = '';
-
-    try {
-      const targetOrderId = resolveOrderId();
-      if (!targetOrderId) {
-        throw new Error('Ordine non associato alla sessione di pagamento.');
-      }
-
-      await rejectPaymentSession(sessionId, 'Payment cancelled by customer');
-
-      const terminalOrder = await pollOrderUntilDone(targetOrderId, () => undefined, 15, 1000);
-      if (!terminalOrder) {
-        throw new Error('Pagamento rifiutato, ma annullamento ordine non ancora confermato. Riprova tra pochi secondi.');
-      }
-
-      if (terminalOrder.status !== 'Failed') {
-        throw new Error(`Stato ordine inatteso dopo rifiuto pagamento: ${terminalOrder.status}.`);
-      }
-
-      window.location.href = `/checkout?payment=cancelled&orderId=${targetOrderId}`;
-    } catch (err) {
-      error = err instanceof Error ? err.message : 'Annullamento pagamento non riuscito.';
-    } finally {
-      isSubmitting = false;
-    }
+    window.location.href = `/payment/return?orderId=${targetOrderId}&sessionId=${sessionId}`;
   }
 
   onMount(loadSession);
@@ -115,9 +48,9 @@
 
 <div class="mx-auto max-w-2xl space-y-6 reveal">
   <div class="text-center">
-    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-[#8c9196]">Hosted Payment Gateway</p>
-    <h1 class="mt-2 font-title text-4xl font-extrabold text-[#202223]">Conferma pagamento</h1>
-    <p class="mt-2 text-sm text-[#616161]">Flusso simulato con redirect, sostituibile con provider reale S2S.</p>
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-[#8c9196]">Hosted Payment Session</p>
+    <h1 class="mt-2 font-title text-4xl font-extrabold text-[#202223]">Sessione pagamento</h1>
+    <p class="mt-2 text-sm text-[#616161]">Autorizzazione gestita via callback server-to-server.</p>
   </div>
 
   <div class="surface-card p-6">
@@ -128,22 +61,18 @@
     {:else if session}
       <div class="space-y-5">
         <div class="surface-muted space-y-2 p-4 text-sm text-[#4a4f55]">
+          <div class="flex justify-between"><span>Provider</span><span class="font-semibold uppercase">{session.providerCode || '-'}</span></div>
           <div class="flex justify-between"><span>Sessione</span><span class="font-mono">{session.sessionId}</span></div>
           <div class="flex justify-between"><span>Ordine</span><span class="font-mono">{session.orderId}</span></div>
-          <div class="flex justify-between"><span>Utente</span><span class="font-mono">{session.userId}</span></div>
+          <div class="flex justify-between"><span>Checkout esterno</span><span class="font-mono">{session.externalCheckoutId ?? '-'}</span></div>
           <div class="flex justify-between text-base font-bold text-[#202223]"><span>Importo</span><span>{formatCurrency(order?.totalAmount ?? session.amount)}</span></div>
         </div>
 
         <div class="rounded-xl border border-[#d0ebe4] bg-[#f1f8f5] px-4 py-3 text-xs text-[#005940]">
-          Questa e una pagina di pagamento hosted. In produzione verra sostituita da un PSP esterno con callback server-to-server.
+          Se hai appena completato il pagamento sul provider esterno, usa il pulsante sotto per verificare lo stato ordine.
         </div>
 
-        <div class="grid gap-3 sm:grid-cols-2">
-          <button class="btn-secondary" on:click={cancelPayment} disabled={isSubmitting}>Rifiuta pagamento</button>
-          <button class="btn-primary" on:click={confirmPayment} disabled={isSubmitting}>
-            {isSubmitting ? 'Elaborazione...' : 'Autorizza pagamento'}
-          </button>
-        </div>
+        <button class="btn-primary w-full" on:click={goToReturnPage}>Verifica stato ordine</button>
       </div>
     {/if}
   </div>
