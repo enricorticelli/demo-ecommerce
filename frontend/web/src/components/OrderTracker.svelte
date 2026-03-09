@@ -13,11 +13,12 @@
   let notFound = false;
   let loadError = '';
   let pollingActive = true;
-  let pollAttempts = 0;
   let isCancelling = false;
   let cancelError = '';
   let cancelSuccess = '';
-  const maxPoll = 50;
+  const FAST_POLL_MS = 1200;
+  const TERMINAL_ORDER_POLL_MS = 5000;
+  const HIDDEN_POLL_MS = 10000;
 
   const paymentMethodLabels: Record<string, string> = {
     stripe_card: 'Carta di credito',
@@ -91,6 +92,38 @@
     ? new Date(shipment.updatedAtUtc).toLocaleString('it-IT', { dateStyle: 'medium', timeStyle: 'short' })
     : '';
 
+  function isTerminalOrderStatus(status: string | undefined): boolean {
+    return status === 'Completed' || status === 'Failed';
+  }
+
+  function isTerminalShipmentStatus(status: string | undefined): boolean {
+    return status === 'Delivered' || status === 'Cancelled';
+  }
+
+  function shouldContinuePolling(): boolean {
+    if (!order) return true;
+    if (!isTerminalOrderStatus(order.status)) return true;
+
+    // Keep refreshing after order completion to track shipment progression.
+    if (order.status === 'Completed') {
+      return !isTerminalShipmentStatus(shipment?.status);
+    }
+
+    return false;
+  }
+
+  function getPollDelayMs(): number {
+    if (document.hidden) {
+      return HIDDEN_POLL_MS;
+    }
+
+    if (order && isTerminalOrderStatus(order.status)) {
+      return TERMINAL_ORDER_POLL_MS;
+    }
+
+    return FAST_POLL_MS;
+  }
+
   async function cancelOrderByCustomer() {
     if (!order || !canCustomerCancel || isCancelling) return;
 
@@ -114,14 +147,14 @@
   }
 
   async function poll() {
-    while (pollingActive && pollAttempts < maxPoll) {
+    while (pollingActive) {
       try {
         order = await fetchOrder(orderId, { includeNonCompleted: true });
         if (order.status === 'Completed' && order.cartId === cartId.get()) {
           startNewCart();
         }
         shipment = await fetchShipmentByOrder(orderId);
-        if (order.status === 'Completed' || order.status === 'Failed') {
+        if (!shouldContinuePolling()) {
           pollingActive = false;
           break;
         }
@@ -133,8 +166,7 @@
         }
       }
 
-      pollAttempts += 1;
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      await new Promise((resolve) => setTimeout(resolve, getPollDelayMs()));
     }
   }
 
@@ -148,7 +180,7 @@
       }
       shipment = await fetchShipmentByOrder(orderId);
       isLoading = false;
-      if (!isDone) await poll();
+      if (shouldContinuePolling()) await poll();
     } catch (err) {
       if (err instanceof Error && err.name === 'NotFoundError') {
         notFound = true;

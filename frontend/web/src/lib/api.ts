@@ -331,7 +331,9 @@ type FetchOrderOptions = {
 
 export async function fetchOrder(orderId: string, options?: FetchOrderOptions): Promise<OrderView> {
   const query = options?.includeNonCompleted ? '?includeNonCompleted=true' : '';
-  const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/order/v1/orders/${orderId}${query}`);
+  const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/order/v1/orders/${orderId}${query}`, {
+    cache: 'no-store',
+  });
   if (res.status === 404) throw new NotFoundError(`Order ${orderId} not found`);
   if (!res.ok) throw new Error(`Order fetch error: ${res.status}`);
   return res.json();
@@ -353,21 +355,27 @@ export async function manualCancelOrder(orderId: string, reason?: string): Promi
 }
 
 export async function getPaymentSessionByOrder(orderId: string): Promise<PaymentSession | null> {
-  const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/payment/v1/payments/sessions/orders/${orderId}`);
+  const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/payment/v1/payments/sessions/orders/${orderId}`, {
+    cache: 'no-store',
+  });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Payment session error: ${res.status}`);
   return res.json();
 }
 
 export async function getPaymentSessionById(sessionId: string): Promise<PaymentSession | null> {
-  const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/payment/v1/payments/sessions/${sessionId}`);
+  const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/payment/v1/payments/sessions/${sessionId}`, {
+    cache: 'no-store',
+  });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Payment session error: ${res.status}`);
   return res.json();
 }
 
 export async function fetchShipmentByOrder(orderId: string): Promise<ShipmentView | null> {
-  const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/shipping/v1/shipments/orders/${orderId}`);
+  const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/shipping/v1/shipments/orders/${orderId}`, {
+    cache: 'no-store',
+  });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Shipment fetch error: ${res.status}`);
   return res.json();
