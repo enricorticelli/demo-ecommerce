@@ -36,7 +36,7 @@ public static class AdminCustomerEndpoints
     }
 
     private static async Task<IResult> ListCustomers(
-        IAccountService service,
+        IAccountAdministrationService service,
         int? limit,
         int? offset,
         string? searchTerm,
@@ -49,7 +49,7 @@ public static class AdminCustomerEndpoints
 
     private static async Task<IResult> GetCustomer(
         Guid customerId,
-        IAccountService service,
+        IAccountAdministrationService service,
         CancellationToken cancellationToken)
     {
         try
@@ -66,7 +66,7 @@ public static class AdminCustomerEndpoints
     private static async Task<IResult> UpdateCustomer(
         Guid customerId,
         UpdateProfileRequest request,
-        IAccountService service,
+        IAccountAdministrationService service,
         CancellationToken cancellationToken)
     {
         try
@@ -83,7 +83,7 @@ public static class AdminCustomerEndpoints
     private static async Task<IResult> ResetCustomerPassword(
         Guid customerId,
         AdminResetCustomerPasswordRequest request,
-        IAccountService service,
+        IAccountAdministrationService service,
         CancellationToken cancellationToken)
     {
         try
@@ -99,7 +99,7 @@ public static class AdminCustomerEndpoints
 
     private static async Task<IResult> ListCustomerAddresses(
         Guid customerId,
-        IAccountService service,
+        IAccountAdministrationService service,
         CancellationToken cancellationToken)
     {
         try
@@ -116,7 +116,7 @@ public static class AdminCustomerEndpoints
     private static async Task<IResult> CreateCustomerAddress(
         Guid customerId,
         UpsertAddressRequest request,
-        IAccountService service,
+        IAccountAdministrationService service,
         CancellationToken cancellationToken)
     {
         try
@@ -134,7 +134,7 @@ public static class AdminCustomerEndpoints
         Guid customerId,
         Guid addressId,
         UpsertAddressRequest request,
-        IAccountService service,
+        IAccountAdministrationService service,
         CancellationToken cancellationToken)
     {
         try
@@ -151,7 +151,7 @@ public static class AdminCustomerEndpoints
     private static async Task<IResult> DeleteCustomerAddress(
         Guid customerId,
         Guid addressId,
-        IAccountService service,
+        IAccountAdministrationService service,
         CancellationToken cancellationToken)
     {
         try

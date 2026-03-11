@@ -40,7 +40,7 @@ public static class StoreUserEndpoints
         return storeGroup;
     }
 
-    private static async Task<IResult> StoreRegister(RegisterCustomerRequest request, IAccountService service,
+    private static async Task<IResult> StoreRegister(RegisterCustomerRequest request, IAccountAuthService service,
         CancellationToken cancellationToken)
     {
         try
@@ -54,19 +54,19 @@ public static class StoreUserEndpoints
         }
     }
 
-    private static Task<IResult> StoreLogin(LoginRequest request, IAccountService service,
+    private static Task<IResult> StoreLogin(LoginRequest request, IAccountAuthService service,
         CancellationToken cancellationToken)
         => LoginByRealm(request.ToInput(), AccountRealm.Customer, service, cancellationToken);
 
-    private static Task<IResult> StoreRefresh(RefreshTokenRequest request, IAccountService service,
+    private static Task<IResult> StoreRefresh(RefreshTokenRequest request, IAccountAuthService service,
         CancellationToken cancellationToken)
         => RefreshByRealm(request, AccountRealm.Customer, service, cancellationToken);
 
-    private static Task<IResult> StoreLogout(LogoutRequest request, IAccountService service,
+    private static Task<IResult> StoreLogout(LogoutRequest request, IAccountAuthService service,
         CancellationToken cancellationToken)
         => LogoutByRealm(request, AccountRealm.Customer, service, cancellationToken);
 
-    private static async Task<IResult> StoreResendVerification(ForgotPasswordRequest request, IAccountService service,
+    private static async Task<IResult> StoreResendVerification(ForgotPasswordRequest request, IAccountAuthService service,
         CancellationToken cancellationToken)
     {
         try
@@ -80,7 +80,7 @@ public static class StoreUserEndpoints
         }
     }
 
-    private static async Task<IResult> StoreVerifyEmail(VerifyEmailRequest request, IAccountService service,
+    private static async Task<IResult> StoreVerifyEmail(VerifyEmailRequest request, IAccountAuthService service,
         CancellationToken cancellationToken)
     {
         try
@@ -94,7 +94,7 @@ public static class StoreUserEndpoints
         }
     }
 
-    private static async Task<IResult> StoreForgotPassword(ForgotPasswordRequest request, IAccountService service,
+    private static async Task<IResult> StoreForgotPassword(ForgotPasswordRequest request, IAccountAuthService service,
         CancellationToken cancellationToken)
     {
         try
@@ -108,7 +108,7 @@ public static class StoreUserEndpoints
         }
     }
 
-    private static async Task<IResult> StoreResetPassword(ResetPasswordRequest request, IAccountService service,
+    private static async Task<IResult> StoreResetPassword(ResetPasswordRequest request, IAccountAuthService service,
         CancellationToken cancellationToken)
     {
         try
@@ -122,7 +122,7 @@ public static class StoreUserEndpoints
         }
     }
 
-    private static async Task<IResult> LoginByRealm(LoginInput input, string realm, IAccountService service,
+    private static async Task<IResult> LoginByRealm(LoginInput input, string realm, IAccountAuthService service,
         CancellationToken cancellationToken)
     {
         try
@@ -136,7 +136,7 @@ public static class StoreUserEndpoints
         }
     }
 
-    private static async Task<IResult> RefreshByRealm(RefreshTokenRequest request, string realm, IAccountService service,
+    private static async Task<IResult> RefreshByRealm(RefreshTokenRequest request, string realm, IAccountAuthService service,
         CancellationToken cancellationToken)
     {
         try
@@ -150,7 +150,7 @@ public static class StoreUserEndpoints
         }
     }
 
-    private static async Task<IResult> LogoutByRealm(LogoutRequest request, string realm, IAccountService service,
+    private static async Task<IResult> LogoutByRealm(LogoutRequest request, string realm, IAccountAuthService service,
         CancellationToken cancellationToken)
     {
         try

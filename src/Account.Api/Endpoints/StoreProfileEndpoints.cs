@@ -41,7 +41,7 @@ public static class StoreProfileEndpoints
         return storeGroup;
     }
 
-    private static async Task<IResult> StoreGetMe(HttpContext context, IAccountService service,
+    private static async Task<IResult> StoreGetMe(HttpContext context, IAccountCustomerProfileService service,
         CancellationToken cancellationToken)
     {
         try
@@ -57,7 +57,7 @@ public static class StoreProfileEndpoints
     }
 
     private static async Task<IResult> StoreUpdateMe(HttpContext context, UpdateProfileRequest request,
-        IAccountService service, CancellationToken cancellationToken)
+        IAccountCustomerProfileService service, CancellationToken cancellationToken)
     {
         try
         {
@@ -71,7 +71,7 @@ public static class StoreProfileEndpoints
         }
     }
 
-    private static async Task<IResult> StoreListAddresses(HttpContext context, IAccountService service,
+    private static async Task<IResult> StoreListAddresses(HttpContext context, IAccountCustomerProfileService service,
         CancellationToken cancellationToken)
     {
         try
@@ -87,7 +87,7 @@ public static class StoreProfileEndpoints
     }
 
     private static async Task<IResult> StoreCreateAddress(HttpContext context, UpsertAddressRequest request,
-        IAccountService service, CancellationToken cancellationToken)
+        IAccountCustomerProfileService service, CancellationToken cancellationToken)
     {
         try
         {
@@ -102,7 +102,7 @@ public static class StoreProfileEndpoints
     }
 
     private static async Task<IResult> StoreUpdateAddress(HttpContext context, Guid addressId,
-        UpsertAddressRequest request, IAccountService service, CancellationToken cancellationToken)
+        UpsertAddressRequest request, IAccountCustomerProfileService service, CancellationToken cancellationToken)
     {
         try
         {
@@ -116,7 +116,7 @@ public static class StoreProfileEndpoints
         }
     }
 
-    private static async Task<IResult> StoreDeleteAddress(HttpContext context, Guid addressId, IAccountService service,
+    private static async Task<IResult> StoreDeleteAddress(HttpContext context, Guid addressId, IAccountCustomerProfileService service,
         CancellationToken cancellationToken)
     {
         try
@@ -131,7 +131,7 @@ public static class StoreProfileEndpoints
         }
     }
 
-    private static async Task<IResult> StoreMyOrders(HttpContext context, IAccountService service,
+    private static async Task<IResult> StoreMyOrders(HttpContext context, IAccountCustomerProfileService service,
         CancellationToken cancellationToken)
     {
         try

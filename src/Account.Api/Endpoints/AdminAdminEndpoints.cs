@@ -27,7 +27,7 @@ public static class AdminAdminEndpoints
     }
 
     private static async Task<IResult> ListAdmins(
-        IAccountService service,
+        IAccountAdministrationService service,
         int? limit,
         int? offset,
         string? searchTerm,
@@ -40,7 +40,7 @@ public static class AdminAdminEndpoints
 
     private static async Task<IResult> CreateAdmin(
         AdminCreateAdminUserRequest request,
-        IAccountService service,
+        IAccountAdministrationService service,
         CancellationToken cancellationToken)
     {
         try
@@ -57,7 +57,7 @@ public static class AdminAdminEndpoints
     private static async Task<IResult> ResetAdminPassword(
         Guid adminUserId,
         AdminResetAdminPasswordRequest request,
-        IAccountService service,
+        IAccountAdministrationService service,
         CancellationToken cancellationToken)
     {
         try
@@ -74,7 +74,7 @@ public static class AdminAdminEndpoints
     private static async Task<IResult> DeleteAdmin(
         HttpContext context,
         Guid adminUserId,
-        IAccountService service,
+        IAccountAdministrationService service,
         CancellationToken cancellationToken)
     {
         try

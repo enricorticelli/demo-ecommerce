@@ -16,7 +16,7 @@ public sealed class AccountServiceTests
     public async Task RegisterCustomerAsync_ValidInput_PersistsUserAndReturnsTokens()
     {
         await using var dbContext = CreateDbContext();
-        var service = CreateService(dbContext);
+        var service = CreateAuthService(dbContext);
 
         var result = await service.RegisterCustomerAsync(
             new RegisterCustomerInput("mario.rossi@example.com", "Password123", "Mario", "Rossi", "+39 333 1112222"),
@@ -54,7 +54,7 @@ public sealed class AccountServiceTests
         });
         await dbContext.SaveChangesAsync();
 
-        var service = CreateService(dbContext);
+        var service = CreateAuthService(dbContext);
 
         await Assert.ThrowsAsync<ValidationAppException>(() =>
             service.LoginAsync(AccountRealm.Customer, new LoginInput("mario.rossi@example.com", "WrongPassword"), CancellationToken.None));
@@ -91,7 +91,7 @@ public sealed class AccountServiceTests
         });
         await dbContext.SaveChangesAsync();
 
-        var service = CreateService(dbContext);
+        var service = CreateAuthService(dbContext);
 
         await service.VerifyEmailAsync(new VerifyEmailInput("mario.rossi@example.com", code), CancellationToken.None);
 
@@ -120,7 +120,7 @@ public sealed class AccountServiceTests
         });
         await dbContext.SaveChangesAsync();
 
-        var service = CreateService(dbContext);
+        var service = CreateCustomerProfileService(dbContext);
 
         var address = await service.CreateAddressAsync(
             customerId,
@@ -132,7 +132,7 @@ public sealed class AccountServiceTests
         Assert.Single(await dbContext.Addresses.ToListAsync());
     }
 
-    private static AccountService CreateService(AccountDbContext dbContext)
+    private static AccountAuthService CreateAuthService(AccountDbContext dbContext)
     {
         var options = new AccountTechnicalOptions
         {
@@ -150,7 +150,15 @@ public sealed class AccountServiceTests
         var httpClient = new HttpClient(new StubHttpMessageHandler()) { BaseAddress = new Uri("http://localhost") };
         var orderApiClient = new OrderApiClient(httpClient);
 
-        return new AccountService(dbContext, tokenFactory, orderApiClient);
+        return new AccountAuthService(dbContext, tokenFactory, orderApiClient);
+    }
+
+    private static AccountCustomerProfileService CreateCustomerProfileService(AccountDbContext dbContext)
+    {
+        var httpClient = new HttpClient(new StubHttpMessageHandler()) { BaseAddress = new Uri("http://localhost") };
+        var orderApiClient = new OrderApiClient(httpClient);
+
+        return new AccountCustomerProfileService(dbContext, orderApiClient);
     }
 
     private static AccountDbContext CreateDbContext()

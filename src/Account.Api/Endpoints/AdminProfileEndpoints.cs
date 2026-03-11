@@ -19,7 +19,7 @@ public static class AdminProfileEndpoints
         return adminGroup;
     }
 
-    private static async Task<IResult> AdminGetMe(HttpContext context, IAccountService service, CancellationToken cancellationToken)
+    private static async Task<IResult> AdminGetMe(HttpContext context, IAccountAdministrationService service, CancellationToken cancellationToken)
     {
         try
         {

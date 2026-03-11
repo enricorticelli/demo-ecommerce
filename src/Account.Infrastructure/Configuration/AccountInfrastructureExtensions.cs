@@ -18,8 +18,10 @@ public static class AccountInfrastructureExtensions
         builder.Services.AddSingleton(options);
         builder.Services.AddDbContext<AccountDbContext>(db => db.UseNpgsql(options.AccountConnectionString));
 
-        builder.Services.AddScoped<IAccountService, AccountService>();
-        builder.Services.AddScoped<AccountService>();
+        builder.Services.AddScoped<IAccountAuthService, AccountAuthService>();
+        builder.Services.AddScoped<IAccountCustomerProfileService, AccountCustomerProfileService>();
+        builder.Services.AddScoped<IAccountAdministrationService, AccountAdministrationService>();
+        builder.Services.AddScoped<IAccountBootstrapService, AccountBootstrapService>();
         builder.Services.AddScoped<TokenFactory>();
 
         builder.Services.AddHttpClient<OrderApiClient>(client =>
@@ -53,7 +55,7 @@ public static class AccountInfrastructureExtensions
         await dbContext.Database.EnsureCreatedAsync();
 
         var options = services.GetRequiredService<AccountTechnicalOptions>();
-        var accountService = services.GetRequiredService<AccountService>();
-        await accountService.EnsureDefaultAdminAsync(options.DefaultAdminUsername, options.DefaultAdminPassword, CancellationToken.None);
+        var bootstrapService = services.GetRequiredService<IAccountBootstrapService>();
+        await bootstrapService.EnsureDefaultAdminAsync(options.DefaultAdminUsername, options.DefaultAdminPassword, CancellationToken.None);
     }
 }

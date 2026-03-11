@@ -23,16 +23,16 @@ public static class AdminUserEndpoints
         return adminGroup;
     }
 
-    private static Task<IResult> AdminLogin(LoginRequest request, IAccountService service, CancellationToken cancellationToken)
+    private static Task<IResult> AdminLogin(LoginRequest request, IAccountAuthService service, CancellationToken cancellationToken)
         => LoginByRealm(request.ToInput(), AccountRealm.Admin, service, cancellationToken);
 
-    private static Task<IResult> AdminRefresh(RefreshTokenRequest request, IAccountService service, CancellationToken cancellationToken)
+    private static Task<IResult> AdminRefresh(RefreshTokenRequest request, IAccountAuthService service, CancellationToken cancellationToken)
         => RefreshByRealm(request, AccountRealm.Admin, service, cancellationToken);
 
-    private static Task<IResult> AdminLogout(LogoutRequest request, IAccountService service, CancellationToken cancellationToken)
+    private static Task<IResult> AdminLogout(LogoutRequest request, IAccountAuthService service, CancellationToken cancellationToken)
         => LogoutByRealm(request, AccountRealm.Admin, service, cancellationToken);
 
-    private static async Task<IResult> LoginByRealm(LoginInput input, string realm, IAccountService service, CancellationToken cancellationToken)
+    private static async Task<IResult> LoginByRealm(LoginInput input, string realm, IAccountAuthService service, CancellationToken cancellationToken)
     {
         try
         {
@@ -45,7 +45,7 @@ public static class AdminUserEndpoints
         }
     }
 
-    private static async Task<IResult> RefreshByRealm(RefreshTokenRequest request, string realm, IAccountService service, CancellationToken cancellationToken)
+    private static async Task<IResult> RefreshByRealm(RefreshTokenRequest request, string realm, IAccountAuthService service, CancellationToken cancellationToken)
     {
         try
         {
@@ -58,7 +58,7 @@ public static class AdminUserEndpoints
         }
     }
 
-    private static async Task<IResult> LogoutByRealm(LogoutRequest request, string realm, IAccountService service, CancellationToken cancellationToken)
+    private static async Task<IResult> LogoutByRealm(LogoutRequest request, string realm, IAccountAuthService service, CancellationToken cancellationToken)
     {
         try
         {
