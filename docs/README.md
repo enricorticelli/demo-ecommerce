@@ -6,6 +6,7 @@ Questa cartella contiene decisioni architetturali, linee guida e documenti di ri
 
 - `agent-guidelines.md`: standard generali di sviluppo.
 - `architecture.md`: vista architetturale target e confini tra bounded context.
+- `authentication.md`: implementazione autenticazione/autorizzazione (store + backoffice).
 - `adr/README.md`: indice Architecture Decision Records.
 - `bounded-contexts/`: responsabilita e confini per ciascun contesto.
 - `guidelines/`: linee guida operative per implementazione incrementale.
