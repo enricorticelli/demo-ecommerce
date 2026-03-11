@@ -71,7 +71,8 @@ export async function revokeSession(refreshToken: string | undefined): Promise<v
 export function setAuthCookie(cookies: CookieStore, login: LoginResponse): void {
   cookies.set(ACCESS_COOKIE_NAME, login.accessToken, {
     path: '/',
-    httpOnly: true,
+    // Access token is used by browser-side admin API calls.
+    httpOnly: false,
     sameSite: 'lax',
     secure: import.meta.env.PROD,
     maxAge: 60 * 60

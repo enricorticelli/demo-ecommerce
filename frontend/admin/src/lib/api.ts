@@ -5,6 +5,8 @@ const gatewayUrl = (): string =>
   ?? (import.meta.env.PUBLIC_GATEWAY_URL as string | undefined)
   ?? 'http://localhost:18080';
 
+const ACCESS_COOKIE_NAME = 'bo_access_token';
+
 const defaultRequestTimeoutMs = Number(
   (typeof window !== 'undefined'
     ? (import.meta.env.PUBLIC_API_TIMEOUT_MS as string | undefined)
@@ -366,7 +368,11 @@ async function fetchWithTimeout(url: string, init?: RequestInit): Promise<Respon
     const timerId = globalThis.setTimeout(() => controller.abort(), requestTimeoutMs);
 
     try {
-      return await fetch(url, { ...init, signal: controller.signal });
+      return await fetch(url, {
+        ...init,
+        headers: withAdminAuthorization(init?.headers),
+        signal: controller.signal
+      });
     } catch (error) {
       const isTimeout = error instanceof DOMException && error.name === 'AbortError';
 
@@ -385,4 +391,40 @@ async function fetchWithTimeout(url: string, init?: RequestInit): Promise<Respon
   }
 
   throw new Error(`Request timeout after ${requestTimeoutMs}ms`);
+}
+
+function withAdminAuthorization(headers?: HeadersInit): Headers {
+  const output = new Headers(headers ?? {});
+  const token = getAccessTokenFromCookie();
+  if (token && !output.has('Authorization')) {
+    output.set('Authorization', `Bearer ${token}`);
+  }
+
+  return output;
+}
+
+function getAccessTokenFromCookie(): string | null {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  const cookie = document.cookie
+    .split(';')
+    .map((x) => x.trim())
+    .find((x) => x.startsWith(`${ACCESS_COOKIE_NAME}=`));
+
+  if (!cookie) {
+    return null;
+  }
+
+  const raw = cookie.slice(ACCESS_COOKIE_NAME.length + 1);
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
 }
