@@ -1,0 +1,8 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import AdminCustomersPage from '../components/AdminCustomersPage.svelte';
+---
+
+<MainLayout title="Clienti">
+  <AdminCustomersPage client:load />
+</MainLayout>

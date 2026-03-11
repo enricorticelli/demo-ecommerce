@@ -42,6 +42,28 @@ public static class AccountResponseMapper
             address.IsDefaultBilling);
     }
 
+    public static AdminCustomerResponse ToResponse(this AccountCustomerAdminModel customer)
+    {
+        return new AdminCustomerResponse(
+            customer.Id,
+            customer.Username,
+            customer.Email,
+            customer.IsEmailVerified,
+            customer.FirstName ?? string.Empty,
+            customer.LastName ?? string.Empty,
+            customer.Phone ?? string.Empty,
+            customer.CreatedAtUtc.ToString("O"));
+    }
+
+    public static AdminAccountUserResponse ToResponse(this AccountAdminUserModel admin)
+    {
+        return new AdminAccountUserResponse(
+            admin.Id,
+            admin.Username,
+            admin.Email,
+            admin.CreatedAtUtc.ToString("O"));
+    }
+
     public static OrderSummaryResponse ToResponse(this OrderSummary order)
     {
         return new OrderSummaryResponse(

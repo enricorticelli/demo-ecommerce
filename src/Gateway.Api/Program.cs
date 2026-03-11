@@ -91,7 +91,15 @@ var routes = new List<RouteConfig>
     CreateContextRoute("admin-account-refresh-route", "account-cluster", "admin", "account", "/api/admin/account/v1/users/refresh", "POST"),
     CreateContextRoute("admin-account-logout-route", "account-cluster", "admin", "account", "/api/admin/account/v1/users/logout", "POST"),
     CreateContextRoute("admin-account-me-route", "account-cluster", "admin", "account", "/api/admin/account/v1/me", "GET"),
-    CreateContextRoute("admin-account-permissions-route", "account-cluster", "admin", "account", "/api/admin/account/v1/me/permissions", "GET")
+    CreateContextRoute("admin-account-permissions-route", "account-cluster", "admin", "account", "/api/admin/account/v1/me/permissions", "GET"),
+    CreateContextRoute("admin-account-admins-collection-route", "account-cluster", "admin", "account", "/api/admin/account/v1/admins", "GET", "POST"),
+    CreateContextRoute("admin-account-admins-item-route", "account-cluster", "admin", "account", "/api/admin/account/v1/admins/{adminUserId}", "DELETE"),
+    CreateContextRoute("admin-account-admins-password-reset-route", "account-cluster", "admin", "account", "/api/admin/account/v1/admins/{adminUserId}/password/reset", "POST"),
+    CreateContextRoute("admin-account-customers-collection-route", "account-cluster", "admin", "account", "/api/admin/account/v1/customers", "GET"),
+    CreateContextRoute("admin-account-customers-item-route", "account-cluster", "admin", "account", "/api/admin/account/v1/customers/{customerId}", "GET", "PUT"),
+    CreateContextRoute("admin-account-customers-password-reset-route", "account-cluster", "admin", "account", "/api/admin/account/v1/customers/{customerId}/password/reset", "POST"),
+    CreateContextRoute("admin-account-customers-addresses-collection-route", "account-cluster", "admin", "account", "/api/admin/account/v1/customers/{customerId}/addresses", "GET", "POST"),
+    CreateContextRoute("admin-account-customers-addresses-item-route", "account-cluster", "admin", "account", "/api/admin/account/v1/customers/{customerId}/addresses/{addressId}", "PUT", "DELETE")
 };
 
 var clusters = new List<ClusterConfig>

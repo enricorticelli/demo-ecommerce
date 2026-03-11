@@ -14,6 +14,8 @@ public static class AccountEndpoints
 
         adminGroup.MapAdminUserEndpoints();
         adminGroup.MapAdminProfileEndpoints();
+        adminGroup.MapAdminAdminEndpoints();
+        adminGroup.MapAdminCustomerEndpoints();
 
         return app;
     }

@@ -322,6 +322,230 @@ public sealed class AccountService(AccountDbContext dbContext, TokenFactory toke
         return ToUserModel(ToDomain(user));
     }
 
+    public async Task<IReadOnlyList<AccountAdminUserModel>> ListAdminsAsync(int limit, int offset, string? searchTerm, CancellationToken cancellationToken)
+    {
+        var query = dbContext.Users
+            .Where(x => x.Realm == AccountRealm.Admin)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var token = searchTerm.Trim().ToLowerInvariant();
+            query = query.Where(x =>
+                x.Username.ToLower().Contains(token) ||
+                x.Email.ToLower().Contains(token));
+        }
+
+        var admins = await query
+            .OrderBy(x => x.Username)
+            .Skip(offset)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+
+        return admins.Select(ToAdminUserModel).ToArray();
+    }
+
+    public async Task<AccountAdminUserModel> CreateAdminByAdminAsync(CreateAdminInput request, CancellationToken cancellationToken)
+    {
+        var normalized = NormalizeEmail(request.Username);
+        var exists = await dbContext.Users.AnyAsync(x => x.Realm == AccountRealm.Admin && x.Username == normalized, cancellationToken);
+        if (exists)
+        {
+            throw new ConflictAppException("Admin username already exists.");
+        }
+
+        ValidatePassword(request.Password);
+
+        var domainAdmin = AccountUser.CreateAdmin(normalized, PasswordHasher.HashPassword(request.Password));
+        dbContext.Users.Add(ToEntity(domainAdmin));
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return ToAdminUserModel(ToEntity(domainAdmin));
+    }
+
+    public async Task SetAdminPasswordByAdminAsync(Guid adminUserId, string newPassword, CancellationToken cancellationToken)
+    {
+        ValidatePassword(newPassword);
+
+        var userEntity = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == adminUserId && x.Realm == AccountRealm.Admin, cancellationToken)
+            ?? throw new NotFoundAppException("Admin account not found.");
+
+        var domainUser = ToDomain(userEntity);
+        domainUser.ChangePasswordHash(PasswordHasher.HashPassword(newPassword));
+        ApplyDomain(domainUser, userEntity);
+
+        var activeSessions = await dbContext.RefreshSessions
+            .Where(x => x.UserId == adminUserId && x.RevokedAtUtc == null)
+            .ToListAsync(cancellationToken);
+
+        foreach (var session in activeSessions)
+        {
+            session.RevokedAtUtc = DateTimeOffset.UtcNow;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task DeleteAdminByAdminAsync(Guid actingAdminUserId, Guid adminUserId, CancellationToken cancellationToken)
+    {
+        if (actingAdminUserId == adminUserId)
+        {
+            throw new ValidationAppException("You cannot delete your own admin account.");
+        }
+
+        var adminToDelete = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == adminUserId && x.Realm == AccountRealm.Admin, cancellationToken)
+            ?? throw new NotFoundAppException("Admin account not found.");
+
+        var adminCount = await dbContext.Users.CountAsync(x => x.Realm == AccountRealm.Admin, cancellationToken);
+        if (adminCount <= 1)
+        {
+            throw new ValidationAppException("Cannot delete the last admin account.");
+        }
+
+        var sessions = await dbContext.RefreshSessions
+            .Where(x => x.UserId == adminUserId)
+            .ToListAsync(cancellationToken);
+
+        dbContext.RefreshSessions.RemoveRange(sessions);
+        dbContext.Users.Remove(adminToDelete);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<AccountCustomerAdminModel>> ListCustomersAsync(int limit, int offset, string? searchTerm, CancellationToken cancellationToken)
+    {
+        var query = dbContext.Users
+            .Where(x => x.Realm == AccountRealm.Customer)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var token = searchTerm.Trim().ToLowerInvariant();
+            query = query.Where(x =>
+                x.Email.ToLower().Contains(token) ||
+                x.Username.ToLower().Contains(token) ||
+                x.FirstName.ToLower().Contains(token) ||
+                x.LastName.ToLower().Contains(token) ||
+                x.Phone.ToLower().Contains(token));
+        }
+
+        var customers = await query
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .Skip(offset)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+
+        return customers.Select(ToAdminCustomerModel).ToArray();
+    }
+
+    public async Task<AccountCustomerAdminModel> GetCustomerAsync(Guid customerId, CancellationToken cancellationToken)
+    {
+        var customer = await EnsureCustomerEntityAsync(customerId, cancellationToken);
+        return ToAdminCustomerModel(customer);
+    }
+
+    public async Task<AccountCustomerAdminModel> UpdateCustomerByAdminAsync(Guid customerId, UpdateProfileInput request, CancellationToken cancellationToken)
+    {
+        var userEntity = await EnsureCustomerEntityAsync(customerId, cancellationToken);
+        var domainUser = ToDomain(userEntity);
+        domainUser.UpdateProfile(request.FirstName, request.LastName, request.Phone);
+        ApplyDomain(domainUser, userEntity);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return ToAdminCustomerModel(userEntity);
+    }
+
+    public async Task SetCustomerPasswordByAdminAsync(Guid customerId, string newPassword, CancellationToken cancellationToken)
+    {
+        ValidatePassword(newPassword);
+
+        var userEntity = await EnsureCustomerEntityAsync(customerId, cancellationToken);
+        var domainUser = ToDomain(userEntity);
+        domainUser.ChangePasswordHash(PasswordHasher.HashPassword(newPassword));
+        ApplyDomain(domainUser, userEntity);
+
+        var activeSessions = await dbContext.RefreshSessions
+            .Where(x => x.UserId == customerId && x.RevokedAtUtc == null)
+            .ToListAsync(cancellationToken);
+
+        foreach (var session in activeSessions)
+        {
+            session.RevokedAtUtc = DateTimeOffset.UtcNow;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<AccountAddressModel>> ListCustomerAddressesByAdminAsync(Guid customerId, CancellationToken cancellationToken)
+    {
+        await EnsureCustomerAsync(customerId, cancellationToken);
+        var addresses = await dbContext.Addresses
+            .Where(x => x.UserId == customerId)
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .ToArrayAsync(cancellationToken);
+
+        return addresses.Select(ToDomain).Select(ToAddressModel).ToArray();
+    }
+
+    public async Task<AccountAddressModel> CreateCustomerAddressByAdminAsync(Guid customerId, UpsertAddressInput request, CancellationToken cancellationToken)
+    {
+        await EnsureCustomerAsync(customerId, cancellationToken);
+
+        var domainAddress = AccountAddress.Create(
+            customerId,
+            request.Label,
+            request.Street,
+            request.City,
+            request.PostalCode,
+            request.Country,
+            request.IsDefaultShipping,
+            request.IsDefaultBilling);
+
+        dbContext.Addresses.Add(ToEntity(domainAddress));
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return ToAddressModel(domainAddress);
+    }
+
+    public async Task<AccountAddressModel> UpdateCustomerAddressByAdminAsync(Guid customerId, Guid addressId, UpsertAddressInput request, CancellationToken cancellationToken)
+    {
+        await EnsureCustomerAsync(customerId, cancellationToken);
+
+        var addressEntity = await dbContext.Addresses.FirstOrDefaultAsync(
+            x => x.Id == addressId && x.UserId == customerId,
+            cancellationToken)
+            ?? throw new NotFoundAppException("Address not found.");
+
+        var domainAddress = ToDomain(addressEntity);
+        domainAddress.Update(
+            request.Label,
+            request.Street,
+            request.City,
+            request.PostalCode,
+            request.Country,
+            request.IsDefaultShipping,
+            request.IsDefaultBilling);
+
+        ApplyDomain(domainAddress, addressEntity);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return ToAddressModel(domainAddress);
+    }
+
+    public async Task DeleteCustomerAddressByAdminAsync(Guid customerId, Guid addressId, CancellationToken cancellationToken)
+    {
+        await EnsureCustomerAsync(customerId, cancellationToken);
+
+        var address = await dbContext.Addresses.FirstOrDefaultAsync(
+            x => x.Id == addressId && x.UserId == customerId,
+            cancellationToken);
+
+        if (address is null)
+        {
+            return;
+        }
+
+        dbContext.Remove(address);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public static string[] GetPermissionsForRealm(string realm)
     {
         return realm == AccountRealm.Admin ? AdminPermissions : CustomerPermissions;
@@ -396,6 +620,12 @@ public sealed class AccountService(AccountDbContext dbContext, TokenFactory toke
         {
             throw new NotFoundAppException("Customer profile not found.");
         }
+    }
+
+    private async Task<AccountUserEntity> EnsureCustomerEntityAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        return await dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId && x.Realm == AccountRealm.Customer, cancellationToken)
+            ?? throw new NotFoundAppException("Customer profile not found.");
     }
 
     private static string NormalizeEmail(string value)
@@ -531,5 +761,27 @@ public sealed class AccountService(AccountDbContext dbContext, TokenFactory toke
             address.Country,
             address.IsDefaultShipping,
             address.IsDefaultBilling);
+    }
+
+    private static AccountCustomerAdminModel ToAdminCustomerModel(AccountUserEntity user)
+    {
+        return new AccountCustomerAdminModel(
+            user.Id,
+            user.Username,
+            user.Email,
+            user.IsEmailVerified,
+            user.FirstName,
+            user.LastName,
+            user.Phone,
+            user.CreatedAtUtc);
+    }
+
+    private static AccountAdminUserModel ToAdminUserModel(AccountUserEntity user)
+    {
+        return new AccountAdminUserModel(
+            user.Id,
+            user.Username,
+            user.Email,
+            user.CreatedAtUtc);
     }
 }

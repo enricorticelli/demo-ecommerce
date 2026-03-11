@@ -115,6 +115,35 @@ export type ShipmentView = {
   deliveredAtUtc: string | null;
 };
 
+export type AdminCustomer = {
+  id: string;
+  username: string;
+  email: string;
+  isEmailVerified: boolean;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  createdAtUtc: string;
+};
+
+export type AdminAccountUser = {
+  id: string;
+  username: string;
+  email: string;
+  createdAtUtc: string;
+};
+
+export type AdminCustomerAddress = {
+  id: string;
+  label: string;
+  street: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  isDefaultShipping: boolean;
+  isDefaultBilling: boolean;
+};
+
 export type PaginationParams = {
   limit?: number;
   offset?: number;
@@ -279,6 +308,99 @@ export async function updateShipmentStatus(shipmentId: string, status: ShipmentV
 
 export async function upsertStock(payload: { productId: string; sku: string; availableQuantity: number }): Promise<void> {
   await postJson(`${gatewayUrl()}/api/admin/warehouse/v1/stock`, payload);
+}
+
+export async function fetchCustomers(limit = 20, offset = 0, searchTerm = ''): Promise<AdminCustomer[]> {
+  const query = new URLSearchParams({
+    limit: String(Math.max(1, limit)),
+    offset: String(Math.max(0, offset))
+  });
+
+  const normalizedSearch = searchTerm.trim();
+  if (normalizedSearch)
+  {
+    query.set('searchTerm', normalizedSearch);
+  }
+
+  return fetchJson(`${gatewayUrl()}/api/admin/account/v1/customers?${query.toString()}`);
+}
+
+export async function fetchCustomer(customerId: string): Promise<AdminCustomer> {
+  return fetchJson(`${gatewayUrl()}/api/admin/account/v1/customers/${customerId}`);
+}
+
+export async function updateCustomer(customerId: string, payload: { firstName: string; lastName: string; phone: string }): Promise<AdminCustomer> {
+  return putJson(`${gatewayUrl()}/api/admin/account/v1/customers/${customerId}`, payload);
+}
+
+export async function resetCustomerPassword(customerId: string, newPassword: string): Promise<void> {
+  const response = await fetchWithTimeout(`${gatewayUrl()}/api/admin/account/v1/customers/${customerId}/password/reset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ newPassword })
+  });
+
+  if (!response.ok) {
+    throw new Error(await getApiErrorMessage(response, 'POST'));
+  }
+}
+
+export async function fetchCustomerAddresses(customerId: string): Promise<AdminCustomerAddress[]> {
+  return fetchJson(`${gatewayUrl()}/api/admin/account/v1/customers/${customerId}/addresses`);
+}
+
+export async function createCustomerAddress(
+  customerId: string,
+  payload: Omit<AdminCustomerAddress, 'id'>
+): Promise<AdminCustomerAddress> {
+  return postJson(`${gatewayUrl()}/api/admin/account/v1/customers/${customerId}/addresses`, payload);
+}
+
+export async function updateCustomerAddress(
+  customerId: string,
+  addressId: string,
+  payload: Omit<AdminCustomerAddress, 'id'>
+): Promise<AdminCustomerAddress> {
+  return putJson(`${gatewayUrl()}/api/admin/account/v1/customers/${customerId}/addresses/${addressId}`, payload);
+}
+
+export async function deleteCustomerAddress(customerId: string, addressId: string): Promise<void> {
+  await deleteJson(`${gatewayUrl()}/api/admin/account/v1/customers/${customerId}/addresses/${addressId}`);
+}
+
+export async function fetchAdminUsers(limit = 20, offset = 0, searchTerm = ''): Promise<AdminAccountUser[]> {
+  const query = new URLSearchParams({
+    limit: String(Math.max(1, limit)),
+    offset: String(Math.max(0, offset))
+  });
+
+  const normalizedSearch = searchTerm.trim();
+  if (normalizedSearch)
+  {
+    query.set('searchTerm', normalizedSearch);
+  }
+
+  return fetchJson(`${gatewayUrl()}/api/admin/account/v1/admins?${query.toString()}`);
+}
+
+export async function createAdminUser(payload: { username: string; password: string }): Promise<AdminAccountUser> {
+  return postJson(`${gatewayUrl()}/api/admin/account/v1/admins`, payload);
+}
+
+export async function resetAdminUserPassword(adminUserId: string, newPassword: string): Promise<void> {
+  const response = await fetchWithTimeout(`${gatewayUrl()}/api/admin/account/v1/admins/${adminUserId}/password/reset`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ newPassword })
+  });
+
+  if (!response.ok) {
+    throw new Error(await getApiErrorMessage(response, 'POST'));
+  }
+}
+
+export async function deleteAdminUser(adminUserId: string): Promise<void> {
+  await deleteJson(`${gatewayUrl()}/api/admin/account/v1/admins/${adminUserId}`);
 }
 
 async function fetchJson<T>(url: string): Promise<T> {

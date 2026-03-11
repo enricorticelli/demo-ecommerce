@@ -32,4 +32,7 @@ public static class AccountRequestMapper
             request.Country,
             request.IsDefaultShipping,
             request.IsDefaultBilling);
+
+    public static CreateAdminInput ToInput(this AdminCreateAdminUserRequest request)
+        => new(request.Username, request.Password);
 }
