@@ -11,5 +11,5 @@ public interface IAccountCustomerProfileService
     Task<AccountAddressModel> CreateAddressAsync(Guid userId, UpsertAddressInput request, CancellationToken cancellationToken);
     Task<AccountAddressModel> UpdateAddressAsync(Guid userId, Guid addressId, UpsertAddressInput request, CancellationToken cancellationToken);
     Task DeleteAddressAsync(Guid userId, Guid addressId, CancellationToken cancellationToken);
-    Task<IReadOnlyList<OrderSummary>> ListMyOrdersAsync(Guid userId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<OrderSummary>> ListMyOrdersAsync(Guid userId, string accessToken, CancellationToken cancellationToken);
 }

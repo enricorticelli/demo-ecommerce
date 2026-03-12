@@ -2,26 +2,50 @@ using Order.Api.Contracts.Requests;
 using Order.Api.Contracts.Responses;
 using Order.Application.Commands;
 using Order.Application.Views;
+using Shared.BuildingBlocks.Exceptions;
 
 namespace Order.Api.Mappers;
 
 public static class OrderMapper
 {
-	public static CreateOrderCommand ToCreateCommand(this CreateOrderRequest request, string correlationId)
+	public static CreateOrderCommand ToCreateCommand(this CreateOrderRequest request, Guid? authenticatedUserId, string correlationId)
 	{
 		var customer = request.Customer ?? new OrderCustomerRequest(string.Empty, string.Empty, string.Empty, string.Empty);
 		var shippingAddress = request.ShippingAddress ?? new OrderAddressRequest(string.Empty, string.Empty, string.Empty, string.Empty);
 		var billingAddress = request.BillingAddress ?? new OrderAddressRequest(string.Empty, string.Empty, string.Empty, string.Empty);
 
+		if (authenticatedUserId.HasValue)
+		{
+			return new CreateOrderCommand(
+				request.CartId,
+				authenticatedUserId.Value,
+				"Authenticated",
+				request.PaymentMethod,
+				request.Items.Select(x => new CreateOrderItemCommand(x.ProductId, x.Sku, x.Name, x.Quantity, x.UnitPrice)).ToArray(),
+				request.TotalAmount,
+				authenticatedUserId.Value,
+				null,
+				new CreateOrderCustomerCommand(customer.FirstName, customer.LastName, customer.Email, customer.Phone),
+				new CreateOrderAddressCommand(shippingAddress.Street, shippingAddress.City, shippingAddress.PostalCode, shippingAddress.Country),
+				new CreateOrderAddressCommand(billingAddress.Street, billingAddress.City, billingAddress.PostalCode, billingAddress.Country),
+				correlationId);
+		}
+
+		var anonymousId = request.AnonymousId ?? request.UserId;
+		if (anonymousId == Guid.Empty)
+		{
+			throw new ValidationAppException("Anonymous checkout requires an anonymous id.");
+		}
+
 		return new CreateOrderCommand(
 			request.CartId,
-			request.UserId,
-			request.IdentityType,
+			anonymousId,
+			"Anonymous",
 			request.PaymentMethod,
 			request.Items.Select(x => new CreateOrderItemCommand(x.ProductId, x.Sku, x.Name, x.Quantity, x.UnitPrice)).ToArray(),
 			request.TotalAmount,
-			request.AuthenticatedUserId,
-			request.AnonymousId,
+			null,
+			anonymousId,
 			new CreateOrderCustomerCommand(customer.FirstName, customer.LastName, customer.Email, customer.Phone),
 			new CreateOrderAddressCommand(shippingAddress.Street, shippingAddress.City, shippingAddress.PostalCode, shippingAddress.Country),
 			new CreateOrderAddressCommand(billingAddress.Street, billingAddress.City, billingAddress.PostalCode, billingAddress.Country),

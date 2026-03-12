@@ -21,6 +21,14 @@ public static class ExceptionHttpResultMapper
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Validation failed",
                 detail: exception.Message),
+            ForbiddenAppException => Results.Problem(
+                statusCode: StatusCodes.Status403Forbidden,
+                title: "Forbidden",
+                detail: exception.Message),
+            UnauthorizedAccessException => Results.Problem(
+                statusCode: StatusCodes.Status401Unauthorized,
+                title: "Unauthorized",
+                detail: exception.Message),
             _ => Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "Unexpected error",

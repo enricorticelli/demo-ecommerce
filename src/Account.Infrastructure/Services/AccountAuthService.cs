@@ -2,6 +2,7 @@ using Account.Application.Abstractions.Services;
 using Account.Application.Inputs;
 using Account.Application.Models;
 using Account.Domain.Entities;
+using Account.Infrastructure.Configuration;
 using Account.Infrastructure.Mappers;
 using Account.Infrastructure.Persistence;
 using Account.Infrastructure.Persistence.Entities;
@@ -11,7 +12,7 @@ using Shared.BuildingBlocks.Helpers;
 
 namespace Account.Infrastructure.Services;
 
-public sealed class AccountAuthService(AccountDbContext dbContext, TokenFactory tokenFactory, OrderApiClient orderApiClient) : IAccountAuthService
+public sealed class AccountAuthService(AccountDbContext dbContext, TokenFactory tokenFactory, OrderApiClient orderApiClient, AccountTechnicalOptions options) : IAccountAuthService
 {
     private static readonly string[] CustomerPermissions = ["account:read", "account:write", "orders:read"];
     private static readonly string[] AdminPermissions = ["catalog:read", "catalog:write", "orders:read", "shipping:read", "shipping:write"];
@@ -55,12 +56,14 @@ public sealed class AccountAuthService(AccountDbContext dbContext, TokenFactory 
             throw new ValidationAppException("Invalid credentials.");
         }
 
+        var tokens = await IssueTokensAsync(userEntity, realm, cancellationToken);
+
         if (realm == AccountRealm.Customer && domainUser.IsEmailVerified)
         {
-            await orderApiClient.ClaimGuestOrdersAsync(domainUser.Id, domainUser.Email, cancellationToken);
+            await orderApiClient.ClaimGuestOrdersAsync(tokens.AccessToken, domainUser.Email, cancellationToken);
         }
 
-        return await IssueTokensAsync(userEntity, realm, cancellationToken);
+        return tokens;
     }
 
     public async Task<AuthTokenResult> RefreshAsync(string realm, string refreshToken, CancellationToken cancellationToken)
@@ -158,7 +161,12 @@ public sealed class AccountAuthService(AccountDbContext dbContext, TokenFactory 
         domainUser.VerifyEmail();
         AccountUserEntityMapper.ApplyDomain(domainUser, userEntity);
 
-        await orderApiClient.ClaimGuestOrdersAsync(domainUser.Id, domainUser.Email, cancellationToken);
+        await orderApiClient.ClaimGuestOrdersInternalAsync(
+            domainUser.Id,
+            domainUser.Email,
+            options.OrderInternalApiKey,
+            cancellationToken);
+
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 

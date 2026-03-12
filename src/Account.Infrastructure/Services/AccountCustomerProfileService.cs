@@ -94,9 +94,9 @@ public sealed class AccountCustomerProfileService(AccountDbContext dbContext, Or
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public Task<IReadOnlyList<OrderSummary>> ListMyOrdersAsync(Guid userId, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<OrderSummary>> ListMyOrdersAsync(Guid userId, string accessToken, CancellationToken cancellationToken)
     {
-        return orderApiClient.ListByAuthenticatedUserAsync(userId, cancellationToken);
+        return orderApiClient.ListByAuthenticatedUserAsync(accessToken, cancellationToken);
     }
 
     private async Task EnsureCustomerAsync(Guid userId, CancellationToken cancellationToken)

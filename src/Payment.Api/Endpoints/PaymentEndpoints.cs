@@ -4,7 +4,10 @@ using Payment.Api.Mappers;
 using Payment.Application.Abstractions.Queries;
 using Payment.Application.Abstractions.Services;
 using Payment.Application.Services;
+using Payment.Application.Views;
+using Shared.BuildingBlocks.Api;
 using Shared.BuildingBlocks.Api.Correlation;
+using Shared.BuildingBlocks.Exceptions;
 using System.Text;
 
 namespace Payment.Api.Endpoints;
@@ -13,46 +16,61 @@ public static class PaymentEndpoints
 {
     public static RouteGroupBuilder MapPaymentEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup(PaymentRoutes.StoreBase)
+        var storeGroup = app.MapGroup(PaymentRoutes.StoreBase)
             .WithTags("Payment");
 
-        group.MapGet("/sessions/orders/{orderId:guid}", GetPaymentSessionByOrderId)
+        storeGroup.MapGet("/sessions/orders/{orderId:guid}", GetPaymentSessionByOrderId)
             .WithName("StoreGetPaymentSessionByOrderId");
-        group.MapGet("/sessions/{sessionId:guid}", GetPaymentSessionById)
+        storeGroup.MapGet("/sessions/{sessionId:guid}", GetPaymentSessionById)
             .WithName("StoreGetPaymentSessionById");
-        group.MapPost("/webhooks/stripe", ProcessStripeWebhook)
+
+        var webhookGroup = app.MapGroup(PaymentRoutes.StoreBase)
+            .WithTags("Payment");
+
+        webhookGroup.MapPost("/webhooks/stripe", ProcessStripeWebhook)
+            .AllowAnonymous()
             .WithName("StoreProcessStripeWebhook");
-        group.MapPost("/webhooks/paypal", ProcessPayPalWebhook)
+        webhookGroup.MapPost("/webhooks/paypal", ProcessPayPalWebhook)
+            .AllowAnonymous()
             .WithName("StoreProcessPayPalWebhook");
-        group.MapPost("/webhooks/satispay", ProcessSatispayWebhook)
+        webhookGroup.MapPost("/webhooks/satispay", ProcessSatispayWebhook)
+            .AllowAnonymous()
             .WithName("StoreProcessSatispayWebhook");
-        return group;
+        return storeGroup;
     }
 
     private static async Task<IResult> GetPaymentSessionByOrderId(
+        HttpContext context,
         Guid orderId,
         IPaymentQueryService queryService,
         CancellationToken cancellationToken)
     {
+        var actorUserId = context.ResolveActorId();
         var session = await queryService.GetOrCreateByOrderIdAsync(orderId, cancellationToken);
         if (session is null)
         {
             return Results.NotFound();
         }
 
+        EnsurePaymentOwnership(session, actorUserId);
+
         return Results.Ok(PaymentMapper.ToResponse(session));
     }
 
     private static async Task<IResult> GetPaymentSessionById(
+        HttpContext context,
         Guid sessionId,
         IPaymentQueryService queryService,
         CancellationToken cancellationToken)
     {
+        var actorUserId = context.ResolveActorId();
         var session = await queryService.GetBySessionIdAsync(sessionId, cancellationToken);
         if (session is null)
         {
             return Results.NotFound();
         }
+
+        EnsurePaymentOwnership(session, actorUserId);
 
         return Results.Ok(PaymentMapper.ToResponse(session));
     }
@@ -123,5 +141,13 @@ public static class PaymentEndpoints
         }
 
         return Results.Ok(new PaymentWebhookResponse(providerCode, result.Status.ToString(), result.Message));
+    }
+
+    private static void EnsurePaymentOwnership(PaymentSessionView session, Guid authenticatedUserId)
+    {
+        if (session.UserId != authenticatedUserId)
+        {
+            throw new ForbiddenAppException("The payment session does not belong to the authenticated user.");
+        }
     }
 }

@@ -3,7 +3,7 @@
   import { fetchOrder, fetchShipmentByOrder, manualCancelOrder, type OrderView, type ShipmentView } from '../lib/api';
   import { getProductImage } from '../lib/catalog-presenter';
   import { formatCurrency } from '../lib/format';
-  import { cartId, startNewCart } from '../stores/cart';
+  import { cartId, startNewCart, userId } from '../stores/cart';
 
   export let orderId: string;
 
@@ -135,9 +135,9 @@
     cancelSuccess = '';
 
     try {
-      await manualCancelOrder(order.id, 'Cancelled by customer from storefront');
-      order = await fetchOrder(orderId);
-      shipment = await fetchShipmentByOrder(orderId);
+      await manualCancelOrder(order.id, 'Cancelled by customer from storefront', { anonymousId: $userId });
+      order = await fetchOrder(orderId, { anonymousId: $userId });
+      shipment = await fetchShipmentByOrder(orderId, { anonymousId: $userId });
       cancelSuccess = 'Richiesta di annullamento inviata correttamente.';
     } catch (err) {
       cancelError = err instanceof Error ? err.message : 'Annullamento non riuscito. Riprova.';
@@ -149,11 +149,11 @@
   async function poll() {
     while (pollingActive) {
       try {
-        order = await fetchOrder(orderId);
+        order = await fetchOrder(orderId, { anonymousId: $userId });
         if (order.status === 'Completed' && order.cartId === cartId.get()) {
           startNewCart();
         }
-        shipment = await fetchShipmentByOrder(orderId);
+        shipment = await fetchShipmentByOrder(orderId, { anonymousId: $userId });
         if (!shouldContinuePolling()) {
           pollingActive = false;
           break;
@@ -174,11 +174,11 @@
     isLoading = true;
 
     try {
-      order = await fetchOrder(orderId);
+      order = await fetchOrder(orderId, { anonymousId: $userId });
       if (order.status === 'Completed' && order.cartId === cartId.get()) {
         startNewCart();
       }
-      shipment = await fetchShipmentByOrder(orderId);
+      shipment = await fetchShipmentByOrder(orderId, { anonymousId: $userId });
       isLoading = false;
       if (shouldContinuePolling()) await poll();
     } catch (err) {

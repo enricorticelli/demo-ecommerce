@@ -13,6 +13,7 @@ public sealed class AccountTechnicalOptions
     public string AdminIssuer { get; init; } = "account-admin";
     public string AdminAudience { get; init; } = "backoffice";
     public string OrderApiBaseUrl { get; init; } = "http://order-api:8080";
+    public string OrderInternalApiKey { get; init; } = "dev-order-internal-key-change-me";
     public string DefaultAdminUsername { get; init; } = "admin";
     public string DefaultAdminPassword { get; init; } = "admin";
 
@@ -29,6 +30,7 @@ public sealed class AccountTechnicalOptions
             AdminIssuer = configuration["Account:Jwt:AdminIssuer"] ?? "account-admin",
             AdminAudience = configuration["Account:Jwt:AdminAudience"] ?? "backoffice",
             OrderApiBaseUrl = configuration["Account:OrderApiBaseUrl"] ?? "http://order-api:8080",
+            OrderInternalApiKey = configuration["Account:OrderInternalApiKey"] ?? "dev-order-internal-key-change-me",
             DefaultAdminUsername = configuration["Account:Admin:Username"] ?? "admin",
             DefaultAdminPassword = configuration["Account:Admin:Password"] ?? "admin"
         };

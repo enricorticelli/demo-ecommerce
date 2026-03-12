@@ -71,15 +71,14 @@
     addedToCart = false;
 
     try {
-      await addCartItem($cartId, {
-        userId: $userId,
+      await addCartItem($cartId, $userId, {
         productId: product.id,
         sku: product.sku,
         name: product.name,
         quantity,
         unitPrice: product.price,
       });
-      const cart = await fetchCart($cartId);
+      const cart = await fetchCart($cartId, $userId);
       if (cart) syncCartFromServer(cart.items);
       addToast(`${product.name} aggiunto al carrello`, 'success');
       addedToCart = true;

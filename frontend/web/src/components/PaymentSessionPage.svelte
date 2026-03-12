@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { fetchOrder, getPaymentSessionById, type OrderView, type PaymentSession } from '../lib/api';
   import { formatCurrency } from '../lib/format';
+  import { userId } from '../stores/cart';
 
   export let sessionId: string;
   export let orderId: string;
@@ -20,11 +21,11 @@
     error = '';
 
     try {
-      session = await getPaymentSessionById(sessionId);
+      session = await getPaymentSessionById(sessionId, { anonymousId: $userId });
       if (!session) {
         error = 'Sessione pagamento non trovata.';
       } else {
-        order = await fetchOrder(session.orderId).catch(() => null);
+        order = await fetchOrder(session.orderId, { anonymousId: $userId }).catch(() => null);
       }
     } catch (err) {
       error = err instanceof Error ? err.message : 'Errore nel caricamento sessione pagamento.';

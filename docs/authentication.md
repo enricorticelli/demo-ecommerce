@@ -23,7 +23,7 @@ Componenti principali:
 - Frontend Store (`frontend/web`): usa token in `localStorage`.
 - Frontend Backoffice (`frontend/admin`): usa cookie (`bo_access_token`, `bo_refresh_token`) e middleware Astro.
 
-## Modello di identita
+## Modello di identità
 
 ### Realm
 
@@ -31,7 +31,7 @@ Il sistema usa due realm separati:
 - `customer`
 - `admin`
 
-Il realm e salvato:
+Il realm è salvato:
 - nel claim JWT `realm`
 - nella tabella `users`
 - nella tabella `refresh_sessions`
@@ -118,60 +118,6 @@ Nota:
 - oggi le policy usano solo `realm`.
 - le `permission` sono incluse nel token e disponibili via endpoint `/me/permissions`, ma non ancora usate in policy granulari endpoint-by-endpoint.
 
-## Endpoint Account (versione v1)
-
-Base path interni (Account.Api):
-- Store: `/store/v1`
-- Admin: `/admin/v1`
-
-Esposti esternamente via Gateway:
-- `/api/store/account/v1/...`
-- `/api/admin/account/v1/...`
-
-### Store auth
-
-- `POST /api/store/account/v1/users/register`
-- `POST /api/store/account/v1/users/login`
-- `POST /api/store/account/v1/users/refresh`
-- `POST /api/store/account/v1/users/logout`
-- `POST /api/store/account/v1/users/verify-email`
-- `POST /api/store/account/v1/users/forgot-password`
-- `POST /api/store/account/v1/users/reset-password`
-- `POST /api/store/account/v1/users/resend-verification`
-
-### Store profilo (protetti)
-
-- `GET /api/store/account/v1/me`
-- `PUT /api/store/account/v1/me`
-- `GET /api/store/account/v1/me/addresses`
-- `POST /api/store/account/v1/me/addresses`
-- `PUT /api/store/account/v1/me/addresses/{addressId}`
-- `DELETE /api/store/account/v1/me/addresses/{addressId}`
-- `GET /api/store/account/v1/me/orders`
-
-### Admin auth
-
-- `POST /api/admin/account/v1/users/login`
-- `POST /api/admin/account/v1/users/refresh`
-- `POST /api/admin/account/v1/users/logout`
-
-### Admin profilo e gestione (protetti)
-
-- `GET /api/admin/account/v1/me`
-- `GET /api/admin/account/v1/me/permissions`
-- `GET /api/admin/account/v1/admins`
-- `POST /api/admin/account/v1/admins`
-- `POST /api/admin/account/v1/admins/{adminUserId}/password/reset`
-- `DELETE /api/admin/account/v1/admins/{adminUserId}`
-- `GET /api/admin/account/v1/customers`
-- `GET /api/admin/account/v1/customers/{customerId}`
-- `PUT /api/admin/account/v1/customers/{customerId}`
-- `POST /api/admin/account/v1/customers/{customerId}/password/reset`
-- `GET /api/admin/account/v1/customers/{customerId}/addresses`
-- `POST /api/admin/account/v1/customers/{customerId}/addresses`
-- `PUT /api/admin/account/v1/customers/{customerId}/addresses/{addressId}`
-- `DELETE /api/admin/account/v1/customers/{customerId}/addresses/{addressId}`
-
 ## Formato risposta auth
 
 Le operazioni login/register/refresh ritornano `AuthResponse`:
@@ -247,6 +193,25 @@ Logout:
 Nota operativa:
 - non c'e un meccanismo globale centralizzato di auto-refresh trasparente per tutte le richieste; i token vengono gestiti dal codice UI dove necessario.
 
+## Flussi guest (utente anonimo)
+
+Il sistema supporta anche checkout guest senza JWT customer.
+
+Regole operative:
+- il frontend guest deve generare un identificatore stabile `anonymousId` (UUID) e riutilizzarlo per tutta la sessione guest;
+- per endpoint store che richiedono ownership senza JWT, l'identita guest passa via header `X-Anonymous-Id: <uuid>`;
+- per la creazione ordine guest, `anonymousId` e valorizzato nel contratto ordine e usato per ownership su letture/azioni guest.
+
+Endpoint store compatibili con guest:
+- Cart: add/remove/get (ownership su `X-Anonymous-Id` o JWT customer)
+- Order: create/list/get/manual-cancel (ownership su `X-Anonymous-Id` o JWT customer)
+- Payment: get session by order/session (ownership su `X-Anonymous-Id` o JWT customer)
+- Shipping: get shipment by order (ownership su `X-Anonymous-Id` o JWT customer)
+
+Nota sicurezza guest:
+- `X-Anonymous-Id` non equivale a una identita forte come JWT; e un trade-off per supportare guest checkout.
+- in produzione, mantenere UUID ad alta entropia e non esporlo inutilmente.
+
 ## Frontend Backoffice (frontend/admin)
 
 Login:
@@ -281,8 +246,16 @@ Chiavi principali (`AccountTechnicalOptions`):
 - `Account:Jwt:AdminIssuer`
 - `Account:Jwt:AdminAudience`
 - `Account:OrderApiBaseUrl`
+- `Account:OrderInternalApiKey`
 - `Account:Admin:Username`
 - `Account:Admin:Password`
+
+Chiavi principali (Order API):
+- `Order:InternalApiKey`
+
+Uso interno claim guest orders:
+- `Account` usa endpoint interno `POST /internal/v1/orders/claim-guest` con header `X-Internal-Api-Key`.
+- endpoint non destinato al frontend pubblico.
 
 Bootstrap admin default:
 - all'avvio modulo Account viene eseguito `EnsureDefaultAdminAsync(...)`.

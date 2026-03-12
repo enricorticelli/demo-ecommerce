@@ -5,9 +5,12 @@ using Order.Api.Mappers;
 using Order.Application.Abstractions.Commands;
 using Order.Application.Abstractions.Queries;
 using Order.Application.Commands;
+using Order.Application.Views;
 using Shared.BuildingBlocks.Api.Correlation;
 using Shared.BuildingBlocks.Api.Errors;
 using Shared.BuildingBlocks.Api.Pagination;
+using Shared.BuildingBlocks.Api;
+using Shared.BuildingBlocks.Exceptions;
 
 namespace Order.Api.Endpoints;
 
@@ -27,7 +30,14 @@ public static class OrderEndpoints
         storeGroup.MapPost("/{orderId:guid}/manual-cancel", StoreManualCancelOrder)
             .WithName("StoreManualCancelOrder");
         storeGroup.MapPost("/claim-guest", ClaimGuestOrders)
+            .RequireAuthorization("CustomerPolicy")
             .WithName("StoreClaimGuestOrders");
+
+        var internalGroup = app.MapGroup(OrderRoutes.InternalBase)
+            .WithTags("OrderInternal");
+
+        internalGroup.MapPost("/claim-guest", InternalClaimGuestOrders)
+            .WithName("InternalClaimGuestOrders");
 
         var adminGroup = app.MapGroup(OrderRoutes.AdminBase)
             .WithTags("Order")
@@ -35,7 +45,7 @@ public static class OrderEndpoints
 
         adminGroup.MapGet("/", ListOrders)
             .WithName("AdminListOrders");
-        adminGroup.MapGet("/{orderId:guid}", GetOrder)
+        adminGroup.MapGet("/{orderId:guid}", AdminGetOrder)
             .WithName("AdminGetOrder");
         adminGroup.MapPost("/{orderId:guid}/manual-complete", AdminManualCompleteOrder)
             .WithName("AdminManualCompleteOrder");
@@ -53,8 +63,11 @@ public static class OrderEndpoints
     {
         try
         {
+            var authenticatedUserId = httpContext.TryGetAuthenticatedUserId(out var userId)
+                ? userId
+                : (Guid?)null;
             var correlationId = CorrelationIdResolver.Resolve(httpContext);
-            var order = await service.CreateAsync(request.ToCreateCommand(correlationId), cancellationToken);
+            var order = await service.CreateAsync(request.ToCreateCommand(authenticatedUserId, correlationId), cancellationToken);
             return Results.Created($"{OrderRoutes.StoreBase}/{order.Id}", new OrderCreatedResponse(order.Id, order.Status));
         }
         catch (Exception exception)
@@ -90,17 +103,19 @@ public static class OrderEndpoints
     }
 
     private static async Task<IResult> StoreListOrders(
+        HttpContext context,
         IOrderQueryService service,
-        Guid? authenticatedUserId,
+        Guid? anonymousId,
         int? limit,
         int? offset,
         CancellationToken cancellationToken)
     {
         var (normalizedLimit, normalizedOffset) = PaginationNormalizer.Normalize(limit, offset);
-
-        var source = authenticatedUserId.HasValue
-            ? await service.ListByAuthenticatedUserIdAsync(authenticatedUserId.Value, cancellationToken)
-            : await service.ListAsync(cancellationToken);
+        var source = context.TryGetAuthenticatedUserId(out var authenticatedUserId)
+            ? await service.ListByAuthenticatedUserIdAsync(authenticatedUserId, cancellationToken)
+            : (await service.ListAsync(cancellationToken))
+                .Where(x => x.AnonymousId.HasValue && x.AnonymousId.Value == (anonymousId ?? context.GetRequiredAnonymousId()))
+                .ToArray();
 
         var page = source
             .Skip(normalizedOffset)
@@ -112,6 +127,28 @@ public static class OrderEndpoints
     }
 
     private static async Task<IResult> GetOrder(
+        HttpContext context,
+        Guid orderId,
+        Guid? anonymousId,
+        IOrderQueryService service,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var actorAnonymousId = anonymousId;
+            var order = await service.GetByIdAsync(orderId, cancellationToken);
+            EnsureOrderOwnership(order, context, ref actorAnonymousId);
+            var response = order.ToResponse();
+
+            return Results.Ok(response);
+        }
+        catch (Exception exception)
+        {
+            return ExceptionHttpResultMapper.Map(exception);
+        }
+    }
+
+    private static async Task<IResult> AdminGetOrder(
         Guid orderId,
         IOrderQueryService service,
         CancellationToken cancellationToken)
@@ -119,9 +156,7 @@ public static class OrderEndpoints
         try
         {
             var order = await service.GetByIdAsync(orderId, cancellationToken);
-            var response = order.ToResponse();
-
-            return Results.Ok(response);
+            return Results.Ok(order.ToResponse());
         }
         catch (Exception exception)
         {
@@ -164,13 +199,20 @@ public static class OrderEndpoints
     }
 
     private static async Task<IResult> StoreManualCancelOrder(
+        HttpContext context,
         Guid orderId,
         ManualCancelOrderRequest request,
+        Guid? anonymousId,
+        IOrderQueryService queryService,
         IOrderCommandService service,
         CancellationToken cancellationToken)
     {
         try
         {
+            var actorAnonymousId = anonymousId;
+            var existingOrder = await queryService.GetByIdAsync(orderId, cancellationToken);
+            EnsureOrderOwnership(existingOrder, context, ref actorAnonymousId);
+
             var order = await service.StoreManualCancelAsync(new ManualCancelOrderCommand(orderId, request.Reason), cancellationToken);
             return Results.Ok(new ManualCancelOrderResponse(order.Id, order.Status, order.FailureReason, "manual"));
         }
@@ -181,12 +223,42 @@ public static class OrderEndpoints
     }
 
     private static async Task<IResult> ClaimGuestOrders(
+        HttpContext context,
         ClaimGuestOrdersRequest request,
         IOrderCommandService service,
         CancellationToken cancellationToken)
     {
         try
         {
+            var authenticatedUserId = context.GetRequiredUserId();
+            var claimedCount = await service.ClaimGuestOrdersAsync(
+                new ClaimGuestOrdersCommand(authenticatedUserId, request.CustomerEmail),
+                cancellationToken);
+
+            return Results.Ok(new ClaimGuestOrdersResponse(claimedCount));
+        }
+        catch (Exception exception)
+        {
+            return ExceptionHttpResultMapper.Map(exception);
+        }
+    }
+
+    private static async Task<IResult> InternalClaimGuestOrders(
+        HttpContext context,
+        InternalClaimGuestOrdersRequest request,
+        IConfiguration configuration,
+        IOrderCommandService service,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var configuredApiKey = configuration["Order:InternalApiKey"] ?? "dev-order-internal-key-change-me";
+            var providedApiKey = context.Request.Headers["X-Internal-Api-Key"].ToString();
+            if (!string.Equals(configuredApiKey, providedApiKey, StringComparison.Ordinal))
+            {
+                throw new ForbiddenAppException("Invalid internal API key.");
+            }
+
             var claimedCount = await service.ClaimGuestOrdersAsync(
                 new ClaimGuestOrdersCommand(request.AuthenticatedUserId, request.CustomerEmail),
                 cancellationToken);
@@ -196,6 +268,25 @@ public static class OrderEndpoints
         catch (Exception exception)
         {
             return ExceptionHttpResultMapper.Map(exception);
+        }
+    }
+
+    private static void EnsureOrderOwnership(OrderView order, HttpContext context, ref Guid? anonymousId)
+    {
+        if (context.TryGetAuthenticatedUserId(out var authenticatedUserId))
+        {
+            if (!order.AuthenticatedUserId.HasValue || order.AuthenticatedUserId.Value != authenticatedUserId)
+            {
+                throw new ForbiddenAppException("The order does not belong to the authenticated user.");
+            }
+
+            return;
+        }
+
+        anonymousId ??= context.GetRequiredAnonymousId();
+        if (!order.AnonymousId.HasValue || order.AnonymousId.Value != anonymousId.Value)
+        {
+            throw new ForbiddenAppException("The order does not belong to the anonymous user.");
         }
     }
 

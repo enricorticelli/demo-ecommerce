@@ -42,7 +42,7 @@
   async function waitForPaymentSession(orderId: string, maxAttempts = 40, intervalMs = 500): Promise<PaymentSession | null> {
     for (let i = 0; i < maxAttempts; i += 1) {
       try {
-        const session = await getPaymentSessionByOrder(orderId);
+        const session = await getPaymentSessionByOrder(orderId, { anonymousId: $userId });
         if (session) {
           return session;
         }
@@ -110,6 +110,8 @@
           postalCode: billingSameAsShipping ? zip : billingZip,
           country: billingSameAsShipping ? country : billingCountry,
         },
+      }, {
+        anonymousId: authenticatedUserId ? undefined : $userId,
       });
       const paymentSession = await waitForPaymentSession(result.orderId);
       if (paymentSession) {
@@ -117,7 +119,9 @@
         return;
       }
 
-      const completedOrder = await pollOrderUntilDone(result.orderId, () => undefined, 30, 1000);
+      const completedOrder = await pollOrderUntilDone(result.orderId, () => undefined, 30, 1000, {
+        anonymousId: authenticatedUserId ? undefined : $userId,
+      });
       if (completedOrder?.status === 'Completed') {
         startNewCart();
         window.location.href = `/orders/${result.orderId}`;

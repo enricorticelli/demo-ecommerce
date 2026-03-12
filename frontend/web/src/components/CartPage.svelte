@@ -3,7 +3,7 @@
   import { fetchCart, removeCartItem, type CartItemDto } from '../lib/api';
   import { getProductImage } from '../lib/catalog-presenter';
   import { formatCurrency } from '../lib/format';
-  import { cartId, cartItems, cartTotal, syncCartFromServer } from '../stores/cart';
+  import { cartId, cartItems, cartTotal, syncCartFromServer, userId } from '../stores/cart';
   import { addToast } from '../stores/ui';
 
   let isLoading = true;
@@ -19,7 +19,7 @@
   async function syncCart() {
     isLoading = true;
     try {
-      const cart = await fetchCart($cartId);
+      const cart = await fetchCart($cartId, $userId);
       if (cart) syncCartFromServer(cart.items);
       else syncCartFromServer([]);
     } catch {
@@ -32,8 +32,8 @@
   async function removeItem(item: CartItemDto) {
     removingId = item.productId;
     try {
-      await removeCartItem($cartId, item.productId);
-      const cart = await fetchCart($cartId);
+      await removeCartItem($cartId, item.productId, $userId);
+      const cart = await fetchCart($cartId, $userId);
       if (cart) syncCartFromServer(cart.items);
       else syncCartFromServer([]);
       addToast(`${item.name} rimosso dal carrello`, 'info');

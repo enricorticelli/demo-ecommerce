@@ -147,6 +147,11 @@ export type CreateOrderPayload = {
   billingAddress: OrderAddress;
 };
 
+type GuestRequestOptions = {
+  anonymousId?: string;
+  headers?: HeadersInit;
+};
+
 export type PaymentSession = {
   sessionId: string;
   orderId: string;
@@ -314,8 +319,10 @@ export async function deleteCollection(_id: string): Promise<void> {
 
 // ─── Cart ─────────────────────────────────────────────────────────────────────
 
-export async function fetchCart(cartId: string): Promise<CartView | null> {
-  const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/cart/v1/carts/${cartId}`);
+export async function fetchCart(cartId: string, anonymousId: string): Promise<CartView | null> {
+  const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/cart/v1/carts/${cartId}`, {
+    headers: withGuestIdentityHeader(anonymousId),
+  });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Cart error: ${res.status}`);
   return res.json();
@@ -323,8 +330,8 @@ export async function fetchCart(cartId: string): Promise<CartView | null> {
 
 export async function addCartItem(
   cartId: string,
+  anonymousId: string,
   payload: {
-    userId: string;
     productId: string;
     sku: string;
     name: string;
@@ -334,7 +341,7 @@ export async function addCartItem(
 ): Promise<void> {
   const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/cart/v1/carts/${cartId}/items`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: withGuestIdentityHeader(anonymousId, { 'Content-Type': 'application/json' }),
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
@@ -343,20 +350,23 @@ export async function addCartItem(
   }
 }
 
-export async function removeCartItem(cartId: string, productId: string): Promise<void> {
+export async function removeCartItem(cartId: string, productId: string, anonymousId: string): Promise<void> {
   const res = await fetchWithTimeout(
     `${gatewayUrl()}/api/store/cart/v1/carts/${cartId}/items/${productId}`,
-    { method: 'DELETE' }
+    { method: 'DELETE', headers: withGuestIdentityHeader(anonymousId) }
   );
   if (!res.ok) throw new Error(`Cart remove error: ${res.status}`);
 }
 
 // ─── Order ────────────────────────────────────────────────────────────────────
 
-export async function createOrder(payload: CreateOrderPayload): Promise<CreateOrderResult> {
+export async function createOrder(payload: CreateOrderPayload, options?: GuestRequestOptions): Promise<CreateOrderResult> {
   const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/order/v1/orders`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: withGuestIdentityHeader(options?.anonymousId, {
+      'Content-Type': 'application/json',
+      ...normalizeHeaders(options?.headers),
+    }),
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
@@ -366,8 +376,9 @@ export async function createOrder(payload: CreateOrderPayload): Promise<CreateOr
   return res.json();
 }
 
-export async function fetchOrder(orderId: string): Promise<OrderView> {
+export async function fetchOrder(orderId: string, options?: GuestRequestOptions): Promise<OrderView> {
   const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/order/v1/orders/${orderId}`, {
+    headers: withGuestIdentityHeader(options?.anonymousId, options?.headers),
     cache: 'no-store',
   });
   if (res.status === 404) throw new NotFoundError(`Order ${orderId} not found`);
@@ -375,10 +386,13 @@ export async function fetchOrder(orderId: string): Promise<OrderView> {
   return res.json();
 }
 
-export async function manualCancelOrder(orderId: string, reason?: string): Promise<void> {
+export async function manualCancelOrder(orderId: string, reason?: string, options?: GuestRequestOptions): Promise<void> {
   const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/order/v1/orders/${orderId}/manual-cancel`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: withGuestIdentityHeader(options?.anonymousId, {
+      'Content-Type': 'application/json',
+      ...normalizeHeaders(options?.headers),
+    }),
     body: JSON.stringify({
       reason: reason?.trim() ? reason.trim() : null,
     }),
@@ -390,8 +404,9 @@ export async function manualCancelOrder(orderId: string, reason?: string): Promi
   }
 }
 
-export async function getPaymentSessionByOrder(orderId: string): Promise<PaymentSession | null> {
+export async function getPaymentSessionByOrder(orderId: string, options?: GuestRequestOptions): Promise<PaymentSession | null> {
   const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/payment/v1/payments/sessions/orders/${orderId}`, {
+    headers: withGuestIdentityHeader(options?.anonymousId, options?.headers),
     cache: 'no-store',
   });
   if (res.status === 404) return null;
@@ -399,8 +414,9 @@ export async function getPaymentSessionByOrder(orderId: string): Promise<Payment
   return res.json();
 }
 
-export async function getPaymentSessionById(sessionId: string): Promise<PaymentSession | null> {
+export async function getPaymentSessionById(sessionId: string, options?: GuestRequestOptions): Promise<PaymentSession | null> {
   const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/payment/v1/payments/sessions/${sessionId}`, {
+    headers: withGuestIdentityHeader(options?.anonymousId, options?.headers),
     cache: 'no-store',
   });
   if (res.status === 404) return null;
@@ -408,8 +424,9 @@ export async function getPaymentSessionById(sessionId: string): Promise<PaymentS
   return res.json();
 }
 
-export async function fetchShipmentByOrder(orderId: string): Promise<ShipmentView | null> {
+export async function fetchShipmentByOrder(orderId: string, options?: GuestRequestOptions): Promise<ShipmentView | null> {
   const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/shipping/v1/shipments/orders/${orderId}`, {
+    headers: withGuestIdentityHeader(options?.anonymousId, options?.headers),
     cache: 'no-store',
   });
   if (res.status === 404) return null;
@@ -582,6 +599,34 @@ async function deleteJson(url: string): Promise<void> {
   }
 }
 
+function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
+  if (!headers) return {};
+
+  if (headers instanceof Headers) {
+    return Object.fromEntries(headers.entries());
+  }
+
+  if (Array.isArray(headers)) {
+    return Object.fromEntries(headers);
+  }
+
+  return { ...headers };
+}
+
+function withGuestIdentityHeader(anonymousId?: string, headers?: HeadersInit): Record<string, string> {
+  const normalizedHeaders = normalizeHeaders(headers);
+  const value = anonymousId?.trim();
+
+  if (!value) {
+    return normalizedHeaders;
+  }
+
+  return {
+    ...normalizedHeaders,
+    'X-Anonymous-Id': value,
+  };
+}
+
 async function fetchWithTimeout(url: string, init?: RequestInit): Promise<Response> {
   const shouldRetry = isSafeMethod(init?.method);
 
@@ -616,11 +661,12 @@ export async function pollOrderUntilDone(
   orderId: string,
   onUpdate: (order: OrderView) => void,
   maxAttempts = 40,
-  intervalMs = 1000
+  intervalMs = 1000,
+  options?: GuestRequestOptions
 ): Promise<OrderView | null> {
   for (let i = 0; i < maxAttempts; i++) {
     try {
-      const order = await fetchOrder(orderId);
+      const order = await fetchOrder(orderId, options);
       onUpdate(order);
       if (order.status === 'Completed' || order.status === 'Failed') return order;
     } catch {

@@ -137,7 +137,8 @@ public static class StoreProfileEndpoints
         try
         {
             var userId = context.GetRequiredUserId();
-            var orders = await service.ListMyOrdersAsync(userId, cancellationToken);
+            var accessToken = Shared.BuildingBlocks.Api.HttpContextAuthExtensions.GetRequiredBearerToken(context);
+            var orders = await service.ListMyOrdersAsync(userId, accessToken, cancellationToken);
             return Results.Ok(orders.Select(x => x.ToResponse()).ToArray());
         }
         catch (Exception exception)

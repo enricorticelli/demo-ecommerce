@@ -3,8 +3,11 @@ using Shipping.Api.Contracts.Requests;
 using Shipping.Api.Mappers;
 using Shipping.Application.Abstractions.Commands;
 using Shipping.Application.Abstractions.Queries;
+using Shipping.Application.Views;
+using Shared.BuildingBlocks.Api;
 using Shared.BuildingBlocks.Api.Errors;
 using Shared.BuildingBlocks.Api.Pagination;
+using Shared.BuildingBlocks.Exceptions;
 
 namespace Shipping.Api.Endpoints;
 
@@ -15,7 +18,7 @@ public static class ShippingEndpoints
         var storeGroup = app.MapGroup(ShippingRoutes.StoreBase)
             .WithTags("Shipping");
 
-        storeGroup.MapGet("/orders/{orderId:guid}", GetShipmentByOrder)
+        storeGroup.MapGet("/orders/{orderId:guid}", StoreGetShipmentByOrder)
             .WithName("StoreGetShipmentByOrder");
 
         var adminGroup = app.MapGroup(ShippingRoutes.AdminBase)
@@ -24,7 +27,7 @@ public static class ShippingEndpoints
 
         adminGroup.MapGet("/", ListShipments)
             .WithName("AdminListShipments");
-        adminGroup.MapGet("/orders/{orderId:guid}", GetShipmentByOrder)
+        adminGroup.MapGet("/orders/{orderId:guid}", AdminGetShipmentByOrder)
             .WithName("AdminGetShipmentByOrder");
         adminGroup.MapPost("/{shipmentId:guid}/status", UpdateShipmentStatus)
             .WithName("AdminUpdateShipmentStatus");
@@ -44,7 +47,26 @@ public static class ShippingEndpoints
         return Results.Ok(shipments.Select(x => x.ToResponse()));
     }
 
-    private static async Task<IResult> GetShipmentByOrder(
+    private static async Task<IResult> StoreGetShipmentByOrder(
+        HttpContext context,
+        Guid orderId,
+        IShippingQueryService service,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var actorUserId = context.ResolveActorId();
+            var shipment = await service.GetByOrderIdAsync(orderId, cancellationToken);
+            EnsureShipmentOwnership(shipment, actorUserId);
+            return Results.Ok(shipment.ToResponse());
+        }
+        catch (Exception exception)
+        {
+            return ExceptionHttpResultMapper.Map(exception);
+        }
+    }
+
+    private static async Task<IResult> AdminGetShipmentByOrder(
         Guid orderId,
         IShippingQueryService service,
         CancellationToken cancellationToken)
@@ -74,6 +96,14 @@ public static class ShippingEndpoints
         catch (Exception exception)
         {
             return ExceptionHttpResultMapper.Map(exception);
+        }
+    }
+
+    private static void EnsureShipmentOwnership(ShipmentView shipment, Guid authenticatedUserId)
+    {
+        if (shipment.UserId != authenticatedUserId)
+        {
+            throw new ForbiddenAppException("The shipment does not belong to the authenticated user.");
         }
     }
 }

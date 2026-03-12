@@ -6,6 +6,8 @@ using Account.Infrastructure.Persistence.Entities;
 using Account.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Shared.BuildingBlocks.Exceptions;
+using System.Net;
+using System.Text.Json;
 using Xunit;
 
 namespace Account.Tests;
@@ -64,6 +66,7 @@ public sealed class AccountServiceTests
     public async Task VerifyEmailAsync_ValidCode_SetsUserAsVerified()
     {
         await using var dbContext = CreateDbContext();
+        var handler = new StubHttpMessageHandler();
         var userId = Guid.NewGuid();
         dbContext.Users.Add(new AccountUserEntity
         {
@@ -91,12 +94,60 @@ public sealed class AccountServiceTests
         });
         await dbContext.SaveChangesAsync();
 
-        var service = CreateAuthService(dbContext);
+        var service = CreateAuthService(dbContext, handler);
 
         await service.VerifyEmailAsync(new VerifyEmailInput("mario.rossi@example.com", code), CancellationToken.None);
 
         var user = await dbContext.Users.SingleAsync();
         Assert.True(user.IsEmailVerified);
+
+        var internalClaimCall = Assert.Single(handler.Requests, x => x.RequestUri?.AbsolutePath == "/internal/v1/orders/claim-guest");
+        Assert.Equal("dev-order-internal-key-change-me", internalClaimCall.Headers.GetValues("X-Internal-Api-Key").Single());
+    }
+
+    [Fact]
+    public async Task OrderApiClient_ClaimGuestOrdersAsync_UsesStoreEndpointWithBearerToken()
+    {
+        var handler = new StubHttpMessageHandler();
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost") };
+        var sut = new OrderApiClient(httpClient);
+
+        await sut.ClaimGuestOrdersAsync("token-123", "mario@example.com", CancellationToken.None);
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal("/store/v1/orders/claim-guest", request.RequestUri?.AbsolutePath);
+        Assert.Equal("Bearer", request.Headers.Authorization?.Scheme);
+        Assert.Equal("token-123", request.Headers.Authorization?.Parameter);
+    }
+
+    [Fact]
+    public async Task OrderApiClient_ClaimGuestOrdersInternalAsync_UsesInternalEndpointWithApiKey()
+    {
+        var handler = new StubHttpMessageHandler();
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost") };
+        var sut = new OrderApiClient(httpClient);
+
+        await sut.ClaimGuestOrdersInternalAsync(Guid.NewGuid(), "mario@example.com", "internal-key", CancellationToken.None);
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal("/internal/v1/orders/claim-guest", request.RequestUri?.AbsolutePath);
+        Assert.Equal("internal-key", request.Headers.GetValues("X-Internal-Api-Key").Single());
+    }
+
+    [Fact]
+    public async Task OrderApiClient_ListByAuthenticatedUserAsync_UsesStoreEndpointWithoutUserIdQueryAndWithBearer()
+    {
+        var handler = new StubHttpMessageHandler();
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost") };
+        var sut = new OrderApiClient(httpClient);
+
+        _ = await sut.ListByAuthenticatedUserAsync("token-abc", CancellationToken.None);
+
+        var request = Assert.Single(handler.Requests);
+        Assert.Equal("/store/v1/orders", request.RequestUri?.AbsolutePath);
+        Assert.DoesNotContain("authenticatedUserId", request.RequestUri?.Query ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("Bearer", request.Headers.Authorization?.Scheme);
+        Assert.Equal("token-abc", request.Headers.Authorization?.Parameter);
     }
 
     [Fact]
@@ -132,7 +183,7 @@ public sealed class AccountServiceTests
         Assert.Single(await dbContext.Addresses.ToListAsync());
     }
 
-    private static AccountAuthService CreateAuthService(AccountDbContext dbContext)
+    private static AccountAuthService CreateAuthService(AccountDbContext dbContext, StubHttpMessageHandler? handler = null)
     {
         var options = new AccountTechnicalOptions
         {
@@ -143,14 +194,15 @@ public sealed class AccountServiceTests
             CustomerAudience = "storefront",
             AdminIssuer = "account-admin",
             AdminAudience = "backoffice",
-            OrderApiBaseUrl = "http://localhost"
+            OrderApiBaseUrl = "http://localhost",
+            OrderInternalApiKey = "dev-order-internal-key-change-me"
         };
 
         var tokenFactory = new TokenFactory(options);
-        var httpClient = new HttpClient(new StubHttpMessageHandler()) { BaseAddress = new Uri("http://localhost") };
+        var httpClient = new HttpClient(handler ?? new StubHttpMessageHandler()) { BaseAddress = new Uri("http://localhost") };
         var orderApiClient = new OrderApiClient(httpClient);
 
-        return new AccountAuthService(dbContext, tokenFactory, orderApiClient);
+        return new AccountAuthService(dbContext, tokenFactory, orderApiClient, options);
     }
 
     private static AccountCustomerProfileService CreateCustomerProfileService(AccountDbContext dbContext)
@@ -172,8 +224,12 @@ public sealed class AccountServiceTests
 
     private sealed class StubHttpMessageHandler : HttpMessageHandler
     {
+        public List<HttpRequestMessage> Requests { get; } = [];
+
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            Requests.Add(request);
+
             if (request.Method == HttpMethod.Get)
             {
                 return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)

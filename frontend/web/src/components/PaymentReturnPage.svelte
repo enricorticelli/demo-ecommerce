@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { fetchOrder, getPaymentSessionById, pollOrderUntilDone, type OrderView, type PaymentSession } from '../lib/api';
   import { addToast } from '../stores/ui';
-  import { startNewCart } from '../stores/cart';
+  import { startNewCart, userId } from '../stores/cart';
 
   export let orderId: string;
   export let sessionId: string;
@@ -26,12 +26,12 @@
       }
 
       if (sessionId) {
-        session = await getPaymentSessionById(sessionId).catch(() => null);
+        session = await getPaymentSessionById(sessionId, { anonymousId: $userId }).catch(() => null);
       }
 
       const terminalOrder = await pollOrderUntilDone(orderId, (updatedOrder) => {
         order = updatedOrder;
-      }, 30, 1000);
+      }, 30, 1000, { anonymousId: $userId });
 
       if (!terminalOrder) {
         message = 'Pagamento ricevuto, ordine ancora in elaborazione. Riprova tra pochi secondi.';

@@ -3,7 +3,6 @@ using System.ComponentModel.DataAnnotations;
 namespace Cart.Api.Contracts.Requests;
 
 public sealed record AddCartItemRequest(
-    Guid UserId,
     Guid ProductId,
     [property: Required, StringLength(64)] string Sku,
     [property: Required, StringLength(256)] string Name,

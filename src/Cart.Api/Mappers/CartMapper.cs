@@ -7,11 +7,11 @@ namespace Cart.Api.Mappers;
 
 public static class CartMapper
 {
-	public static AddCartItemCommand ToCommand(this AddCartItemRequest request, Guid cartId)
+	public static AddCartItemCommand ToCommand(this AddCartItemRequest request, Guid cartId, Guid authenticatedUserId)
 	{
 		return new AddCartItemCommand(
 			cartId,
-			request.UserId,
+			authenticatedUserId,
 			request.ProductId,
 			request.Sku,
 			request.Name,

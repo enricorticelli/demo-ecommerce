@@ -5,7 +5,7 @@ using Shared.BuildingBlocks.Api;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddDefaultApiServices();
-builder.AddAdminAuthentication();
+builder.AddStoreAndAdminAuthentication();
 builder.AddOrderModule();
 
 var app = builder.Build();
