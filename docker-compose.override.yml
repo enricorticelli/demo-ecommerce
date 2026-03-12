@@ -1,0 +1,116 @@
+x-dotnet-hotreload-common: &dotnet-hotreload-common
+  working_dir: /src
+  volumes:
+    - ./:/src
+    - dotnet-nuget:/root/.nuget/packages
+  environment:
+    ASPNETCORE_ENVIRONMENT: Development
+    DOTNET_USE_POLLING_FILE_WATCHER: "1"
+  healthcheck:
+    test: ["CMD-SHELL", "dotnet --version >/dev/null 2>&1 || exit 1"]
+    interval: 10s
+    timeout: 3s
+    retries: 20
+
+services:
+  catalog-api:
+    <<: *dotnet-hotreload-common
+    build:
+      context: .
+      dockerfile: src/Catalog.Api/Dockerfile
+      target: build
+    command:
+      - /bin/sh
+      - -c
+      - dotnet restore src/Catalog.Api/Catalog.Api.csproj && dotnet watch --project src/Catalog.Api/Catalog.Api.csproj run --no-launch-profile --urls http://0.0.0.0:8080
+
+  cart-api:
+    <<: *dotnet-hotreload-common
+    build:
+      context: .
+      dockerfile: src/Cart.Api/Dockerfile
+      target: build
+    command:
+      - /bin/sh
+      - -c
+      - dotnet restore src/Cart.Api/Cart.Api.csproj && dotnet watch --project src/Cart.Api/Cart.Api.csproj run --no-launch-profile --urls http://0.0.0.0:8080
+
+  order-api:
+    <<: *dotnet-hotreload-common
+    build:
+      context: .
+      dockerfile: src/Order.Api/Dockerfile
+      target: build
+    command:
+      - /bin/sh
+      - -c
+      - dotnet restore src/Order.Api/Order.Api.csproj && dotnet watch --project src/Order.Api/Order.Api.csproj run --no-launch-profile --urls http://0.0.0.0:8080
+
+  account-api:
+    <<: *dotnet-hotreload-common
+    build:
+      context: .
+      dockerfile: src/Account.Api/Dockerfile
+      target: build
+    command:
+      - /bin/sh
+      - -c
+      - dotnet restore src/Account.Api/Account.Api.csproj && dotnet watch --project src/Account.Api/Account.Api.csproj run --no-launch-profile --urls http://0.0.0.0:8080
+
+  warehouse-api:
+    <<: *dotnet-hotreload-common
+    build:
+      context: .
+      dockerfile: src/Warehouse.Api/Dockerfile
+      target: build
+    command:
+      - /bin/sh
+      - -c
+      - dotnet restore src/Warehouse.Api/Warehouse.Api.csproj && dotnet watch --project src/Warehouse.Api/Warehouse.Api.csproj run --no-launch-profile --urls http://0.0.0.0:8080
+
+  payment-api:
+    <<: *dotnet-hotreload-common
+    build:
+      context: .
+      dockerfile: src/Payment.Api/Dockerfile
+      target: build
+    command:
+      - /bin/sh
+      - -c
+      - dotnet restore src/Payment.Api/Payment.Api.csproj && dotnet watch --project src/Payment.Api/Payment.Api.csproj run --no-launch-profile --urls http://0.0.0.0:8080
+
+  shipping-api:
+    <<: *dotnet-hotreload-common
+    build:
+      context: .
+      dockerfile: src/Shipping.Api/Dockerfile
+      target: build
+    command:
+      - /bin/sh
+      - -c
+      - dotnet restore src/Shipping.Api/Shipping.Api.csproj && dotnet watch --project src/Shipping.Api/Shipping.Api.csproj run --no-launch-profile --urls http://0.0.0.0:8080
+
+  communication-api:
+    <<: *dotnet-hotreload-common
+    build:
+      context: .
+      dockerfile: src/Communication.Api/Dockerfile
+      target: build
+    command:
+      - /bin/sh
+      - -c
+      - dotnet restore src/Communication.Api/Communication.Api.csproj && dotnet watch --project src/Communication.Api/Communication.Api.csproj run --no-launch-profile --urls http://0.0.0.0:8080
+
+  gateway-api:
+    <<: *dotnet-hotreload-common
+    build:
+      context: .
+      dockerfile: src/Gateway.Api/Dockerfile
+      target: build
+    command:
+      - /bin/sh
+      - -c
+      - dotnet restore src/Gateway.Api/Gateway.Api.csproj && dotnet watch --project src/Gateway.Api/Gateway.Api.csproj run --no-launch-profile --urls http://0.0.0.0:8080
+
+volumes:
+  dotnet-nuget:

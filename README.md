@@ -52,6 +52,22 @@ L'Aspire Dashboard per l'osservabilità è raggiungibile su `http://localhost:18
 Mailpit (mock SMTP + inbox UI) è disponibile su `http://localhost:18025`.
 Payment mock gateway (hosted checkout esterno) è disponibile su `http://localhost:18082`.
 
+### Hot reload microservizi .NET (Docker)
+
+Per sviluppo locale e disponibile `docker-compose.override.yml`, che avvia le API .NET con `dotnet watch`.
+
+```bash
+# avvio con hot reload (compose carica automaticamente docker-compose.override.yml)
+docker compose up -d
+
+# stop completo
+docker compose down
+```
+
+Note:
+- Il primo avvio e piu lento per restore/build.
+- Su Windows e abilitato `DOTNET_USE_POLLING_FILE_WATCHER=1` per rilevare correttamente le modifiche dei file montati.
+
 ### Contesti API
 
 Il gateway espone solo endpoint contestualizzati:
