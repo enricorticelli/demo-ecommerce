@@ -9,11 +9,11 @@ public static class AdminProfileEndpoints
     public static RouteGroupBuilder MapAdminProfileEndpoints(this RouteGroupBuilder adminGroup)
     {
         adminGroup.MapGet("/me", AdminGetMe)
-            .RequireAuthorization("AdminPolicy")
+            .RequireAuthorization(Shared.BuildingBlocks.Api.AuthorizationPolicies.AccountAdminReadPolicy)
             .WithName("AdminAccountGetMe");
         
         adminGroup.MapGet("/me/permissions", AdminGetPermissions)
-            .RequireAuthorization("AdminPolicy")
+            .RequireAuthorization(Shared.BuildingBlocks.Api.AuthorizationPolicies.AccountAdminReadPolicy)
             .WithName("AdminAccountGetPermissions");
         
         return adminGroup;

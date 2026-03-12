@@ -1,8 +1,16 @@
 ---
 import '../styles/global.css';
+import { ADMIN_PERMISSION, getAdminPermissionsFromCookies } from '../lib/permissions';
 
 const { title = 'Backoffice' } = Astro.props;
 const inactivityTimeoutMs = 15 * 60 * 1000;
+const permissions = getAdminPermissionsFromCookies(Astro.cookies);
+
+const canReadCatalog = permissions.has(ADMIN_PERMISSION.catalogRead);
+const canReadOrders = permissions.has(ADMIN_PERMISSION.ordersRead);
+const canReadShipping = permissions.has(ADMIN_PERMISSION.shippingRead);
+const canReadWarehouse = permissions.has(ADMIN_PERMISSION.warehouseRead);
+const canReadAccounts = permissions.has(ADMIN_PERMISSION.accountRead);
 ---
 
 <html lang="it">
@@ -36,12 +44,12 @@ const inactivityTimeoutMs = 15 * 60 * 1000;
       <div class="mx-auto w-full max-w-[1440px] px-4 pb-4 md:px-8">
         <nav class="flex flex-wrap items-center gap-2 text-sm font-semibold text-[#374457]">
           <a href="/" class="btn-secondary">Dashboard</a>
-          <a href="/catalog" class="btn-secondary">Catalogo</a>
-          <a href="/orders" class="btn-secondary">Ordini</a>
-          <a href="/customers" class="btn-secondary">Clienti</a>
-          <a href="/admin-users" class="btn-secondary">Utenti</a>
-          <a href="/shipments" class="btn-secondary">Spedizioni</a>
-          <a href="/warehouse" class="btn-secondary">Magazzino</a>
+          {canReadCatalog && <a href="/catalog" class="btn-secondary">Catalogo</a>}
+          {canReadOrders && <a href="/orders" class="btn-secondary">Ordini</a>}
+          {canReadAccounts && <a href="/customers" class="btn-secondary">Clienti</a>}
+          {canReadAccounts && <a href="/admin-users" class="btn-secondary">Utenti</a>}
+          {canReadShipping && <a href="/shipments" class="btn-secondary">Spedizioni</a>}
+          {canReadWarehouse && <a href="/warehouse" class="btn-secondary">Magazzino</a>}
         </nav>
       </div>
     </header>

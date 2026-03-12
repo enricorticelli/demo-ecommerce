@@ -11,16 +11,22 @@ public static class AdminAdminEndpoints
 {
     public static RouteGroupBuilder MapAdminAdminEndpoints(this RouteGroupBuilder adminGroup)
     {
-        var group = adminGroup.MapGroup("/admins")
-            .RequireAuthorization("AdminPolicy");
+        var group = adminGroup.MapGroup("/admins");
 
         group.MapGet("/", ListAdmins)
+            .RequireAuthorization(Shared.BuildingBlocks.Api.AuthorizationPolicies.AccountAdminReadPolicy)
             .WithName("AdminAccountListAdmins");
         group.MapPost("/", CreateAdmin)
+            .RequireAuthorization(Shared.BuildingBlocks.Api.AuthorizationPolicies.AccountAdminWritePolicy)
             .WithName("AdminAccountCreateAdmin");
         group.MapPost("/{adminUserId:guid}/password/reset", ResetAdminPassword)
+            .RequireAuthorization(Shared.BuildingBlocks.Api.AuthorizationPolicies.AccountAdminWritePolicy)
             .WithName("AdminAccountResetAdminPassword");
+        group.MapPut("/{adminUserId:guid}/permissions", SetAdminPermissions)
+            .RequireAuthorization(Shared.BuildingBlocks.Api.AuthorizationPolicies.AccountAdminWritePolicy)
+            .WithName("AdminAccountSetAdminPermissions");
         group.MapDelete("/{adminUserId:guid}", DeleteAdmin)
+            .RequireAuthorization(Shared.BuildingBlocks.Api.AuthorizationPolicies.AccountAdminWritePolicy)
             .WithName("AdminAccountDeleteAdmin");
 
         return adminGroup;
@@ -63,6 +69,25 @@ public static class AdminAdminEndpoints
         try
         {
             await service.SetAdminPasswordByAdminAsync(adminUserId, request.NewPassword, cancellationToken);
+            return Results.NoContent();
+        }
+        catch (Exception exception)
+        {
+            return ExceptionHttpResultMapper.Map(exception);
+        }
+    }
+
+    private static async Task<IResult> SetAdminPermissions(
+        HttpContext context,
+        Guid adminUserId,
+        AdminSetAdminPermissionsRequest request,
+        IAccountAdministrationService service,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var actingAdminUserId = context.GetRequiredUserId();
+            await service.SetAdminPermissionsByAdminAsync(actingAdminUserId, adminUserId, request.Permissions, cancellationToken);
             return Results.NoContent();
         }
         catch (Exception exception)

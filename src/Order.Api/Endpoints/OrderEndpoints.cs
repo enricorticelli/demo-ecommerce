@@ -40,16 +40,19 @@ public static class OrderEndpoints
             .WithName("InternalClaimGuestOrders");
 
         var adminGroup = app.MapGroup(OrderRoutes.AdminBase)
-            .WithTags("Order")
-            .RequireAuthorization("AdminPolicy");
+            .WithTags("Order");
 
         adminGroup.MapGet("/", ListOrders)
+            .RequireAuthorization(AuthorizationPolicies.OrdersReadPolicy)
             .WithName("AdminListOrders");
         adminGroup.MapGet("/{orderId:guid}", AdminGetOrder)
+            .RequireAuthorization(AuthorizationPolicies.OrdersReadPolicy)
             .WithName("AdminGetOrder");
         adminGroup.MapPost("/{orderId:guid}/manual-complete", AdminManualCompleteOrder)
+            .RequireAuthorization(AuthorizationPolicies.OrdersWritePolicy)
             .WithName("AdminManualCompleteOrder");
         adminGroup.MapPost("/{orderId:guid}/manual-cancel", AdminManualCancelOrder)
+            .RequireAuthorization(AuthorizationPolicies.OrdersWritePolicy)
             .WithName("AdminManualCancelOrder");
 
         return adminGroup;

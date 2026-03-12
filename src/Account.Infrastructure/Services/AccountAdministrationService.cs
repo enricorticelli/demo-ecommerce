@@ -6,6 +6,7 @@ using Account.Infrastructure.Mappers;
 using Account.Infrastructure.Persistence;
 using Account.Infrastructure.Persistence.Entities;
 using Microsoft.EntityFrameworkCore;
+using Shared.BuildingBlocks.Api;
 using Shared.BuildingBlocks.Exceptions;
 using Shared.BuildingBlocks.Helpers;
 
@@ -13,6 +14,8 @@ namespace Account.Infrastructure.Services;
 
 public sealed class AccountAdministrationService(AccountDbContext dbContext) : IAccountAdministrationService
 {
+    private static readonly HashSet<string> AllowedAdminPermissions = new(AuthorizationPermissions.AllAdmin, StringComparer.Ordinal);
+
     public async Task<AccountUserModel> GetAdminAsync(Guid userId, CancellationToken cancellationToken)
     {
         var user = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId && x.Realm == AccountRealm.Admin, cancellationToken)
@@ -41,7 +44,7 @@ public sealed class AccountAdministrationService(AccountDbContext dbContext) : I
             .Take(limit)
             .ToListAsync(cancellationToken);
 
-        return admins.Select(AccountModelMapper.ToAdminUserModel).ToArray();
+        return admins.Select(x => AccountModelMapper.ToAdminUserModel(x, ResolveAdminPermissions(x))).ToArray();
     }
 
     public async Task<AccountAdminUserModel> CreateAdminByAdminAsync(CreateAdminInput request, CancellationToken cancellationToken)
@@ -56,10 +59,41 @@ public sealed class AccountAdministrationService(AccountDbContext dbContext) : I
         InputValidationHelper.EnsureMinLength(request.Password, 8, "Password must be at least 8 characters long.");
 
         var domainAdmin = AccountUser.CreateAdmin(normalized, PasswordHasher.HashPassword(request.Password));
-        dbContext.Users.Add(AccountUserEntityMapper.ToEntity(domainAdmin));
+        var entity = AccountUserEntityMapper.ToEntity(domainAdmin);
+        entity.CustomPermissions = NormalizeAdminPermissionsForCreate(request.Permissions);
+
+        dbContext.Users.Add(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return AccountModelMapper.ToAdminUserModel(AccountUserEntityMapper.ToEntity(domainAdmin));
+        return AccountModelMapper.ToAdminUserModel(entity, ResolveAdminPermissions(entity));
+    }
+
+    public async Task SetAdminPermissionsByAdminAsync(Guid actingAdminUserId, Guid adminUserId, string[]? permissions, CancellationToken cancellationToken)
+    {
+        var adminToUpdate = await dbContext.Users
+            .FirstOrDefaultAsync(x => x.Id == adminUserId && x.Realm == AccountRealm.Admin, cancellationToken)
+            ?? throw new NotFoundAppException("Admin account not found.");
+
+        var normalizedPermissions = NormalizeAdminPermissionsForUpdate(permissions);
+        var effectivePermissions = normalizedPermissions ?? AuthorizationPermissions.AllAdmin;
+
+        if (actingAdminUserId == adminUserId && !effectivePermissions.Contains(AuthorizationPermissions.AccountWrite, StringComparer.Ordinal))
+        {
+            throw new ValidationAppException("You cannot remove your own account:write permission.");
+        }
+
+        adminToUpdate.CustomPermissions = normalizedPermissions;
+
+        var activeSessions = await dbContext.RefreshSessions
+            .Where(x => x.UserId == adminUserId && x.RevokedAtUtc == null)
+            .ToListAsync(cancellationToken);
+
+        foreach (var session in activeSessions)
+        {
+            session.RevokedAtUtc = DateTimeOffset.UtcNow;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task SetAdminPasswordByAdminAsync(Guid adminUserId, string newPassword, CancellationToken cancellationToken)
@@ -258,5 +292,49 @@ public sealed class AccountAdministrationService(AccountDbContext dbContext) : I
     {
         return await dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId && x.Realm == AccountRealm.Customer, cancellationToken)
             ?? throw new NotFoundAppException("Customer profile not found.");
+    }
+
+    private static string[] ResolveAdminPermissions(AccountUserEntity admin)
+    {
+        return admin.CustomPermissions is not null
+            ? admin.CustomPermissions
+            : AuthorizationPermissions.AllAdmin;
+    }
+
+    private static string[]? NormalizeAdminPermissionsForCreate(IEnumerable<string>? permissions)
+    {
+        if (permissions is null)
+        {
+            return null;
+        }
+
+        return NormalizeAdminPermissionsForUpdate(permissions);
+    }
+
+    private static string[]? NormalizeAdminPermissionsForUpdate(IEnumerable<string>? permissions)
+    {
+        if (permissions is null)
+        {
+            return null;
+        }
+
+        var requested = permissions.ToArray();
+        if (requested.Length == 0)
+        {
+            return [];
+        }
+
+        var normalized = requested
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        if (normalized.Any(x => !AllowedAdminPermissions.Contains(x)))
+        {
+            throw new ValidationAppException("Invalid admin permissions set.");
+        }
+
+        return normalized;
     }
 }

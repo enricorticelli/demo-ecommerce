@@ -6,6 +6,7 @@ using Catalog.Application.Abstractions.Queries;
 using Shared.BuildingBlocks.Api.Correlation;
 using Shared.BuildingBlocks.Api.Errors;
 using Shared.BuildingBlocks.Api.Pagination;
+using Shared.BuildingBlocks.Api;
 
 namespace Catalog.Api.Endpoints;
 
@@ -14,14 +15,13 @@ public static class BrandEndpoints
     public static RouteGroupBuilder MapBrandEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup(CatalogRoutes.AdminBrands)
-            .WithTags("Catalog")
-            .RequireAuthorization("AdminPolicy");
+            .WithTags("Catalog");
 
-        group.MapGet("/", GetBrands).WithName("AdminGetBrands");
-        group.MapGet("/{id:guid}", GetBrandById).WithName("AdminGetBrandById");
-        group.MapPost("/", CreateBrand).WithName("AdminCreateBrand");
-        group.MapPut("/{id:guid}", UpdateBrand).WithName("AdminUpdateBrand");
-        group.MapDelete("/{id:guid}", DeleteBrand).WithName("AdminDeleteBrand");
+        group.MapGet("/", GetBrands).RequireAuthorization(AuthorizationPolicies.CatalogReadPolicy).WithName("AdminGetBrands");
+        group.MapGet("/{id:guid}", GetBrandById).RequireAuthorization(AuthorizationPolicies.CatalogReadPolicy).WithName("AdminGetBrandById");
+        group.MapPost("/", CreateBrand).RequireAuthorization(AuthorizationPolicies.CatalogWritePolicy).WithName("AdminCreateBrand");
+        group.MapPut("/{id:guid}", UpdateBrand).RequireAuthorization(AuthorizationPolicies.CatalogWritePolicy).WithName("AdminUpdateBrand");
+        group.MapDelete("/{id:guid}", DeleteBrand).RequireAuthorization(AuthorizationPolicies.CatalogWritePolicy).WithName("AdminDeleteBrand");
 
         return group;
     }

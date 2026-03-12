@@ -44,12 +44,14 @@ internal static class AccountModelMapper
             user.CreatedAtUtc);
     }
 
-    public static AccountAdminUserModel ToAdminUserModel(AccountUserEntity user)
+    public static AccountAdminUserModel ToAdminUserModel(AccountUserEntity user, string[] permissions)
     {
         return new AccountAdminUserModel(
             user.Id,
             user.Username,
             user.Email,
-            user.CreatedAtUtc);
+            user.CreatedAtUtc,
+            permissions,
+            user.CustomPermissions is not null);
     }
 }

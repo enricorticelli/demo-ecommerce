@@ -11,25 +11,32 @@ public static class AdminCustomerEndpoints
 {
     public static RouteGroupBuilder MapAdminCustomerEndpoints(this RouteGroupBuilder adminGroup)
     {
-        var customerGroup = adminGroup.MapGroup("/customers")
-            .RequireAuthorization("AdminPolicy");
+        var customerGroup = adminGroup.MapGroup("/customers");
 
         customerGroup.MapGet("/", ListCustomers)
+            .RequireAuthorization(Shared.BuildingBlocks.Api.AuthorizationPolicies.AccountAdminReadPolicy)
             .WithName("AdminAccountListCustomers");
         customerGroup.MapGet("/{customerId:guid}", GetCustomer)
+            .RequireAuthorization(Shared.BuildingBlocks.Api.AuthorizationPolicies.AccountAdminReadPolicy)
             .WithName("AdminAccountGetCustomer");
         customerGroup.MapPut("/{customerId:guid}", UpdateCustomer)
+            .RequireAuthorization(Shared.BuildingBlocks.Api.AuthorizationPolicies.AccountAdminWritePolicy)
             .WithName("AdminAccountUpdateCustomer");
         customerGroup.MapPost("/{customerId:guid}/password/reset", ResetCustomerPassword)
+            .RequireAuthorization(Shared.BuildingBlocks.Api.AuthorizationPolicies.AccountAdminWritePolicy)
             .WithName("AdminAccountResetCustomerPassword");
 
         customerGroup.MapGet("/{customerId:guid}/addresses", ListCustomerAddresses)
+            .RequireAuthorization(Shared.BuildingBlocks.Api.AuthorizationPolicies.AccountAdminReadPolicy)
             .WithName("AdminAccountListCustomerAddresses");
         customerGroup.MapPost("/{customerId:guid}/addresses", CreateCustomerAddress)
+            .RequireAuthorization(Shared.BuildingBlocks.Api.AuthorizationPolicies.AccountAdminWritePolicy)
             .WithName("AdminAccountCreateCustomerAddress");
         customerGroup.MapPut("/{customerId:guid}/addresses/{addressId:guid}", UpdateCustomerAddress)
+            .RequireAuthorization(Shared.BuildingBlocks.Api.AuthorizationPolicies.AccountAdminWritePolicy)
             .WithName("AdminAccountUpdateCustomerAddress");
         customerGroup.MapDelete("/{customerId:guid}/addresses/{addressId:guid}", DeleteCustomerAddress)
+            .RequireAuthorization(Shared.BuildingBlocks.Api.AuthorizationPolicies.AccountAdminWritePolicy)
             .WithName("AdminAccountDeleteCustomerAddress");
 
         return adminGroup;

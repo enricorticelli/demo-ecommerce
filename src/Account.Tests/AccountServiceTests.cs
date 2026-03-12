@@ -5,6 +5,10 @@ using Account.Infrastructure.Persistence;
 using Account.Infrastructure.Persistence.Entities;
 using Account.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Shared.BuildingBlocks.Api;
 using Shared.BuildingBlocks.Exceptions;
 using System.Net;
 using System.Text.Json;
@@ -60,6 +64,184 @@ public sealed class AccountServiceTests
 
         await Assert.ThrowsAsync<ValidationAppException>(() =>
             service.LoginAsync(AccountRealm.Customer, new LoginInput("mario.rossi@example.com", "WrongPassword"), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task LoginAsync_AdminRealm_WithCustomPermissions_ReturnsOnlyCustomPermissions()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Users.Add(new AccountUserEntity
+        {
+            Id = Guid.NewGuid(),
+            Realm = AccountRealm.Admin,
+            Username = "admin-custom",
+            Email = "admin-custom@example.com",
+            NormalizedEmail = "admin-custom@example.com",
+            PasswordHash = PasswordHasher.HashPassword("Password123"),
+            IsEmailVerified = true,
+            FirstName = "Admin",
+            LastName = "Custom",
+            Phone = "+39",
+            CustomPermissions = new[] { AuthorizationPermissions.CatalogRead, AuthorizationPermissions.AccountRead },
+            CreatedAtUtc = DateTimeOffset.UtcNow
+        });
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateAuthService(dbContext);
+
+        var result = await service.LoginAsync(AccountRealm.Admin, new LoginInput("admin-custom", "Password123"), CancellationToken.None);
+
+        Assert.Equal(2, result.Permissions.Length);
+        Assert.Contains(AuthorizationPermissions.CatalogRead, result.Permissions);
+        Assert.Contains(AuthorizationPermissions.AccountRead, result.Permissions);
+    }
+
+    [Fact]
+    public async Task CreateAdminByAdminAsync_WithCustomPermissions_PersistsCustomSet()
+    {
+        await using var dbContext = CreateDbContext();
+        var service = new AccountAdministrationService(dbContext);
+
+        var created = await service.CreateAdminByAdminAsync(
+            new CreateAdminInput(
+                "ops-admin",
+                "Password123",
+                new[] { AuthorizationPermissions.ShippingRead, AuthorizationPermissions.ShippingWrite, AuthorizationPermissions.AccountRead }),
+            CancellationToken.None);
+
+        Assert.Equal("ops-admin", created.Username);
+        Assert.True(created.HasCustomPermissions);
+        Assert.Contains(AuthorizationPermissions.ShippingRead, created.Permissions);
+        Assert.Contains(AuthorizationPermissions.ShippingWrite, created.Permissions);
+        Assert.Contains(AuthorizationPermissions.AccountRead, created.Permissions);
+
+        var persisted = await dbContext.Users.SingleAsync(x => x.Id == created.Id);
+        Assert.NotNull(persisted.CustomPermissions);
+        Assert.Equal(3, persisted.CustomPermissions!.Length);
+    }
+
+    [Fact]
+    public async Task LoginAsync_AdminRealm_ReturnsExpandedAdminPermissions()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Users.Add(new AccountUserEntity
+        {
+            Id = Guid.NewGuid(),
+            Realm = AccountRealm.Admin,
+            Username = "admin",
+            Email = "admin@example.com",
+            NormalizedEmail = "admin@example.com",
+            PasswordHash = PasswordHasher.HashPassword("Password123"),
+            IsEmailVerified = true,
+            FirstName = "Admin",
+            LastName = "User",
+            Phone = "+39",
+            CreatedAtUtc = DateTimeOffset.UtcNow
+        });
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateAuthService(dbContext);
+
+        var result = await service.LoginAsync(AccountRealm.Admin, new LoginInput("admin", "Password123"), CancellationToken.None);
+
+        Assert.Contains(AuthorizationPermissions.CatalogRead, result.Permissions);
+        Assert.Contains(AuthorizationPermissions.CatalogWrite, result.Permissions);
+        Assert.Contains(AuthorizationPermissions.OrdersRead, result.Permissions);
+        Assert.Contains(AuthorizationPermissions.OrdersWrite, result.Permissions);
+        Assert.Contains(AuthorizationPermissions.ShippingRead, result.Permissions);
+        Assert.Contains(AuthorizationPermissions.ShippingWrite, result.Permissions);
+        Assert.Contains(AuthorizationPermissions.WarehouseRead, result.Permissions);
+        Assert.Contains(AuthorizationPermissions.WarehouseWrite, result.Permissions);
+        Assert.Contains(AuthorizationPermissions.AccountRead, result.Permissions);
+        Assert.Contains(AuthorizationPermissions.AccountWrite, result.Permissions);
+    }
+
+    [Fact]
+    public async Task CreatePasswordResetCodeAsync_InProduction_ReturnsNullPreviewCode()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Users.Add(new AccountUserEntity
+        {
+            Id = Guid.NewGuid(),
+            Realm = AccountRealm.Customer,
+            Username = "mario.rossi@example.com",
+            Email = "mario.rossi@example.com",
+            NormalizedEmail = "mario.rossi@example.com",
+            PasswordHash = PasswordHasher.HashPassword("Password123"),
+            IsEmailVerified = true,
+            FirstName = "Mario",
+            LastName = "Rossi",
+            Phone = "+39",
+            CreatedAtUtc = DateTimeOffset.UtcNow
+        });
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateAuthService(dbContext, environmentName: Environments.Production);
+
+        var result = await service.CreatePasswordResetCodeAsync(new ForgotPasswordInput("mario.rossi@example.com"), CancellationToken.None);
+
+        Assert.True(result.Issued);
+        Assert.Null(result.PreviewCode);
+    }
+
+    [Fact]
+    public async Task CreatePasswordResetCodeAsync_InDevelopment_ReturnsPreviewCode()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Users.Add(new AccountUserEntity
+        {
+            Id = Guid.NewGuid(),
+            Realm = AccountRealm.Customer,
+            Username = "mario.rossi@example.com",
+            Email = "mario.rossi@example.com",
+            NormalizedEmail = "mario.rossi@example.com",
+            PasswordHash = PasswordHasher.HashPassword("Password123"),
+            IsEmailVerified = true,
+            FirstName = "Mario",
+            LastName = "Rossi",
+            Phone = "+39",
+            CreatedAtUtc = DateTimeOffset.UtcNow
+        });
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateAuthService(dbContext, environmentName: Environments.Development);
+
+        var result = await service.CreatePasswordResetCodeAsync(new ForgotPasswordInput("mario.rossi@example.com"), CancellationToken.None);
+
+        Assert.True(result.Issued);
+        Assert.False(string.IsNullOrWhiteSpace(result.PreviewCode));
+    }
+
+    [Fact]
+    public async Task LoginAsync_InvalidPassword_WritesAuditWarning()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Users.Add(new AccountUserEntity
+        {
+            Id = Guid.NewGuid(),
+            Realm = AccountRealm.Customer,
+            Username = "mario.rossi@example.com",
+            Email = "mario.rossi@example.com",
+            NormalizedEmail = "mario.rossi@example.com",
+            PasswordHash = PasswordHasher.HashPassword("Password123"),
+            IsEmailVerified = true,
+            FirstName = "Mario",
+            LastName = "Rossi",
+            Phone = "+39",
+            CreatedAtUtc = DateTimeOffset.UtcNow
+        });
+        await dbContext.SaveChangesAsync();
+
+        var logger = new TestLogger<AccountAuthService>();
+        var service = CreateAuthService(dbContext, logger: logger);
+
+        await Assert.ThrowsAsync<ValidationAppException>(() =>
+            service.LoginAsync(AccountRealm.Customer, new LoginInput("mario.rossi@example.com", "WrongPassword"), CancellationToken.None));
+
+        Assert.Contains(logger.Entries, x =>
+            x.Level == LogLevel.Warning &&
+            x.Message.Contains("event=login", StringComparison.OrdinalIgnoreCase) &&
+            x.Message.Contains("outcome=invalid_credentials", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -183,7 +365,11 @@ public sealed class AccountServiceTests
         Assert.Single(await dbContext.Addresses.ToListAsync());
     }
 
-    private static AccountAuthService CreateAuthService(AccountDbContext dbContext, StubHttpMessageHandler? handler = null)
+    private static AccountAuthService CreateAuthService(
+        AccountDbContext dbContext,
+        StubHttpMessageHandler? handler = null,
+        string environmentName = "Development",
+        ILogger<AccountAuthService>? logger = null)
     {
         var options = new AccountTechnicalOptions
         {
@@ -201,8 +387,9 @@ public sealed class AccountServiceTests
         var tokenFactory = new TokenFactory(options);
         var httpClient = new HttpClient(handler ?? new StubHttpMessageHandler()) { BaseAddress = new Uri("http://localhost") };
         var orderApiClient = new OrderApiClient(httpClient);
+        var environment = new TestHostEnvironment(environmentName);
 
-        return new AccountAuthService(dbContext, tokenFactory, orderApiClient, options);
+        return new AccountAuthService(dbContext, tokenFactory, orderApiClient, options, environment, logger ?? NullLogger<AccountAuthService>.Instance);
     }
 
     private static AccountCustomerProfileService CreateCustomerProfileService(AccountDbContext dbContext)
@@ -239,6 +426,36 @@ public sealed class AccountServiceTests
             }
 
             return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
+        }
+    }
+
+    private sealed class TestHostEnvironment(string environmentName) : IHostEnvironment
+    {
+        public string EnvironmentName { get; set; } = environmentName;
+        public string ApplicationName { get; set; } = "Account.Tests";
+        public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
+        public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; }
+            = new Microsoft.Extensions.FileProviders.NullFileProvider();
+    }
+
+    private sealed class TestLogger<T> : ILogger<T>
+    {
+        public List<(LogLevel Level, string Message)> Entries { get; } = [];
+
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            Entries.Add((logLevel, formatter(state, exception)));
+        }
+
+        private sealed class NullScope : IDisposable
+        {
+            public static readonly NullScope Instance = new();
+            public void Dispose() { }
         }
     }
 }

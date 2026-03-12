@@ -13,6 +13,8 @@
     type AdminCustomerAddress
   } from '../lib/api';
 
+  export let canWrite = false;
+
   const pageSize = 20;
 
   let loadingList = true;
@@ -148,6 +150,7 @@
   }
 
   async function saveProfile() {
+    if (!canWrite) return;
     if (!selectedCustomer || savingProfile) return;
     savingProfile = true;
     message = '';
@@ -166,6 +169,7 @@
   }
 
   async function saveAddress() {
+    if (!canWrite) return;
     if (!selectedCustomer || savingAddress) return;
     savingAddress = true;
     message = '';
@@ -190,6 +194,7 @@
   }
 
   async function removeAddress(addressId: string) {
+    if (!canWrite) return;
     if (!selectedCustomer || savingAddress) return;
     savingAddress = true;
     message = '';
@@ -210,6 +215,7 @@
   }
 
   async function savePassword() {
+    if (!canWrite) return;
     if (!selectedCustomer || savingPassword) return;
     if (passwordForm.newPassword.length < 8) {
       error = 'La password deve avere almeno 8 caratteri.';
@@ -271,6 +277,11 @@
     {/if}
     {#if error}
       <p class="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>
+    {/if}
+    {#if !canWrite}
+      <p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
+        Permesso mancante: account:write. Modifiche clienti disabilitate.
+      </p>
     {/if}
   </section>
 
@@ -349,32 +360,32 @@
           {:else}
             <div class="mt-3 grid gap-3 md:grid-cols-2">
               <div>
-                <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]">ID</label>
+                <p class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]">ID</p>
                 <input class="form-input font-mono text-xs" value={selectedCustomer.id} disabled />
               </div>
               <div>
-                <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]">Email</label>
+                <p class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]">Email</p>
                 <input class="form-input" value={selectedCustomer.email} disabled />
               </div>
               <div>
-                <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]">Nome</label>
-                <input class="form-input" bind:value={profileForm.firstName} />
+                <p class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]">Nome</p>
+                <input class="form-input" bind:value={profileForm.firstName} disabled={!canWrite} />
               </div>
               <div>
-                <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]">Cognome</label>
-                <input class="form-input" bind:value={profileForm.lastName} />
+                <p class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]">Cognome</p>
+                <input class="form-input" bind:value={profileForm.lastName} disabled={!canWrite} />
               </div>
               <div>
-                <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]">Telefono</label>
-                <input class="form-input" bind:value={profileForm.phone} />
+                <p class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]">Telefono</p>
+                <input class="form-input" bind:value={profileForm.phone} disabled={!canWrite} />
               </div>
               <div>
-                <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]">Verificato</label>
+                <p class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]">Verificato</p>
                 <input class="form-input" value={selectedCustomer.isEmailVerified ? 'Si' : 'No'} disabled />
               </div>
             </div>
             <div class="mt-4 flex justify-end">
-              <button class="btn-primary" on:click={saveProfile} disabled={savingProfile}>
+              <button class="btn-primary" on:click={saveProfile} disabled={!canWrite || savingProfile}>
                 {savingProfile ? 'Salvataggio...' : 'Salva profilo'}
               </button>
             </div>
@@ -385,16 +396,16 @@
           <h2 class="text-xl font-bold text-[#1c2430]">Reset password</h2>
           <div class="mt-3 grid gap-3 md:grid-cols-2">
             <div>
-              <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]">Nuova password</label>
-              <input class="form-input" type="password" bind:value={passwordForm.newPassword} />
+              <p class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]">Nuova password</p>
+              <input class="form-input" type="password" bind:value={passwordForm.newPassword} disabled={!canWrite} />
             </div>
             <div>
-              <label class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]">Conferma password</label>
-              <input class="form-input" type="password" bind:value={passwordForm.confirmPassword} />
+              <p class="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]">Conferma password</p>
+              <input class="form-input" type="password" bind:value={passwordForm.confirmPassword} disabled={!canWrite} />
             </div>
           </div>
           <div class="mt-4 flex justify-end">
-            <button class="btn-primary" on:click={savePassword} disabled={savingPassword}>
+            <button class="btn-primary" on:click={savePassword} disabled={!canWrite || savingPassword}>
               {savingPassword ? 'Aggiornamento...' : 'Reset password'}
             </button>
           </div>
@@ -403,7 +414,7 @@
         <div class="surface-card p-5">
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-bold text-[#1c2430]">Indirizzi</h2>
-            <button class="btn-secondary" on:click={newAddress}>Nuovo indirizzo</button>
+            <button class="btn-secondary" on:click={newAddress} disabled={!canWrite}>Nuovo indirizzo</button>
           </div>
 
           <div class="mt-3 overflow-x-auto">
@@ -428,8 +439,8 @@
                     <td class="px-2 py-2">{address.country}</td>
                     <td class="px-2 py-2 text-right">
                       <div class="inline-flex gap-2">
-                        <button class="btn-secondary !px-3 !py-1.5 text-xs" on:click={() => editAddress(address)}>Modifica</button>
-                        <button class="btn-secondary !px-3 !py-1.5 text-xs" on:click={() => removeAddress(address.id)}>Elimina</button>
+                        <button class="btn-secondary !px-3 !py-1.5 text-xs" on:click={() => editAddress(address)} disabled={!canWrite}>Modifica</button>
+                        <button class="btn-secondary !px-3 !py-1.5 text-xs" on:click={() => removeAddress(address.id)} disabled={!canWrite}>Elimina</button>
                       </div>
                     </td>
                   </tr>
@@ -441,24 +452,24 @@
           <div class="mt-4 rounded-xl border border-[#d9dee8] bg-[#fcfdff] p-4">
             <p class="text-sm font-semibold text-[#1c2430]">{selectedAddressId ? 'Modifica indirizzo' : 'Nuovo indirizzo'}</p>
             <div class="mt-3 grid gap-3 md:grid-cols-2">
-              <input class="form-input" placeholder="Label" bind:value={addressForm.label} />
-              <input class="form-input" placeholder="Via" bind:value={addressForm.street} />
-              <input class="form-input" placeholder="Citta" bind:value={addressForm.city} />
-              <input class="form-input" placeholder="CAP" bind:value={addressForm.postalCode} />
-              <input class="form-input" placeholder="Nazione" bind:value={addressForm.country} />
+              <input class="form-input" placeholder="Label" bind:value={addressForm.label} disabled={!canWrite} />
+              <input class="form-input" placeholder="Via" bind:value={addressForm.street} disabled={!canWrite} />
+              <input class="form-input" placeholder="Citta" bind:value={addressForm.city} disabled={!canWrite} />
+              <input class="form-input" placeholder="CAP" bind:value={addressForm.postalCode} disabled={!canWrite} />
+              <input class="form-input" placeholder="Nazione" bind:value={addressForm.country} disabled={!canWrite} />
               <div class="flex items-center gap-4">
                 <label class="inline-flex items-center gap-2 text-sm text-[#1c2430]">
-                  <input type="checkbox" bind:checked={addressForm.isDefaultShipping} />
+                  <input type="checkbox" bind:checked={addressForm.isDefaultShipping} disabled={!canWrite} />
                   Default spedizione
                 </label>
                 <label class="inline-flex items-center gap-2 text-sm text-[#1c2430]">
-                  <input type="checkbox" bind:checked={addressForm.isDefaultBilling} />
+                  <input type="checkbox" bind:checked={addressForm.isDefaultBilling} disabled={!canWrite} />
                   Default fatturazione
                 </label>
               </div>
             </div>
             <div class="mt-4 flex justify-end">
-              <button class="btn-primary" on:click={saveAddress} disabled={savingAddress}>
+              <button class="btn-primary" on:click={saveAddress} disabled={!canWrite || savingAddress}>
                 {savingAddress ? 'Salvataggio...' : selectedAddressId ? 'Aggiorna indirizzo' : 'Crea indirizzo'}
               </button>
             </div>

@@ -4,8 +4,10 @@ using Account.Infrastructure.Persistence;
 using Account.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Shared.BuildingBlocks.Api;
 
 namespace Account.Infrastructure.Configuration;
 
@@ -39,11 +41,68 @@ public static class AccountInfrastructureExtensions
 
         builder.Services.AddAuthorization(optionsAuth =>
         {
-            optionsAuth.AddPolicy("CustomerPolicy", policy => policy.RequireClaim("realm", AccountRealm.Customer));
-            optionsAuth.AddPolicy("AdminPolicy", policy => policy.RequireClaim("realm", AccountRealm.Admin));
+            optionsAuth.AddPolicy(AuthorizationPolicies.CustomerPolicy, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim(AuthorizationClaimTypes.Realm, AccountRealm.Customer));
+            optionsAuth.AddPolicy(AuthorizationPolicies.AdminPolicy, policy =>
+                policy.RequireAuthenticatedUser().RequireClaim(AuthorizationClaimTypes.Realm, AccountRealm.Admin));
+
+            AddAdminPermissionPolicies(optionsAuth);
         });
 
         return builder;
+    }
+
+    private static void AddAdminPermissionPolicies(AuthorizationOptions options)
+    {
+        options.AddPolicy(AuthorizationPolicies.CatalogReadPolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, AccountRealm.Admin)
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.CatalogRead));
+
+        options.AddPolicy(AuthorizationPolicies.CatalogWritePolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, AccountRealm.Admin)
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.CatalogWrite));
+
+        options.AddPolicy(AuthorizationPolicies.OrdersReadPolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, AccountRealm.Admin)
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.OrdersRead));
+
+        options.AddPolicy(AuthorizationPolicies.OrdersWritePolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, AccountRealm.Admin)
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.OrdersWrite));
+
+        options.AddPolicy(AuthorizationPolicies.ShippingReadPolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, AccountRealm.Admin)
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.ShippingRead));
+
+        options.AddPolicy(AuthorizationPolicies.ShippingWritePolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, AccountRealm.Admin)
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.ShippingWrite));
+
+        options.AddPolicy(AuthorizationPolicies.WarehouseReadPolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, AccountRealm.Admin)
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.WarehouseRead));
+
+        options.AddPolicy(AuthorizationPolicies.WarehouseWritePolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, AccountRealm.Admin)
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.WarehouseWrite));
+
+        options.AddPolicy(AuthorizationPolicies.AccountAdminReadPolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, AccountRealm.Admin)
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.AccountRead));
+
+        options.AddPolicy(AuthorizationPolicies.AccountAdminWritePolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, AccountRealm.Admin)
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.AccountWrite));
     }
 
     public static async Task UseAccountModuleAsync(this WebApplication app)
@@ -53,6 +112,7 @@ public static class AccountInfrastructureExtensions
 
         var dbContext = services.GetRequiredService<AccountDbContext>();
         await dbContext.Database.EnsureCreatedAsync();
+        await dbContext.Database.ExecuteSqlRawAsync("ALTER TABLE accounting.users ADD COLUMN IF NOT EXISTS \"CustomPermissions\" text[] NULL;");
 
         var options = services.GetRequiredService<AccountTechnicalOptions>();
         var bootstrapService = services.GetRequiredService<IAccountBootstrapService>();

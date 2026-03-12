@@ -32,6 +32,9 @@ namespace Account.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string[]>("CustomPermissions")
+                        .HasColumnType("text[]");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)

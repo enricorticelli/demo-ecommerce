@@ -7,6 +7,8 @@
     type Product
   } from '../lib/api';
 
+  export let canWrite = false;
+
   let products: Product[] = [];
   let loading = true;
   let syncingStock = false;
@@ -245,6 +247,7 @@
   }
 
   async function saveStockForProduct(product: Product, quantity: number) {
+    if (!canWrite) return;
     const normalizedQuantity = toInt(quantity, 0);
     saving = true;
     savingProductId = product.id;
@@ -274,6 +277,7 @@
   }
 
   async function saveQuickStock() {
+    if (!canWrite) return;
     const selected = getSelectedProduct();
     if (!selected || saving) return;
     await saveStockForProduct(selected, quickQuantity);
@@ -295,6 +299,11 @@
     {/if}
     {#if error}
       <p class="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>
+    {/if}
+    {#if !canWrite}
+      <p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
+        Permesso mancante: warehouse:write. Aggiornamento stock disabilitato.
+      </p>
     {/if}
   </section>
 
@@ -383,23 +392,24 @@
             min="0"
             bind:value={quickQuantity}
             on:input={handleQuickInput}
+            disabled={!canWrite}
           />
           <div class="flex flex-wrap gap-2">
-            <button class="btn-secondary !px-3" on:click={() => changeQuickBy(-10)} disabled={saving || quickQuantity === 0}>-10</button>
-            <button class="btn-secondary !px-3" on:click={() => changeQuickBy(-5)} disabled={saving || quickQuantity === 0}>-5</button>
-            <button class="btn-secondary !px-3" on:click={() => changeQuickBy(5)} disabled={saving}>+5</button>
-            <button class="btn-secondary !px-3" on:click={() => changeQuickBy(10)} disabled={saving}>+10</button>
+            <button class="btn-secondary !px-3" on:click={() => changeQuickBy(-10)} disabled={!canWrite || saving || quickQuantity === 0}>-10</button>
+            <button class="btn-secondary !px-3" on:click={() => changeQuickBy(-5)} disabled={!canWrite || saving || quickQuantity === 0}>-5</button>
+            <button class="btn-secondary !px-3" on:click={() => changeQuickBy(5)} disabled={!canWrite || saving}>+5</button>
+            <button class="btn-secondary !px-3" on:click={() => changeQuickBy(10)} disabled={!canWrite || saving}>+10</button>
           </div>
         </div>
 
         <div class="space-y-2">
           <p class="text-xs font-semibold uppercase tracking-[0.12em] text-[#5a6472]">Preset intelligenti</p>
-          <button class="btn-secondary w-full" on:click={useCurrentStockForQuick} disabled={saving}>Usa stock attuale</button>
-          <button class="btn-secondary w-full" on:click={useThresholdForQuick} disabled={saving}>Porta a soglia ({normalizedThreshold()})</button>
+          <button class="btn-secondary w-full" on:click={useCurrentStockForQuick} disabled={!canWrite || saving}>Usa stock attuale</button>
+          <button class="btn-secondary w-full" on:click={useThresholdForQuick} disabled={!canWrite || saving}>Porta a soglia ({normalizedThreshold()})</button>
         </div>
 
         <div class="flex items-end">
-          <button class="btn-primary" on:click={saveQuickStock} disabled={saving}>
+          <button class="btn-primary" on:click={saveQuickStock} disabled={!canWrite || saving}>
             {saving && savingProductId === selectedProduct.id ? 'Aggiornamento...' : 'Aggiorna stock'}
           </button>
         </div>

@@ -5,8 +5,12 @@
     deleteAdminUser,
     fetchAdminUsers,
     resetAdminUserPassword,
+    updateAdminUserPermissions,
     type AdminAccountUser
   } from '../lib/api';
+  import { ALL_ADMIN_PERMISSIONS, ADMIN_PERMISSION_LABEL, type AdminPermission } from '../lib/permissions';
+
+  export let canWrite = false;
 
   const pageSize = 20;
 
@@ -18,8 +22,9 @@
   let searchTerm = '';
   let appliedSearchTerm = '';
 
-  let createForm = { username: '', password: '' };
+  let createForm = { username: '', password: '', permissions: [...ALL_ADMIN_PERMISSIONS] as AdminPermission[] };
   let resetPasswordByUserId: Record<string, string> = {};
+  let permissionDraftByUserId: Record<string, AdminPermission[]> = {};
 
   let message = '';
   let error = '';
@@ -40,6 +45,50 @@
     setResetPassword(userId, target?.value ?? '');
   }
 
+  function getPermissionDraft(user: AdminAccountUser): AdminPermission[] {
+    return permissionDraftByUserId[user.id] ?? (user.permissions as AdminPermission[]);
+  }
+
+  function setPermissionDraft(userId: string, permissions: AdminPermission[]) {
+    permissionDraftByUserId = {
+      ...permissionDraftByUserId,
+      [userId]: permissions
+    };
+  }
+
+  function toggleCreatePermission(permission: AdminPermission) {
+    if (createForm.permissions.includes(permission)) {
+      createForm.permissions = createForm.permissions.filter((x) => x !== permission);
+      return;
+    }
+
+    createForm.permissions = [...createForm.permissions, permission];
+  }
+
+  function toggleUserPermission(userId: string, permission: AdminPermission) {
+    const current = permissionDraftByUserId[userId] ?? [];
+    if (current.includes(permission)) {
+      setPermissionDraft(userId, current.filter((x) => x !== permission));
+      return;
+    }
+
+    setPermissionDraft(userId, [...current, permission]);
+  }
+
+  function resetCreatePermissionsToDefault() {
+    createForm.permissions = [...ALL_ADMIN_PERMISSIONS];
+  }
+
+  function toCreatePermissionsPayload(permissions: AdminPermission[]): AdminPermission[] | null {
+    if (permissions.length !== ALL_ADMIN_PERMISSIONS.length) {
+      return permissions;
+    }
+
+    const requested = new Set(permissions);
+    const isDefault = ALL_ADMIN_PERMISSIONS.every((permission) => requested.has(permission));
+    return isDefault ? null : permissions;
+  }
+
   async function loadUsers(page = currentPage) {
     loading = true;
     error = '';
@@ -56,6 +105,10 @@
         users = loadedUsers.slice(0, pageSize);
         hasNextPage = loadedUsers.length > pageSize;
       }
+
+      permissionDraftByUserId = Object.fromEntries(
+        users.map((user) => [user.id, [...(user.permissions as AdminPermission[])]])
+      );
     } catch (err) {
       error = err instanceof Error ? err.message : 'Errore caricamento utenti';
     } finally {
@@ -85,6 +138,7 @@
   }
 
   async function createUser() {
+    if (!canWrite) return;
     if (saving) return;
     if (!createForm.username.trim()) {
       error = 'Username obbligatorio.';
@@ -102,10 +156,11 @@
     try {
       await createAdminUser({
         username: createForm.username.trim(),
-        password: createForm.password
+        password: createForm.password,
+        permissions: toCreatePermissionsPayload(createForm.permissions)
       });
 
-      createForm = { username: '', password: '' };
+      createForm = { username: '', password: '', permissions: [...ALL_ADMIN_PERMISSIONS] };
       message = 'Utente admin creato.';
       await loadUsers(1);
     } catch (err) {
@@ -116,6 +171,7 @@
   }
 
   async function resetPassword(user: AdminAccountUser) {
+    if (!canWrite) return;
     if (saving) return;
 
     const newPassword = getResetPassword(user.id);
@@ -140,6 +196,7 @@
   }
 
   async function removeUser(user: AdminAccountUser) {
+    if (!canWrite) return;
     if (saving) return;
 
     const confirmed = globalThis.confirm(`Eliminare l'utente admin "${user.username}"?`);
@@ -160,6 +217,45 @@
     }
   }
 
+  async function savePermissions(user: AdminAccountUser) {
+    if (!canWrite) return;
+    if (saving) return;
+
+    saving = true;
+    message = '';
+    error = '';
+
+    try {
+      const permissions = getPermissionDraft(user);
+      await updateAdminUserPermissions(user.id, permissions);
+      message = `Permessi aggiornati per ${user.username}. Sessioni utente revocate.`;
+      await loadUsers(currentPage);
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Errore aggiornamento permessi admin';
+    } finally {
+      saving = false;
+    }
+  }
+
+  async function useDefaultPermissions(user: AdminAccountUser) {
+    if (!canWrite) return;
+    if (saving) return;
+
+    saving = true;
+    message = '';
+    error = '';
+
+    try {
+      await updateAdminUserPermissions(user.id, null);
+      message = `Permessi default ripristinati per ${user.username}. Sessioni utente revocate.`;
+      await loadUsers(currentPage);
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Errore ripristino permessi default';
+    } finally {
+      saving = false;
+    }
+  }
+
   onMount(() => {
     loadUsers();
   });
@@ -175,6 +271,11 @@
     {#if error}
       <p class="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>
     {/if}
+    {#if !canWrite}
+      <p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
+        Permesso mancante: account:write. Operazioni su utenti admin disabilitate.
+      </p>
+    {/if}
   </section>
 
   <section class="surface-card p-5">
@@ -182,9 +283,30 @@
     <div class="mt-3 grid gap-3 md:grid-cols-3">
       <input class="form-input" placeholder="Username" bind:value={createForm.username} />
       <input class="form-input" type="password" placeholder="Password" bind:value={createForm.password} />
-      <button class="btn-primary" on:click={createUser} disabled={saving}>
+      <button class="btn-primary" on:click={createUser} disabled={!canWrite || saving}>
         {saving ? 'Creazione...' : 'Crea utente'}
       </button>
+    </div>
+    <div class="mt-4 rounded-xl border border-[#d9dee8] bg-[#fcfdff] p-4">
+      <div class="mb-3 flex items-center justify-between gap-2">
+        <p class="text-sm font-semibold text-[#1c2430]">Permessi iniziali</p>
+        <button class="btn-secondary !px-3 !py-1.5 text-xs" on:click={resetCreatePermissionsToDefault} disabled={!canWrite || saving}>
+          Usa default
+        </button>
+      </div>
+      <div class="grid gap-2 md:grid-cols-2">
+        {#each ALL_ADMIN_PERMISSIONS as permission}
+          <label class="inline-flex items-center gap-2 text-sm text-[#1c2430]">
+            <input
+              type="checkbox"
+              checked={createForm.permissions.includes(permission)}
+              on:change={() => toggleCreatePermission(permission)}
+              disabled={!canWrite || saving}
+            />
+            {ADMIN_PERMISSION_LABEL[permission]}
+          </label>
+        {/each}
+      </div>
     </div>
   </section>
 
@@ -227,12 +349,13 @@
       <div class="mt-4 h-24 animate-pulse rounded-xl bg-[#f0f4fb]"></div>
     {:else}
       <div class="mt-4 overflow-x-auto">
-        <table class="w-full min-w-[980px] text-left text-sm">
+        <table class="w-full min-w-[1240px] text-left text-sm">
           <thead>
             <tr class="border-b border-[#d9dee8] text-[#5a6472]">
               <th class="px-2 py-2">Username</th>
               <th class="px-2 py-2">Email</th>
               <th class="px-2 py-2">Creato il</th>
+              <th class="px-2 py-2">Permessi</th>
               <th class="px-2 py-2">Nuova password</th>
               <th class="px-2 py-2 text-right">Azioni</th>
             </tr>
@@ -244,21 +367,45 @@
                 <td class="px-2 py-2">{user.email}</td>
                 <td class="px-2 py-2">{new Date(user.createdAtUtc).toLocaleString('it-IT')}</td>
                 <td class="px-2 py-2">
+                  <div class="grid gap-1">
+                    {#each ALL_ADMIN_PERMISSIONS as permission}
+                      <label class="inline-flex items-center gap-2 text-xs text-[#1c2430]">
+                        <input
+                          type="checkbox"
+                          checked={getPermissionDraft(user).includes(permission)}
+                          on:change={() => toggleUserPermission(user.id, permission)}
+                          disabled={!canWrite || saving}
+                        />
+                        {ADMIN_PERMISSION_LABEL[permission]}
+                      </label>
+                    {/each}
+                    {#if !user.hasCustomPermissions}
+                      <p class="text-xs text-[#5a6472]">Profilo in modalita default.</p>
+                    {/if}
+                  </div>
+                </td>
+                <td class="px-2 py-2">
                   <input
                     class="form-input max-w-[220px]"
                     type="password"
                     placeholder="Nuova password"
                     value={getResetPassword(user.id)}
                     on:input={(event) => handleResetPasswordInput(user.id, event)}
-                    disabled={saving}
+                    disabled={!canWrite || saving}
                   />
                 </td>
                 <td class="px-2 py-2 text-right">
                   <div class="inline-flex gap-2">
-                    <button class="btn-secondary !px-3 !py-1.5 text-xs" on:click={() => resetPassword(user)} disabled={saving}>
+                    <button class="btn-secondary !px-3 !py-1.5 text-xs" on:click={() => savePermissions(user)} disabled={!canWrite || saving}>
+                      Salva permessi
+                    </button>
+                    <button class="btn-secondary !px-3 !py-1.5 text-xs" on:click={() => useDefaultPermissions(user)} disabled={!canWrite || saving}>
+                      Default
+                    </button>
+                    <button class="btn-secondary !px-3 !py-1.5 text-xs" on:click={() => resetPassword(user)} disabled={!canWrite || saving}>
                       Reset password
                     </button>
-                    <button class="btn-secondary !px-3 !py-1.5 text-xs" on:click={() => removeUser(user)} disabled={saving}>
+                    <button class="btn-secondary !px-3 !py-1.5 text-xs" on:click={() => removeUser(user)} disabled={!canWrite || saving}>
                       Elimina
                     </button>
                   </div>

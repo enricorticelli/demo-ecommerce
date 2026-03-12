@@ -23,6 +23,8 @@
     type Product
   } from '../lib/api';
 
+  export let canWrite = false;
+
   type CatalogTab = 'products' | 'brands' | 'categories' | 'collections';
 
   const pageSize = 20;
@@ -319,6 +321,7 @@
   }
 
   async function saveActiveEntity() {
+    if (!canWrite) return;
     if (isSaving) return;
 
     isSaving = true;
@@ -381,6 +384,7 @@
   }
 
   async function removeActiveEntity() {
+    if (!canWrite) return;
     const selectedId = selectedByTab[activeTab];
     if (!selectedId || isSaving) return;
 
@@ -501,7 +505,7 @@
     <div class="surface-card p-4">
       <div class="flex items-center justify-between gap-2">
         <h2 class="text-xl font-bold text-[#1c2430]">Lista {tabLabels[activeTab].toLowerCase()}</h2>
-        <button class="btn-secondary" on:click={newActiveEntity} disabled={isSaving}>Nuovo</button>
+        <button class="btn-secondary" on:click={newActiveEntity} disabled={!canWrite || isSaving}>Nuovo</button>
       </div>
 
       {#if isLoading}
@@ -635,12 +639,18 @@
         </div>
       {/if}
 
+      {#if !canWrite}
+        <p class="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
+          Permesso mancante: `catalog:write`. Modifiche disabilitate in sola lettura.
+        </p>
+      {/if}
+
       <div class="mt-4 flex flex-wrap justify-end gap-2">
-        <button class="btn-secondary" on:click={newActiveEntity} disabled={isSaving}>Nuovo</button>
-        <button class="btn-primary" on:click={saveActiveEntity} disabled={isSaving}>
+        <button class="btn-secondary" on:click={newActiveEntity} disabled={!canWrite || isSaving}>Nuovo</button>
+        <button class="btn-primary" on:click={saveActiveEntity} disabled={!canWrite || isSaving}>
           {isSaving ? 'Salvataggio...' : 'Salva'}
         </button>
-        <button class="btn-danger" on:click={removeActiveEntity} disabled={isSaving || !selectedByTab[activeTab]}>
+        <button class="btn-danger" on:click={removeActiveEntity} disabled={!canWrite || isSaving || !selectedByTab[activeTab]}>
           Elimina
         </button>
       </div>

@@ -1,7 +1,17 @@
 import { defineMiddleware } from 'astro:middleware';
 import { isAuthenticated } from './lib/auth';
+import { ADMIN_PERMISSION, getAdminPermissionsFromCookies } from './lib/permissions';
 
-const PUBLIC_PATH_PREFIXES = ['/login'];
+const PUBLIC_PATH_PREFIXES = ['/login', '/api/auth/refresh'];
+
+const READ_PERMISSION_BY_PATH_PREFIX: Array<{ prefix: string; permission: string }> = [
+  { prefix: '/catalog', permission: ADMIN_PERMISSION.catalogRead },
+  { prefix: '/orders', permission: ADMIN_PERMISSION.ordersRead },
+  { prefix: '/shipments', permission: ADMIN_PERMISSION.shippingRead },
+  { prefix: '/warehouse', permission: ADMIN_PERMISSION.warehouseRead },
+  { prefix: '/customers', permission: ADMIN_PERMISSION.accountRead },
+  { prefix: '/admin-users', permission: ADMIN_PERMISSION.accountRead }
+];
 
 export const onRequest = defineMiddleware((context, next) => {
   const pathname = context.url.pathname;
@@ -23,6 +33,17 @@ export const onRequest = defineMiddleware((context, next) => {
       : '/login';
 
     return context.redirect(redirectPath);
+  }
+
+  const requiredPermission = READ_PERMISSION_BY_PATH_PREFIX
+    .find((entry) => pathname.startsWith(entry.prefix))
+    ?.permission;
+
+  if (requiredPermission) {
+    const permissions = getAdminPermissionsFromCookies(context.cookies);
+    if (!permissions.has(requiredPermission)) {
+      return context.redirect('/');
+    }
   }
 
   return next();

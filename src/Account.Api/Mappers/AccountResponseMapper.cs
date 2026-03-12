@@ -61,7 +61,9 @@ public static class AccountResponseMapper
             admin.Id,
             admin.Username,
             admin.Email,
-            admin.CreatedAtUtc.ToString("O"));
+            admin.CreatedAtUtc.ToString("O"),
+            admin.Permissions,
+            admin.HasCustomPermissions);
     }
 
     public static OrderSummaryResponse ToResponse(this OrderSummary order)

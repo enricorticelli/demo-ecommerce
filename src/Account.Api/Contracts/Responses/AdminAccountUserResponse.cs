@@ -4,4 +4,6 @@ public sealed record AdminAccountUserResponse(
     Guid Id,
     string Username,
     string Email,
-    string CreatedAtUtc);
+    string CreatedAtUtc,
+    string[] Permissions,
+    bool HasCustomPermissions);

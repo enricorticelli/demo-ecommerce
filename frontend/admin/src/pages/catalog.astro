@@ -1,9 +1,13 @@
 ---
 import MainLayout from '../layouts/MainLayout.astro';
 import AdminCatalogPage from '../components/AdminCatalogPage.svelte';
+import { ADMIN_PERMISSION, getAdminPermissionsFromCookies } from '../lib/permissions';
+
+const permissions = getAdminPermissionsFromCookies(Astro.cookies);
+const canWriteCatalog = permissions.has(ADMIN_PERMISSION.catalogWrite);
 ---
 
 <MainLayout title="Catalogo">
-  <AdminCatalogPage client:load />
+  <AdminCatalogPage client:load canWrite={canWriteCatalog} />
 </MainLayout>
 

@@ -1,9 +1,13 @@
 ---
 import MainLayout from '../layouts/MainLayout.astro';
 import AdminWarehousePage from '../components/AdminWarehousePage.svelte';
+import { ADMIN_PERMISSION, getAdminPermissionsFromCookies } from '../lib/permissions';
+
+const permissions = getAdminPermissionsFromCookies(Astro.cookies);
+const canWriteWarehouse = permissions.has(ADMIN_PERMISSION.warehouseWrite);
 ---
 
 <MainLayout title="Magazzino">
-  <AdminWarehousePage client:load />
+  <AdminWarehousePage client:load canWrite={canWriteWarehouse} />
 </MainLayout>
 

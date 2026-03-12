@@ -41,10 +41,16 @@ Il realm è salvato:
 Policy configurate in `Account.Infrastructure`:
 - `CustomerPolicy`: richiede claim `realm=customer`
 - `AdminPolicy`: richiede claim `realm=admin`
+- policy granulari admin basate su claim `permission`:
+- `CatalogReadPolicy` / `CatalogWritePolicy`
+- `OrdersReadPolicy` / `OrdersWritePolicy`
+- `ShippingReadPolicy` / `ShippingWritePolicy`
+- `WarehouseReadPolicy` / `WarehouseWritePolicy`
+- `AccountAdminReadPolicy` / `AccountAdminWritePolicy`
 
 Endpoint protetti:
 - Store profile (`/store/v1/me`, `/me/addresses`, `/me/orders`) -> `CustomerPolicy`
-- Admin profile/gestione utenti/clienti (`/admin/v1/me`, `/admins`, `/customers`) -> `AdminPolicy`
+- Admin endpoint-by-endpoint -> policy granulari `permission` (read/write per dominio)
 
 ## Token model
 
@@ -111,12 +117,18 @@ Permissions hardcoded in `AccountAuthService`:
 - `catalog:read`
 - `catalog:write`
 - `orders:read`
+- `orders:write`
 - `shipping:read`
 - `shipping:write`
+- `warehouse:read`
+- `warehouse:write`
+- `account:read`
+- `account:write`
 
 Nota:
-- oggi le policy usano solo `realm`.
-- le `permission` sono incluse nel token e disponibili via endpoint `/me/permissions`, ma non ancora usate in policy granulari endpoint-by-endpoint.
+- le policy admin usano `realm=admin` + claim `permission` richiesto dall'endpoint.
+- l'endpoint `/me/permissions` espone il set effettivo di permission presenti nel token.
+- per gli utenti admin e supportata assegnazione custom delle permission (per utente) da backoffice; se non configurate, viene usato il set admin di default.
 
 ## Formato risposta auth
 
@@ -228,6 +240,17 @@ Middleware:
 Chiamate API admin:
 - `frontend/admin/src/lib/api.ts` legge `bo_access_token` da cookie client e imposta header `Authorization: Bearer ...`.
 
+Gestione utenti admin e permission:
+- la sezione `/admin-users` consente creazione utenti admin con set permission custom.
+- e possibile aggiornare successivamente le permission di un admin o ripristinare il profilo default.
+- quando le permission di un admin cambiano, le sessioni refresh attive di quell'utente vengono revocate per forzare nuovo login con claim aggiornati.
+
+Refresh automatico centralizzato:
+- `frontend/admin/src/lib/api.ts` gestisce in modo centralizzato `401` con retry singolo.
+- al primo `401` su una request: chiama `POST /api/auth/refresh` e, se ok, ripete una sola volta la request originale.
+- `frontend/admin/src/pages/api/auth/refresh.ts` usa `bo_refresh_token` (httpOnly) per invocare `/api/admin/account/v1/users/refresh` e aggiornare i cookie auth.
+- in caso di refresh fallito: cookie auth puliti e redirect a login lato client.
+
 Logout:
 - pagina `/logout` legge refresh cookie, chiama revoke, poi cancella cookie e redirige a `/login`.
 
@@ -269,12 +292,14 @@ Punti buoni gia implementati:
 - rotazione refresh token
 - revoca sessione su logout e su reset password
 - separazione issuer/audience per realm
+- policy autorizzative admin granulari per permission
+- `codePreview` disponibile solo in ambiente development
+- audit trail auth tramite log strutturati per login/refresh/logout/reset password (success/failure)
 
 Trade-off/limiti attuali:
 - Storefront usa `localStorage` per token (rischio XSS -> token exposure).
 - Backoffice usa access token cookie non-httpOnly per poterlo leggere da JS e inviare Authorization header.
-- Le permission sono nel token ma le policy endpoint oggi sono basate su realm, non su permission fine-grained.
-- Endpoint forgot/reset/verify restituiscono `codePreview` (utile dev/test, da valutare in produzione).
+- Il backoffice non e ancora migrato a BFF completo con access token `httpOnly` e forward server-side.
 
 ## Troubleshooting rapido
 
@@ -286,6 +311,7 @@ Trade-off/limiti attuali:
 - refresh non funziona:
 - token refresh mancante/scaduto/revocato
 - realm non coerente con sessione
+- fallimento endpoint interno backoffice `POST /api/auth/refresh`
 
 - utente admin non accede al backoffice:
 - cookie `bo_access_token` assente o scaduto
@@ -298,7 +324,5 @@ Trade-off/limiti attuali:
 ## Evoluzioni consigliate
 
 1. Spostare il backoffice a BFF completo con access token `httpOnly` e forward server-side, eliminando lettura token da JS.
-2. Introdurre policy granulari basate su claim `permission` (es. `catalog:write`).
-3. Introdurre refresh automatico centralizzato lato frontend con retry singolo su `401`.
-4. Disabilitare `codePreview` in ambienti non-dev.
-5. Aggiungere audit trail esplicito per login/refresh/logout/reset password.
+2. Valutare enforcement CSRF dedicato anche sul percorso di refresh backoffice (`/api/auth/refresh`).
+3. Aggiungere alerting operativo su pattern anomali nei log audit auth (es. picchi `invalid_credentials` / `invalid_refresh_token`).

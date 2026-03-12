@@ -22,14 +22,16 @@ public static class ShippingEndpoints
             .WithName("StoreGetShipmentByOrder");
 
         var adminGroup = app.MapGroup(ShippingRoutes.AdminBase)
-            .WithTags("Shipping")
-            .RequireAuthorization("AdminPolicy");
+            .WithTags("Shipping");
 
         adminGroup.MapGet("/", ListShipments)
+            .RequireAuthorization(AuthorizationPolicies.ShippingReadPolicy)
             .WithName("AdminListShipments");
         adminGroup.MapGet("/orders/{orderId:guid}", AdminGetShipmentByOrder)
+            .RequireAuthorization(AuthorizationPolicies.ShippingReadPolicy)
             .WithName("AdminGetShipmentByOrder");
         adminGroup.MapPost("/{shipmentId:guid}/status", UpdateShipmentStatus)
+            .RequireAuthorization(AuthorizationPolicies.ShippingWritePolicy)
             .WithName("AdminUpdateShipmentStatus");
         return adminGroup;
     }

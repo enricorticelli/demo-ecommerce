@@ -6,6 +6,7 @@ const gatewayUrl = (): string =>
   ?? 'http://localhost:18080';
 
 const ACCESS_COOKIE_NAME = 'bo_access_token';
+const REFRESH_ENDPOINT_PATH = '/api/auth/refresh';
 
 const defaultRequestTimeoutMs = Number(
   (typeof window !== 'undefined'
@@ -16,6 +17,9 @@ const defaultRequestTimeoutMs = Number(
 const requestTimeoutMs = Number.isFinite(defaultRequestTimeoutMs) && defaultRequestTimeoutMs > 0
   ? defaultRequestTimeoutMs
   : 20000;
+
+let refreshInFlight: Promise<boolean> | null = null;
+let loginRedirectTriggered = false;
 
 function isSafeMethod(method?: string): boolean {
   if (!method) return true;
@@ -137,6 +141,8 @@ export type AdminAccountUser = {
   username: string;
   email: string;
   createdAtUtc: string;
+  permissions: string[];
+  hasCustomPermissions: boolean;
 };
 
 export type AdminCustomerAddress = {
@@ -415,8 +421,20 @@ export async function fetchAdminUsers(limit = 20, offset = 0, searchTerm = ''): 
   return fetchJson(`${gatewayUrl()}/api/admin/account/v1/admins?${query.toString()}`);
 }
 
-export async function createAdminUser(payload: { username: string; password: string }): Promise<AdminAccountUser> {
+export async function createAdminUser(payload: { username: string; password: string; permissions?: string[] | null }): Promise<AdminAccountUser> {
   return postJson(`${gatewayUrl()}/api/admin/account/v1/admins`, payload);
+}
+
+export async function updateAdminUserPermissions(adminUserId: string, permissions: string[] | null): Promise<void> {
+  const response = await fetchWithTimeout(`${gatewayUrl()}/api/admin/account/v1/admins/${adminUserId}/permissions`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ permissions })
+  });
+
+  if (!response.ok) {
+    throw new Error(await getApiErrorMessage(response, 'PUT'));
+  }
 }
 
 export async function resetAdminUserPassword(adminUserId: string, newPassword: string): Promise<void> {
@@ -515,6 +533,25 @@ function normalizeDomainErrorMessage(rawMessage: string): string {
 }
 
 async function fetchWithTimeout(url: string, init?: RequestInit): Promise<Response> {
+  let hasRetriedAfterRefresh = false;
+
+  while (true) {
+    const response = await fetchWithTimeoutRetry(url, init);
+    const canRefresh = typeof window !== 'undefined';
+
+    if (response.status !== 401 || !canRefresh || hasRetriedAfterRefresh) {
+      return response;
+    }
+
+    hasRetriedAfterRefresh = true;
+    const refreshed = await refreshAdminSession();
+    if (!refreshed) {
+      return response;
+    }
+  }
+}
+
+async function fetchWithTimeoutRetry(url: string, init?: RequestInit): Promise<Response> {
   const shouldRetry = isSafeMethod(init?.method);
 
   for (let attempt = 0; attempt < (shouldRetry ? 2 : 1); attempt += 1) {
@@ -545,6 +582,39 @@ async function fetchWithTimeout(url: string, init?: RequestInit): Promise<Respon
   }
 
   throw new Error(`Request timeout after ${requestTimeoutMs}ms`);
+}
+
+async function refreshAdminSession(): Promise<boolean> {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const response = await fetch(REFRESH_ENDPOINT_PATH, {
+          method: 'POST',
+          credentials: 'same-origin'
+        });
+
+        return response.ok;
+      } catch {
+        return false;
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
+  }
+
+  const refreshed = await refreshInFlight;
+
+  if (!refreshed && !loginRedirectTriggered) {
+    loginRedirectTriggered = true;
+    const nextPath = `${window.location.pathname}${window.location.search}`;
+    window.location.assign(`/login?next=${encodeURIComponent(nextPath)}`);
+  }
+
+  return refreshed;
 }
 
 function withAdminAuthorization(headers?: HeadersInit): Headers {

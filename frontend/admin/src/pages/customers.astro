@@ -1,8 +1,12 @@
 ---
 import MainLayout from '../layouts/MainLayout.astro';
 import AdminCustomersPage from '../components/AdminCustomersPage.svelte';
+import { ADMIN_PERMISSION, getAdminPermissionsFromCookies } from '../lib/permissions';
+
+const permissions = getAdminPermissionsFromCookies(Astro.cookies);
+const canWriteAccounts = permissions.has(ADMIN_PERMISSION.accountWrite);
 ---
 
 <MainLayout title="Clienti">
-  <AdminCustomersPage client:load />
+  <AdminCustomersPage client:load canWrite={canWriteAccounts} />
 </MainLayout>

@@ -23,6 +23,10 @@ type LoginResponse = {
   realm: string;
 };
 
+function isValidLoginResponse(body: LoginResponse | null | undefined): body is LoginResponse {
+  return !!body?.accessToken && !!body.refreshToken && body.realm === 'admin';
+}
+
 export function isAuthenticated(cookies: CookieStore): boolean {
   const token = cookies.get(ACCESS_COOKIE_NAME)?.value;
   if (!token) return false;
@@ -51,11 +55,39 @@ export async function validateCredentials(username: string, password: string): P
   }
 
   const body = await res.json() as LoginResponse;
-  if (!body.accessToken || !body.refreshToken || body.realm !== 'admin') {
+  if (!isValidLoginResponse(body)) {
     return null;
   }
 
   return body;
+}
+
+export async function refreshSession(cookies: CookieStore): Promise<boolean> {
+  const refreshToken = getRefreshToken(cookies);
+  if (!refreshToken) {
+    clearAuthCookie(cookies);
+    return false;
+  }
+
+  const response = await fetch(`${gatewayUrl()}/api/admin/account/v1/users/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refreshToken })
+  }).catch(() => null);
+
+  if (!response?.ok) {
+    clearAuthCookie(cookies);
+    return false;
+  }
+
+  const body = await response.json() as LoginResponse;
+  if (!isValidLoginResponse(body)) {
+    clearAuthCookie(cookies);
+    return false;
+  }
+
+  setAuthCookie(cookies, body);
+  return true;
 }
 
 export async function revokeSession(refreshToken: string | undefined): Promise<void> {

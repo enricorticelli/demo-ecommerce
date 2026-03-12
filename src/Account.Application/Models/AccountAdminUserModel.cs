@@ -4,4 +4,6 @@ public sealed record AccountAdminUserModel(
     Guid Id,
     string Username,
     string Email,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc,
+    string[] Permissions,
+    bool HasCustomPermissions);

@@ -6,6 +6,8 @@
     type ShipmentView
   } from '../lib/api';
 
+  export let canWrite = false;
+
   const pageSize = 20;
   const statuses: ShipmentView['status'][] = ['Preparing', 'Created', 'InTransit', 'Delivered', 'Cancelled'];
 
@@ -73,6 +75,7 @@
   }
 
   async function changeStatus(shipment: ShipmentView, status: ShipmentView['status']) {
+    if (!canWrite) return;
     if (loading || shipment.status === status) return;
 
     loading = true;
@@ -109,6 +112,11 @@
     {/if}
     {#if error}
       <p class="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>
+    {/if}
+    {#if !canWrite}
+      <p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
+        Permesso mancante: shipping:write. Aggiornamento stato disabilitato.
+      </p>
     {/if}
   </section>
 
@@ -189,7 +197,7 @@
                   class="form-input"
                   value={shipment.status}
                   on:change={(event) => handleStatusChange(shipment, event)}
-                  disabled={loading}
+                  disabled={loading || !canWrite}
                 >
                   {#each statuses as status}
                     <option value={status}>{status}</option>

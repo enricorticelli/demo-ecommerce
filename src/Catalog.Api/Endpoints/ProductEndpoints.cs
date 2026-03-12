@@ -6,6 +6,7 @@ using Catalog.Application.Abstractions.Queries;
 using Shared.BuildingBlocks.Api.Correlation;
 using Shared.BuildingBlocks.Api.Errors;
 using Shared.BuildingBlocks.Api.Pagination;
+using Shared.BuildingBlocks.Api;
 
 namespace Catalog.Api.Endpoints;
 
@@ -22,14 +23,13 @@ public static class ProductEndpoints
         storeGroup.MapGet("/{id:guid}", GetProductById).WithName("StoreGetProductById");
 
         var adminGroup = app.MapGroup(CatalogRoutes.AdminProducts)
-            .WithTags("Catalog")
-            .RequireAuthorization("AdminPolicy");
+            .WithTags("Catalog");
 
-        adminGroup.MapGet("/", AdminGetProducts).WithName("AdminGetProducts");
-        adminGroup.MapGet("/{id:guid}", GetProductById).WithName("AdminGetProductById");
-        adminGroup.MapPost("/", CreateProduct).WithName("AdminCreateProduct");
-        adminGroup.MapPut("/{id:guid}", UpdateProduct).WithName("AdminUpdateProduct");
-        adminGroup.MapDelete("/{id:guid}", DeleteProduct).WithName("AdminDeleteProduct");
+        adminGroup.MapGet("/", AdminGetProducts).RequireAuthorization(AuthorizationPolicies.CatalogReadPolicy).WithName("AdminGetProducts");
+        adminGroup.MapGet("/{id:guid}", GetProductById).RequireAuthorization(AuthorizationPolicies.CatalogReadPolicy).WithName("AdminGetProductById");
+        adminGroup.MapPost("/", CreateProduct).RequireAuthorization(AuthorizationPolicies.CatalogWritePolicy).WithName("AdminCreateProduct");
+        adminGroup.MapPut("/{id:guid}", UpdateProduct).RequireAuthorization(AuthorizationPolicies.CatalogWritePolicy).WithName("AdminUpdateProduct");
+        adminGroup.MapDelete("/{id:guid}", DeleteProduct).RequireAuthorization(AuthorizationPolicies.CatalogWritePolicy).WithName("AdminDeleteProduct");
 
         return adminGroup;
     }

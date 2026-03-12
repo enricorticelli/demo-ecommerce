@@ -6,6 +6,7 @@ using Catalog.Application.Abstractions.Queries;
 using Shared.BuildingBlocks.Api.Correlation;
 using Shared.BuildingBlocks.Api.Errors;
 using Shared.BuildingBlocks.Api.Pagination;
+using Shared.BuildingBlocks.Api;
 
 namespace Catalog.Api.Endpoints;
 
@@ -14,14 +15,13 @@ public static class CollectionEndpoints
     public static RouteGroupBuilder MapCollectionEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup(CatalogRoutes.AdminCollections)
-            .WithTags("Catalog")
-            .RequireAuthorization("AdminPolicy");
+            .WithTags("Catalog");
 
-        group.MapGet("/", GetCollections).WithName("AdminGetCollections");
-        group.MapGet("/{id:guid}", GetCollectionById).WithName("AdminGetCollectionById");
-        group.MapPost("/", CreateCollection).WithName("AdminCreateCollection");
-        group.MapPut("/{id:guid}", UpdateCollection).WithName("AdminUpdateCollection");
-        group.MapDelete("/{id:guid}", DeleteCollection).WithName("AdminDeleteCollection");
+        group.MapGet("/", GetCollections).RequireAuthorization(AuthorizationPolicies.CatalogReadPolicy).WithName("AdminGetCollections");
+        group.MapGet("/{id:guid}", GetCollectionById).RequireAuthorization(AuthorizationPolicies.CatalogReadPolicy).WithName("AdminGetCollectionById");
+        group.MapPost("/", CreateCollection).RequireAuthorization(AuthorizationPolicies.CatalogWritePolicy).WithName("AdminCreateCollection");
+        group.MapPut("/{id:guid}", UpdateCollection).RequireAuthorization(AuthorizationPolicies.CatalogWritePolicy).WithName("AdminUpdateCollection");
+        group.MapDelete("/{id:guid}", DeleteCollection).RequireAuthorization(AuthorizationPolicies.CatalogWritePolicy).WithName("AdminDeleteCollection");
 
         return group;
     }

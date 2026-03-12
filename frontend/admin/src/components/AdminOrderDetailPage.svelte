@@ -3,6 +3,7 @@
   import { fetchOrder, manualCancelOrder, manualCompleteOrder, type OrderView } from '../lib/api';
 
   export let orderId: string;
+  export let canWrite = false;
 
   let order: OrderView | null = null;
   let error = '';
@@ -154,6 +155,7 @@
   }
 
   async function completeManually() {
+    if (!canWrite) return;
     if (!order || actionLoading) return;
     if (order.status === 'Completed') return;
 
@@ -176,6 +178,7 @@
   }
 
   async function cancelManually() {
+    if (!canWrite) return;
     if (!order || actionLoading) return;
     if (order.status === 'Cancelled') return;
 
@@ -270,18 +273,23 @@
           >
             Apri pagina store
           </a>
-          {#if canCancel}
+          {#if canWrite && canCancel}
             <button class="action-btn action-btn-danger" on:click={cancelManually} disabled={actionLoading}>
               {actionLoading ? 'Elaborazione...' : 'Annulla'}
             </button>
           {/if}
-          {#if canComplete}
+          {#if canWrite && canComplete}
             <button class="action-btn action-btn-success" on:click={completeManually} disabled={actionLoading}>
               {actionLoading ? 'Elaborazione...' : 'Completa'}
             </button>
           {/if}
         {/if}
       </div>
+      {#if !canWrite}
+        <p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
+          Permesso mancante: orders:write. Azioni di workflow in sola lettura.
+        </p>
+      {/if}
     </div>
   </section>
 

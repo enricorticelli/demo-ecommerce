@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -36,12 +37,14 @@ public static class AuthenticationExtensions
 
         builder.Services.AddAuthorization(options =>
         {
-            options.AddPolicy("AdminPolicy", policy =>
+            options.AddPolicy(AuthorizationPolicies.AdminPolicy, policy =>
                 policy.RequireAuthenticatedUser()
-                    .RequireClaim("realm", "admin"));
-            options.AddPolicy("CustomerPolicy", policy =>
+                    .RequireClaim(AuthorizationClaimTypes.Realm, "admin"));
+            options.AddPolicy(AuthorizationPolicies.CustomerPolicy, policy =>
                 policy.RequireAuthenticatedUser()
-                    .RequireClaim("realm", "customer"));
+                    .RequireClaim(AuthorizationClaimTypes.Realm, "customer"));
+
+            AddAdminPermissionPolicies(options);
         });
 
         return builder;
@@ -49,12 +52,12 @@ public static class AuthenticationExtensions
 
     public static WebApplicationBuilder AddCustomerAuthentication(this WebApplicationBuilder builder)
     {
-        return builder.AddJwtAuthentication("customer", "CustomerPolicy");
+        return builder.AddJwtAuthentication("customer", AuthorizationPolicies.CustomerPolicy);
     }
 
     public static WebApplicationBuilder AddAdminAuthentication(this WebApplicationBuilder builder)
     {
-        return builder.AddJwtAuthentication("admin", "AdminPolicy");
+        return builder.AddJwtAuthentication("admin", AuthorizationPolicies.AdminPolicy);
     }
 
     private static WebApplicationBuilder AddJwtAuthentication(this WebApplicationBuilder builder, string realm, string policyName)
@@ -89,9 +92,67 @@ public static class AuthenticationExtensions
         {
             options.AddPolicy(policyName, policy =>
                 policy.RequireAuthenticatedUser()
-                    .RequireClaim("realm", normalizedRealm));
+                    .RequireClaim(AuthorizationClaimTypes.Realm, normalizedRealm));
+
+            if (normalizedRealm == "admin")
+            {
+                AddAdminPermissionPolicies(options);
+            }
         });
 
         return builder;
+    }
+
+    private static void AddAdminPermissionPolicies(AuthorizationOptions options)
+    {
+        options.AddPolicy(AuthorizationPolicies.CatalogReadPolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, "admin")
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.CatalogRead));
+
+        options.AddPolicy(AuthorizationPolicies.CatalogWritePolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, "admin")
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.CatalogWrite));
+
+        options.AddPolicy(AuthorizationPolicies.OrdersReadPolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, "admin")
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.OrdersRead));
+
+        options.AddPolicy(AuthorizationPolicies.OrdersWritePolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, "admin")
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.OrdersWrite));
+
+        options.AddPolicy(AuthorizationPolicies.ShippingReadPolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, "admin")
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.ShippingRead));
+
+        options.AddPolicy(AuthorizationPolicies.ShippingWritePolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, "admin")
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.ShippingWrite));
+
+        options.AddPolicy(AuthorizationPolicies.WarehouseReadPolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, "admin")
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.WarehouseRead));
+
+        options.AddPolicy(AuthorizationPolicies.WarehouseWritePolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, "admin")
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.WarehouseWrite));
+
+        options.AddPolicy(AuthorizationPolicies.AccountAdminReadPolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, "admin")
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.AccountRead));
+
+        options.AddPolicy(AuthorizationPolicies.AccountAdminWritePolicy, policy =>
+            policy.RequireAuthenticatedUser()
+                .RequireClaim(AuthorizationClaimTypes.Realm, "admin")
+                .RequireClaim(AuthorizationClaimTypes.Permission, AuthorizationPermissions.AccountWrite));
     }
 }
