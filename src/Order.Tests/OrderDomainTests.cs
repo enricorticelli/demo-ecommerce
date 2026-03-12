@@ -57,6 +57,14 @@ public sealed class OrderDomainTests
     }
 
     [Fact]
+    public void CreateCustomer_EmptyPhone_IsAllowed()
+    {
+        var customer = OrderCustomer.Create("Mario", "Rossi", "mario@example.com", "   ");
+
+        Assert.Equal(string.Empty, customer.Phone);
+    }
+
+    [Fact]
     public void MarkCompleted_NonPendingOrder_ThrowsConflictException()
     {
         var item = OrderItem.Create(Guid.NewGuid(), "SKU-1", "Item 1", 1, 10m);

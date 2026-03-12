@@ -25,7 +25,7 @@ public static class OrderMapper
 				request.TotalAmount,
 				authenticatedUserId.Value,
 				null,
-				new CreateOrderCustomerCommand(customer.FirstName, customer.LastName, customer.Email, customer.Phone),
+				new CreateOrderCustomerCommand(customer.FirstName, customer.LastName, customer.Email, customer.Phone ?? string.Empty),
 				new CreateOrderAddressCommand(shippingAddress.Street, shippingAddress.City, shippingAddress.PostalCode, shippingAddress.Country),
 				new CreateOrderAddressCommand(billingAddress.Street, billingAddress.City, billingAddress.PostalCode, billingAddress.Country),
 				correlationId);
@@ -46,7 +46,7 @@ public static class OrderMapper
 			request.TotalAmount,
 			null,
 			anonymousId,
-			new CreateOrderCustomerCommand(customer.FirstName, customer.LastName, customer.Email, customer.Phone),
+			new CreateOrderCustomerCommand(customer.FirstName, customer.LastName, customer.Email, customer.Phone ?? string.Empty),
 			new CreateOrderAddressCommand(shippingAddress.Street, shippingAddress.City, shippingAddress.PostalCode, shippingAddress.Country),
 			new CreateOrderAddressCommand(billingAddress.Street, billingAddress.City, billingAddress.PostalCode, billingAddress.Country),
 			correlationId);

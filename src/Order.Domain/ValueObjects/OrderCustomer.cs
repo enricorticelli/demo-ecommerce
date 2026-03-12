@@ -21,7 +21,7 @@ public sealed class OrderCustomer
         Phone = phone;
     }
 
-    public static OrderCustomer Create(string firstName, string lastName, string email, string phone)
+    public static OrderCustomer Create(string firstName, string lastName, string email, string? phone)
     {
         if (string.IsNullOrWhiteSpace(firstName))
         {
@@ -38,11 +38,6 @@ public sealed class OrderCustomer
             throw new ValidationAppException("Customer email is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(phone))
-        {
-            throw new ValidationAppException("Customer phone is required.");
-        }
-
-        return new OrderCustomer(firstName.Trim(), lastName.Trim(), email.Trim(), phone.Trim());
+        return new OrderCustomer(firstName.Trim(), lastName.Trim(), email.Trim(), phone?.Trim() ?? string.Empty);
     }
 }
