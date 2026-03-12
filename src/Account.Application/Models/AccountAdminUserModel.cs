@@ -6,4 +6,5 @@ public sealed record AccountAdminUserModel(
     string Email,
     DateTimeOffset CreatedAtUtc,
     string[] Permissions,
-    bool HasCustomPermissions);
+    bool HasCustomPermissions,
+    bool IsSuperUser);

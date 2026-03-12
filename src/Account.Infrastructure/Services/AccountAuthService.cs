@@ -286,8 +286,15 @@ public sealed class AccountAuthService(
 
     private async Task<AuthTokenResult> IssueTokensAsync(AccountUserEntity user, string realm, CancellationToken cancellationToken)
     {
-        var permissions = GetPermissionsForUser(user, realm);
-        var (accessToken, accessExpiresAt) = tokenFactory.CreateAccessToken(user.Id, user.Email, user.IsEmailVerified, realm, permissions);
+        var isSuperUser = IsSuperUser(user, realm);
+        var permissions = GetPermissionsForUser(user, realm, isSuperUser);
+        var (accessToken, accessExpiresAt) = tokenFactory.CreateAccessToken(
+            user.Id,
+            user.Email,
+            user.IsEmailVerified,
+            realm,
+            permissions,
+            isSuperUser);
         var (refreshToken, refreshExpiresAt) = tokenFactory.CreateRefreshToken();
 
         dbContext.RefreshSessions.Add(new RefreshSessionEntity
@@ -339,11 +346,31 @@ public sealed class AccountAuthService(
         InputValidationHelper.EnsureMinLength(password, 8, "Password must be at least 8 characters long.");
     }
 
-    private static string[] GetPermissionsForUser(AccountUserEntity user, string realm)
+    private bool IsSuperUser(AccountUserEntity user, string realm)
+    {
+        if (realm != AccountRealm.Admin)
+        {
+            return false;
+        }
+
+        if (user.IsSuperUser)
+        {
+            return true;
+        }
+
+        return string.Equals(user.Username, options.DefaultAdminUsername, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string[] GetPermissionsForUser(AccountUserEntity user, string realm, bool isSuperUser)
     {
         if (realm != AccountRealm.Admin)
         {
             return CustomerPermissions;
+        }
+
+        if (isSuperUser)
+        {
+            return AuthorizationPermissions.AllAdmin;
         }
 
         if (user.CustomPermissions is not null)

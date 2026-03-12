@@ -3,7 +3,7 @@
     catalog: boolean;
     orders: boolean;
     customers: boolean;
-    adminUsers: boolean;
+    users: boolean;
     shipments: boolean;
     warehouse: boolean;
   };
@@ -12,7 +12,7 @@
     access.catalog ||
     access.orders ||
     access.customers ||
-    access.adminUsers ||
+    access.users ||
     access.shipments ||
     access.warehouse;
 </script>
@@ -51,9 +51,9 @@
     </a>
     {/if}
 
-    {#if access.adminUsers}
-    <a href="/admin-users" class="surface-card p-5 transition hover:-translate-y-0.5 hover:shadow-sm">
-      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[#3e4b5d]">Admin</p>
+    {#if access.users}
+    <a href="/users" class="surface-card p-5 transition hover:-translate-y-0.5 hover:shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[#3e4b5d]">Accessi</p>
       <h2 class="mt-2 text-xl font-extrabold text-[#1c2430]">Utenti</h2>
       <p class="mt-2 text-sm text-[#5a6472]">Crea amministratori, resetta password e gestisci accessi.</p>
     </a>

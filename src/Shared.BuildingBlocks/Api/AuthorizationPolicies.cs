@@ -4,6 +4,7 @@ public static class AuthorizationClaimTypes
 {
     public const string Realm = "realm";
     public const string Permission = "permission";
+    public const string SuperUser = "super_user";
 }
 
 public static class AuthorizationPermissions

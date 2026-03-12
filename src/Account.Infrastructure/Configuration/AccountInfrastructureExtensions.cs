@@ -113,6 +113,7 @@ public static class AccountInfrastructureExtensions
         var dbContext = services.GetRequiredService<AccountDbContext>();
         await dbContext.Database.EnsureCreatedAsync();
         await dbContext.Database.ExecuteSqlRawAsync("ALTER TABLE accounting.users ADD COLUMN IF NOT EXISTS \"CustomPermissions\" text[] NULL;");
+        await dbContext.Database.ExecuteSqlRawAsync("ALTER TABLE accounting.users ADD COLUMN IF NOT EXISTS \"IsSuperUser\" boolean NOT NULL DEFAULT false;");
 
         var options = services.GetRequiredService<AccountTechnicalOptions>();
         var bootstrapService = services.GetRequiredService<IAccountBootstrapService>();

@@ -27,6 +27,7 @@ public sealed class AccountDbContext(DbContextOptions<AccountDbContext> options)
             entity.Property(x => x.FirstName).HasMaxLength(128).IsRequired();
             entity.Property(x => x.LastName).HasMaxLength(128).IsRequired();
             entity.Property(x => x.Phone).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.IsSuperUser).HasDefaultValue(false).IsRequired();
             entity.Property(x => x.CustomPermissions).HasColumnType("text[]");
             entity.Property(x => x.CreatedAtUtc).IsRequired();
             entity.HasIndex(x => new { x.Realm, x.NormalizedEmail }).IsUnique();

@@ -1,15 +1,16 @@
 ---
 import MainLayout from '../layouts/MainLayout.astro';
 import AdminHomePage from '../components/AdminHomePage.svelte';
-import { ADMIN_PERMISSION, getAdminPermissionsFromCookies } from '../lib/permissions';
+import { ADMIN_PERMISSION, getAdminPermissionsFromCookies, isAdminSuperUserFromCookies } from '../lib/permissions';
 
 const permissions = getAdminPermissionsFromCookies(Astro.cookies);
+const isSuperUser = isAdminSuperUserFromCookies(Astro.cookies);
 
 const access = {
   catalog: permissions.has(ADMIN_PERMISSION.catalogRead),
   orders: permissions.has(ADMIN_PERMISSION.ordersRead),
   customers: permissions.has(ADMIN_PERMISSION.accountRead),
-  adminUsers: permissions.has(ADMIN_PERMISSION.accountRead),
+  users: isSuperUser,
   shipments: permissions.has(ADMIN_PERMISSION.shippingRead),
   warehouse: permissions.has(ADMIN_PERMISSION.warehouseRead)
 };

@@ -46,16 +46,33 @@ type CookieStore = {
 const ACCESS_COOKIE_NAME = 'bo_access_token';
 
 export function getAdminPermissionsFromCookies(cookies: CookieStore): Set<string> {
-  const token = cookies.get(ACCESS_COOKIE_NAME)?.value;
-  return getAdminPermissionsFromToken(token);
+  const payload = getAdminJwtPayloadFromCookies(cookies);
+  return getAdminPermissionsFromPayload(payload);
+}
+
+export function isAdminSuperUserFromCookies(cookies: CookieStore): boolean {
+  const payload = getAdminJwtPayloadFromCookies(cookies);
+  if (!payload) {
+    return false;
+  }
+
+  const claim = payload.super_user;
+  if (typeof claim === 'boolean') {
+    return claim;
+  }
+
+  if (typeof claim === 'string') {
+    return claim.toLowerCase() === 'true';
+  }
+
+  return false;
 }
 
 export function hasPermission(permissions: Set<string>, permission: AdminPermission): boolean {
   return permissions.has(permission);
 }
 
-function getAdminPermissionsFromToken(token: string | undefined): Set<string> {
-  const payload = decodeJwtPayload(token);
+function getAdminPermissionsFromPayload(payload: Record<string, unknown> | null): Set<string> {
   if (!payload) {
     return new Set();
   }
@@ -75,6 +92,11 @@ function getAdminPermissionsFromToken(token: string | undefined): Set<string> {
   }
 
   return new Set();
+}
+
+function getAdminJwtPayloadFromCookies(cookies: CookieStore): Record<string, unknown> | null {
+  const token = cookies.get(ACCESS_COOKIE_NAME)?.value;
+  return decodeJwtPayload(token);
 }
 
 function decodeJwtPayload(token: string | undefined): Record<string, unknown> | null {

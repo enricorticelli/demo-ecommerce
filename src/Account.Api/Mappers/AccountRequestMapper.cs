@@ -34,5 +34,5 @@ public static class AccountRequestMapper
             request.IsDefaultBilling);
 
     public static CreateAdminInput ToInput(this AdminCreateAdminUserRequest request)
-        => new(request.Username, request.Password, request.Permissions);
+        => new(request.Username, request.Password, request.Permissions, request.IsSuperUser);
 }

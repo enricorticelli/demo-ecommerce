@@ -6,4 +6,5 @@ public sealed record AdminAccountUserResponse(
     string Email,
     string CreatedAtUtc,
     string[] Permissions,
-    bool HasCustomPermissions);
+    bool HasCustomPermissions,
+    bool IsSuperUser);

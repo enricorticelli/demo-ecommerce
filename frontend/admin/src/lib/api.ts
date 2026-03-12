@@ -143,6 +143,7 @@ export type AdminAccountUser = {
   createdAtUtc: string;
   permissions: string[];
   hasCustomPermissions: boolean;
+  isSuperUser: boolean;
 };
 
 export type AdminCustomerAddress = {
@@ -421,7 +422,7 @@ export async function fetchAdminUsers(limit = 20, offset = 0, searchTerm = ''): 
   return fetchJson(`${gatewayUrl()}/api/admin/account/v1/admins?${query.toString()}`);
 }
 
-export async function createAdminUser(payload: { username: string; password: string; permissions?: string[] | null }): Promise<AdminAccountUser> {
+export async function createAdminUser(payload: { username: string; password: string; permissions?: string[] | null; isSuperUser?: boolean }): Promise<AdminAccountUser> {
   return postJson(`${gatewayUrl()}/api/admin/account/v1/admins`, payload);
 }
 

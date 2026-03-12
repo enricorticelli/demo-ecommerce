@@ -33,25 +33,36 @@ public static class AdminAdminEndpoints
     }
 
     private static async Task<IResult> ListAdmins(
+        HttpContext context,
         IAccountAdministrationService service,
         int? limit,
         int? offset,
         string? searchTerm,
         CancellationToken cancellationToken)
     {
-        var (normalizedLimit, normalizedOffset) = PaginationNormalizer.Normalize(limit, offset);
-        var admins = await service.ListAdminsAsync(normalizedLimit, normalizedOffset, searchTerm, cancellationToken);
-        return Results.Ok(admins.Select(x => x.ToResponse()).ToArray());
+        try
+        {
+            var actingAdminUserId = context.GetRequiredUserId();
+            var (normalizedLimit, normalizedOffset) = PaginationNormalizer.Normalize(limit, offset);
+            var admins = await service.ListAdminsAsync(actingAdminUserId, normalizedLimit, normalizedOffset, searchTerm, cancellationToken);
+            return Results.Ok(admins.Select(x => x.ToResponse()).ToArray());
+        }
+        catch (Exception exception)
+        {
+            return ExceptionHttpResultMapper.Map(exception);
+        }
     }
 
     private static async Task<IResult> CreateAdmin(
+        HttpContext context,
         AdminCreateAdminUserRequest request,
         IAccountAdministrationService service,
         CancellationToken cancellationToken)
     {
         try
         {
-            var created = await service.CreateAdminByAdminAsync(request.ToInput(), cancellationToken);
+            var actingAdminUserId = context.GetRequiredUserId();
+            var created = await service.CreateAdminByAdminAsync(actingAdminUserId, request.ToInput(), cancellationToken);
             return Results.Created($"{AccountRoutes.AdminBase}/admins/{created.Id}", created.ToResponse());
         }
         catch (Exception exception)
@@ -61,6 +72,7 @@ public static class AdminAdminEndpoints
     }
 
     private static async Task<IResult> ResetAdminPassword(
+        HttpContext context,
         Guid adminUserId,
         AdminResetAdminPasswordRequest request,
         IAccountAdministrationService service,
@@ -68,7 +80,8 @@ public static class AdminAdminEndpoints
     {
         try
         {
-            await service.SetAdminPasswordByAdminAsync(adminUserId, request.NewPassword, cancellationToken);
+            var actingAdminUserId = context.GetRequiredUserId();
+            await service.SetAdminPasswordByAdminAsync(actingAdminUserId, adminUserId, request.NewPassword, cancellationToken);
             return Results.NoContent();
         }
         catch (Exception exception)

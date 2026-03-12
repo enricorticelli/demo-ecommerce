@@ -1,6 +1,6 @@
 ---
 import '../styles/global.css';
-import { ADMIN_PERMISSION, getAdminPermissionsFromCookies } from '../lib/permissions';
+import { ADMIN_PERMISSION, getAdminPermissionsFromCookies, isAdminSuperUserFromCookies } from '../lib/permissions';
 
 const { title = 'Backoffice' } = Astro.props;
 const inactivityTimeoutMs = 15 * 60 * 1000;
@@ -11,6 +11,7 @@ const canReadOrders = permissions.has(ADMIN_PERMISSION.ordersRead);
 const canReadShipping = permissions.has(ADMIN_PERMISSION.shippingRead);
 const canReadWarehouse = permissions.has(ADMIN_PERMISSION.warehouseRead);
 const canReadAccounts = permissions.has(ADMIN_PERMISSION.accountRead);
+const isSuperUser = isAdminSuperUserFromCookies(Astro.cookies);
 ---
 
 <html lang="it">
@@ -47,7 +48,7 @@ const canReadAccounts = permissions.has(ADMIN_PERMISSION.accountRead);
           {canReadCatalog && <a href="/catalog" class="btn-secondary">Catalogo</a>}
           {canReadOrders && <a href="/orders" class="btn-secondary">Ordini</a>}
           {canReadAccounts && <a href="/customers" class="btn-secondary">Clienti</a>}
-          {canReadAccounts && <a href="/admin-users" class="btn-secondary">Utenti</a>}
+          {isSuperUser && <a href="/users" class="btn-secondary">Utenti</a>}
           {canReadShipping && <a href="/shipments" class="btn-secondary">Spedizioni</a>}
           {canReadWarehouse && <a href="/warehouse" class="btn-secondary">Magazzino</a>}
         </nav>

@@ -100,13 +100,38 @@ public sealed class AccountServiceTests
     public async Task CreateAdminByAdminAsync_WithCustomPermissions_PersistsCustomSet()
     {
         await using var dbContext = CreateDbContext();
-        var service = new AccountAdministrationService(dbContext);
+        var options = new AccountTechnicalOptions
+        {
+            DefaultAdminUsername = "admin"
+        };
+
+        var actingSuperUserId = Guid.NewGuid();
+        dbContext.Users.Add(new AccountUserEntity
+        {
+            Id = actingSuperUserId,
+            Realm = AccountRealm.Admin,
+            Username = "admin",
+            Email = "admin@example.com",
+            NormalizedEmail = "admin@example.com",
+            PasswordHash = PasswordHasher.HashPassword("Password123"),
+            IsEmailVerified = true,
+            FirstName = "Default",
+            LastName = "Admin",
+            Phone = "+39",
+            IsSuperUser = true,
+            CreatedAtUtc = DateTimeOffset.UtcNow
+        });
+        await dbContext.SaveChangesAsync();
+
+        var service = new AccountAdministrationService(dbContext, options);
 
         var created = await service.CreateAdminByAdminAsync(
+            actingSuperUserId,
             new CreateAdminInput(
                 "ops-admin",
                 "Password123",
-                new[] { AuthorizationPermissions.ShippingRead, AuthorizationPermissions.ShippingWrite, AuthorizationPermissions.AccountRead }),
+                new[] { AuthorizationPermissions.ShippingRead, AuthorizationPermissions.ShippingWrite, AuthorizationPermissions.AccountRead },
+                false),
             CancellationToken.None);
 
         Assert.Equal("ops-admin", created.Username);
@@ -154,6 +179,71 @@ public sealed class AccountServiceTests
         Assert.Contains(AuthorizationPermissions.WarehouseWrite, result.Permissions);
         Assert.Contains(AuthorizationPermissions.AccountRead, result.Permissions);
         Assert.Contains(AuthorizationPermissions.AccountWrite, result.Permissions);
+    }
+
+    [Fact]
+    public async Task LoginAsync_AdminRealm_DefaultAdminWithCustomPermissions_StillHasAllPermissions()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.Users.Add(new AccountUserEntity
+        {
+            Id = Guid.NewGuid(),
+            Realm = AccountRealm.Admin,
+            Username = "admin",
+            Email = "admin@example.com",
+            NormalizedEmail = "admin@example.com",
+            PasswordHash = PasswordHasher.HashPassword("Password123"),
+            IsEmailVerified = true,
+            FirstName = "Default",
+            LastName = "Admin",
+            Phone = "+39",
+            CustomPermissions = new[] { AuthorizationPermissions.CatalogRead },
+            CreatedAtUtc = DateTimeOffset.UtcNow
+        });
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateAuthService(dbContext);
+
+        var result = await service.LoginAsync(AccountRealm.Admin, new LoginInput("admin", "Password123"), CancellationToken.None);
+
+        Assert.Equal(AuthorizationPermissions.AllAdmin.Length, result.Permissions.Length);
+        foreach (var permission in AuthorizationPermissions.AllAdmin)
+        {
+            Assert.Contains(permission, result.Permissions);
+        }
+    }
+
+    [Fact]
+    public async Task ListAdminsAsync_NonSuperUser_ThrowsForbidden()
+    {
+        await using var dbContext = CreateDbContext();
+        var options = new AccountTechnicalOptions
+        {
+            DefaultAdminUsername = "admin"
+        };
+
+        var normalAdminId = Guid.NewGuid();
+        dbContext.Users.Add(new AccountUserEntity
+        {
+            Id = normalAdminId,
+            Realm = AccountRealm.Admin,
+            Username = "ops-admin",
+            Email = "ops-admin@example.com",
+            NormalizedEmail = "ops-admin@example.com",
+            PasswordHash = PasswordHasher.HashPassword("Password123"),
+            IsEmailVerified = true,
+            FirstName = "Ops",
+            LastName = "Admin",
+            Phone = "+39",
+            IsSuperUser = false,
+            CreatedAtUtc = DateTimeOffset.UtcNow
+        });
+        await dbContext.SaveChangesAsync();
+
+        var service = new AccountAdministrationService(dbContext, options);
+
+        await Assert.ThrowsAsync<ForbiddenAppException>(() =>
+            service.ListAdminsAsync(normalAdminId, 20, 0, null, CancellationToken.None));
     }
 
     [Fact]

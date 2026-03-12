@@ -5,6 +5,7 @@ using Account.Domain.Entities;
 using Account.Infrastructure.Mappers;
 using Account.Infrastructure.Persistence;
 using Account.Infrastructure.Persistence.Entities;
+using Account.Infrastructure.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Shared.BuildingBlocks.Api;
 using Shared.BuildingBlocks.Exceptions;
@@ -12,7 +13,9 @@ using Shared.BuildingBlocks.Helpers;
 
 namespace Account.Infrastructure.Services;
 
-public sealed class AccountAdministrationService(AccountDbContext dbContext) : IAccountAdministrationService
+public sealed class AccountAdministrationService(
+    AccountDbContext dbContext,
+    AccountTechnicalOptions options) : IAccountAdministrationService
 {
     private static readonly HashSet<string> AllowedAdminPermissions = new(AuthorizationPermissions.AllAdmin, StringComparer.Ordinal);
 
@@ -24,8 +27,15 @@ public sealed class AccountAdministrationService(AccountDbContext dbContext) : I
         return AccountModelMapper.ToUserModel(AccountUserEntityMapper.ToDomain(user));
     }
 
-    public async Task<IReadOnlyList<AccountAdminUserModel>> ListAdminsAsync(int limit, int offset, string? searchTerm, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<AccountAdminUserModel>> ListAdminsAsync(
+        Guid actingAdminUserId,
+        int limit,
+        int offset,
+        string? searchTerm,
+        CancellationToken cancellationToken)
     {
+        await EnsureSuperUserAsync(actingAdminUserId, cancellationToken);
+
         var query = dbContext.Users
             .Where(x => x.Realm == AccountRealm.Admin)
             .AsQueryable();
@@ -47,8 +57,13 @@ public sealed class AccountAdministrationService(AccountDbContext dbContext) : I
         return admins.Select(x => AccountModelMapper.ToAdminUserModel(x, ResolveAdminPermissions(x))).ToArray();
     }
 
-    public async Task<AccountAdminUserModel> CreateAdminByAdminAsync(CreateAdminInput request, CancellationToken cancellationToken)
+    public async Task<AccountAdminUserModel> CreateAdminByAdminAsync(
+        Guid actingAdminUserId,
+        CreateAdminInput request,
+        CancellationToken cancellationToken)
     {
+        await EnsureSuperUserAsync(actingAdminUserId, cancellationToken);
+
         var normalized = InputValidationHelper.NormalizeRequiredLowerInvariant(request.Username, "Email/username");
         var exists = await dbContext.Users.AnyAsync(x => x.Realm == AccountRealm.Admin && x.Username == normalized, cancellationToken);
         if (exists)
@@ -60,7 +75,10 @@ public sealed class AccountAdministrationService(AccountDbContext dbContext) : I
 
         var domainAdmin = AccountUser.CreateAdmin(normalized, PasswordHasher.HashPassword(request.Password));
         var entity = AccountUserEntityMapper.ToEntity(domainAdmin);
-        entity.CustomPermissions = NormalizeAdminPermissionsForCreate(request.Permissions);
+        entity.IsSuperUser = request.IsSuperUser;
+        entity.CustomPermissions = request.IsSuperUser
+            ? null
+            : NormalizeAdminPermissionsForCreate(request.Permissions);
 
         dbContext.Users.Add(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -70,9 +88,16 @@ public sealed class AccountAdministrationService(AccountDbContext dbContext) : I
 
     public async Task SetAdminPermissionsByAdminAsync(Guid actingAdminUserId, Guid adminUserId, string[]? permissions, CancellationToken cancellationToken)
     {
+        await EnsureSuperUserAsync(actingAdminUserId, cancellationToken);
+
         var adminToUpdate = await dbContext.Users
             .FirstOrDefaultAsync(x => x.Id == adminUserId && x.Realm == AccountRealm.Admin, cancellationToken)
             ?? throw new NotFoundAppException("Admin account not found.");
+
+        if (IsSuperUser(adminToUpdate))
+        {
+            throw new ValidationAppException("Super user permissions are fixed and cannot be changed.");
+        }
 
         var normalizedPermissions = NormalizeAdminPermissionsForUpdate(permissions);
         var effectivePermissions = normalizedPermissions ?? AuthorizationPermissions.AllAdmin;
@@ -96,8 +121,14 @@ public sealed class AccountAdministrationService(AccountDbContext dbContext) : I
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task SetAdminPasswordByAdminAsync(Guid adminUserId, string newPassword, CancellationToken cancellationToken)
+    public async Task SetAdminPasswordByAdminAsync(
+        Guid actingAdminUserId,
+        Guid adminUserId,
+        string newPassword,
+        CancellationToken cancellationToken)
     {
+        await EnsureSuperUserAsync(actingAdminUserId, cancellationToken);
+
         InputValidationHelper.EnsureMinLength(newPassword, 8, "Password must be at least 8 characters long.");
 
         var userEntity = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == adminUserId && x.Realm == AccountRealm.Admin, cancellationToken)
@@ -121,6 +152,8 @@ public sealed class AccountAdministrationService(AccountDbContext dbContext) : I
 
     public async Task DeleteAdminByAdminAsync(Guid actingAdminUserId, Guid adminUserId, CancellationToken cancellationToken)
     {
+        await EnsureSuperUserAsync(actingAdminUserId, cancellationToken);
+
         if (actingAdminUserId == adminUserId)
         {
             throw new ValidationAppException("You cannot delete your own admin account.");
@@ -128,6 +161,11 @@ public sealed class AccountAdministrationService(AccountDbContext dbContext) : I
 
         var adminToDelete = await dbContext.Users.FirstOrDefaultAsync(x => x.Id == adminUserId && x.Realm == AccountRealm.Admin, cancellationToken)
             ?? throw new NotFoundAppException("Admin account not found.");
+
+        if (IsSuperUser(adminToDelete))
+        {
+            throw new ValidationAppException("Cannot delete super user account.");
+        }
 
         var adminCount = await dbContext.Users.CountAsync(x => x.Realm == AccountRealm.Admin, cancellationToken);
         if (adminCount <= 1)
@@ -296,9 +334,36 @@ public sealed class AccountAdministrationService(AccountDbContext dbContext) : I
 
     private static string[] ResolveAdminPermissions(AccountUserEntity admin)
     {
+        if (admin.IsSuperUser)
+        {
+            return AuthorizationPermissions.AllAdmin;
+        }
+
         return admin.CustomPermissions is not null
             ? admin.CustomPermissions
             : AuthorizationPermissions.AllAdmin;
+    }
+
+    private async Task EnsureSuperUserAsync(Guid actingAdminUserId, CancellationToken cancellationToken)
+    {
+        var actingAdmin = await dbContext.Users
+            .FirstOrDefaultAsync(x => x.Id == actingAdminUserId && x.Realm == AccountRealm.Admin, cancellationToken)
+            ?? throw new NotFoundAppException("Admin account not found.");
+
+        if (!IsSuperUser(actingAdmin))
+        {
+            throw new ForbiddenAppException("Only super user can manage admin users.");
+        }
+    }
+
+    private bool IsSuperUser(AccountUserEntity admin)
+    {
+        if (admin.IsSuperUser)
+        {
+            return true;
+        }
+
+        return string.Equals(admin.Username, options.DefaultAdminUsername, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string[]? NormalizeAdminPermissionsForCreate(IEnumerable<string>? permissions)

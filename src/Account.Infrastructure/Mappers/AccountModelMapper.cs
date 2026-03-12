@@ -52,6 +52,7 @@ internal static class AccountModelMapper
             user.Email,
             user.CreatedAtUtc,
             permissions,
-            user.CustomPermissions is not null);
+            user.CustomPermissions is not null,
+            user.IsSuperUser);
     }
 }

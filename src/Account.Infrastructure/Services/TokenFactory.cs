@@ -12,7 +12,13 @@ public sealed class TokenFactory(AccountTechnicalOptions options)
 {
     private readonly SymmetricSecurityKey _securityKey = new(Encoding.UTF8.GetBytes(options.JwtSigningKey));
 
-    public (string AccessToken, DateTimeOffset ExpiresAtUtc) CreateAccessToken(Guid userId, string email, bool emailVerified, string realm, string[] permissions)
+    public (string AccessToken, DateTimeOffset ExpiresAtUtc) CreateAccessToken(
+        Guid userId,
+        string email,
+        bool emailVerified,
+        string realm,
+        string[] permissions,
+        bool isSuperUser)
     {
         var now = DateTimeOffset.UtcNow;
         var expiresAt = now.AddMinutes(options.AccessTokenMinutes);
@@ -24,7 +30,8 @@ public sealed class TokenFactory(AccountTechnicalOptions options)
             new(JwtRegisteredClaimNames.Email, email),
             new("realm", realm),
             new("role", role),
-            new("email_verified", emailVerified ? "true" : "false")
+            new("email_verified", emailVerified ? "true" : "false"),
+            new("super_user", isSuperUser ? "true" : "false")
         };
 
         claims.AddRange(permissions.Select(permission => new Claim("permission", permission)));

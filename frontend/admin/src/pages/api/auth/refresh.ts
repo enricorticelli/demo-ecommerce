@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { refreshSession } from '../../../../lib/auth';
+import { refreshSession } from '../../../lib/auth';
 
 export const POST: APIRoute = async ({ cookies }) => {
   const refreshed = await refreshSession(cookies);
