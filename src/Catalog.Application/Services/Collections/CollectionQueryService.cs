@@ -9,7 +9,7 @@ namespace Catalog.Application.Services.Collections;
 
 public sealed class CollectionQueryService(
     ICollectionRepository collectionRepository,
-    IViewMapper<CatalogCollection, CollectionView> mapper) : ICollectionQueryService
+    IViewMapper<Collection, CollectionView> mapper) : ICollectionQueryService
 {
     public async Task<IReadOnlyList<CollectionView>> ListAsync(string? searchTerm, CancellationToken cancellationToken)
     {

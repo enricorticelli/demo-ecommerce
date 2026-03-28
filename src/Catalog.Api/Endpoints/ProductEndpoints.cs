@@ -1,11 +1,11 @@
 using Catalog.Api.Contracts;
 using Catalog.Api.Contracts.Requests;
-using Catalog.Api.Contracts.Responses;
 using Catalog.Api.Mappers;
 using Catalog.Application.Abstractions.Commands;
 using Catalog.Application.Abstractions.Queries;
 using Shared.BuildingBlocks.Api.Correlation;
 using Shared.BuildingBlocks.Api.Errors;
+using Shared.BuildingBlocks.Api.Pagination;
 
 namespace Catalog.Api.Endpoints;
 
@@ -13,18 +13,18 @@ public static class ProductEndpoints
 {
     public static RouteGroupBuilder MapProductEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup(CatalogRoutes.Products)
+        var storeGroup = app.MapGroup(CatalogRoutes.StoreProducts)
             .WithTags("Catalog");
 
-        group.MapGet("/", GetProducts).WithName("GetProducts");
-        group.MapGet("/new-arrivals", GetNewArrivals).WithName("GetNewArrivals");
-        group.MapGet("/best-sellers", GetBestSellers).WithName("GetBestSellers");
-        group.MapGet("/{id:guid}", GetProductById).WithName("GetProductById");
-        group.MapPost("/", CreateProduct).WithName("CreateProduct");
-        group.MapPut("/{id:guid}", UpdateProduct).WithName("UpdateProduct");
-        group.MapDelete("/{id:guid}", DeleteProduct).WithName("DeleteProduct");
+        storeGroup.MapGet("/", GetProducts).WithName("StoreGetProducts");
+        storeGroup.MapGet("/new-arrivals", GetNewArrivals).WithName("StoreGetNewArrivals");
+        storeGroup.MapGet("/best-sellers", GetBestSellers).WithName("StoreGetBestSellers");
+        storeGroup.MapGet("/{id:guid}", GetProductById).WithName("StoreGetProductById");
+        storeGroup.MapPost("/", CreateProduct).WithName("StoreCreateProduct");
+        storeGroup.MapPut("/{id:guid}", UpdateProduct).WithName("StoreUpdateProduct");
+        storeGroup.MapDelete("/{id:guid}", DeleteProduct).WithName("StoreDeleteProduct");
 
-        return group;
+        return storeGroup;
     }
 
     private static async Task<IResult> GetProducts(string? searchTerm, IProductQueryService service, CancellationToken cancellationToken)
@@ -76,7 +76,7 @@ public static class ProductEndpoints
             correlationId,
             cancellationToken);
 
-            return Results.Created($"{CatalogRoutes.Products}/{product.Id}", product.ToResponse());
+            return Results.Created($"{CatalogRoutes.StoreProducts}/{product.Id}", product.ToResponse());
         }
         catch (Exception exception)
         {

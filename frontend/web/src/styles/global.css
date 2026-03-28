@@ -1,0 +1,193 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Plus Jakarta Sans', 'Avenir Next', 'Segoe UI', sans-serif;
+  --font-body: 'Public Sans', 'Avenir Next', 'Segoe UI', sans-serif;
+  --color-bg: #f6f6f7;
+  --color-surface: #ffffff;
+  --color-border: #e1e3e5;
+  --color-text: #202223;
+  --color-muted: #616161;
+  --color-accent: #008060;
+  --color-accent-dark: #005940;
+  --color-accent-soft: #f1f8f5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background:
+    radial-gradient(circle at 90% -10%, rgba(0, 128, 96, 0.08), transparent 28%),
+    radial-gradient(circle at -10% 30%, rgba(28, 115, 255, 0.06), transparent 24%),
+    var(--color-bg);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+@layer components {
+  .font-title {
+    font-family: var(--font-display);
+  }
+
+  .surface-card {
+    @apply rounded-2xl border bg-white;
+    border-color: var(--color-border);
+  }
+
+  .surface-muted {
+    @apply rounded-2xl border;
+    border-color: var(--color-border);
+    background-color: #fbfbfb;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition;
+    background-color: var(--color-accent);
+  }
+
+  .btn-primary:hover {
+    background-color: var(--color-accent-dark);
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-xl border bg-white px-4 py-2.5 text-sm font-semibold transition;
+    border-color: var(--color-border);
+    color: var(--color-text);
+  }
+
+  .btn-secondary:hover {
+    background-color: #f6f6f7;
+  }
+
+  .form-label {
+    @apply mb-2 block text-xs font-semibold uppercase tracking-wide;
+    color: #6d7175;
+  }
+
+  .form-input {
+    @apply w-full rounded-xl border bg-white px-3.5 py-3 text-sm outline-none ring-0 transition;
+    border-color: var(--color-border);
+  }
+
+  .form-input:focus {
+    border-color: #36a38b;
+    box-shadow: 0 0 0 3px rgba(0, 128, 96, 0.12);
+  }
+
+  .form-toggle {
+    @apply absolute right-2 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-xs font-semibold;
+    color: #005940;
+    background: #e8f4ef;
+  }
+
+  .form-toggle:hover {
+    background: #d6ede4;
+  }
+
+  .password-strength-meter {
+    @apply grid grid-cols-4 gap-1;
+  }
+
+  .strength-segment {
+    @apply h-2 rounded-full;
+    background: #e1e3e5;
+    transition: background-color 160ms ease;
+  }
+
+  .password-strength-meter[data-strength='1'] .strength-segment.is-active,
+  .password-strength-meter[data-strength='2'] .strength-segment.is-active {
+    background: #d72c0d;
+  }
+
+  .password-strength-meter[data-strength='3'] .strength-segment.is-active {
+    background: #b98900;
+  }
+
+  .password-strength-meter[data-strength='4'] .strength-segment.is-active {
+    background: #008060;
+  }
+
+  .password-rule-ok {
+    color: #005940;
+    font-weight: 600;
+  }
+
+  .status-pill {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold;
+  }
+}
+
+.reveal {
+  animation: fade-up 360ms ease both;
+}
+
+.pop-in {
+  animation: pop-in 280ms ease both;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(32, 34, 35, 0.2);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(32, 34, 35, 0.34);
+}
+
+html {
+  scroll-padding-top: 88px;
+}

@@ -1,7 +1,13 @@
 using Order.Api.Contracts;
 using Order.Api.Contracts.Requests;
 using Order.Api.Contracts.Responses;
-using Shared.BuildingBlocks.Api;
+using Order.Api.Mappers;
+using Order.Application.Abstractions.Commands;
+using Order.Application.Abstractions.Queries;
+using Order.Application.Commands;
+using Shared.BuildingBlocks.Api.Correlation;
+using Shared.BuildingBlocks.Api.Errors;
+using Shared.BuildingBlocks.Api.Pagination;
 
 namespace Order.Api.Endpoints;
 
@@ -9,78 +15,133 @@ public static class OrderEndpoints
 {
     public static RouteGroupBuilder MapOrderEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup(OrderRoutes.Base)
+        var storeGroup = app.MapGroup(OrderRoutes.StoreBase)
             .WithTags("Order");
 
-        group.MapPost("/", CreateOrder)
-            .WithName("CreateOrder");
-        group.MapGet("/", ListOrders)
-            .WithName("ListOrders");
-        group.MapGet("/{orderId:guid}", GetOrder)
-            .WithName("GetOrder");
-        group.MapPost("/{orderId:guid}/manual-complete", ManualCompleteOrder)
-            .WithName("ManualCompleteOrder");
-        group.MapPost("/{orderId:guid}/manual-cancel", ManualCancelOrder)
-            .WithName("ManualCancelOrder");
-        return group;
+        storeGroup.MapPost("/", CreateOrder)
+            .WithName("StoreCreateOrder");
+        storeGroup.MapGet("/", StoreListOrders)
+            .WithName("StoreListOrders");
+        storeGroup.MapGet("/{orderId:guid}", GetOrder)
+            .WithName("StoreGetOrder");
+        storeGroup.MapPost("/{orderId:guid}/manual-cancel", StoreManualCancelOrder)
+            .WithName("StoreManualCancelOrder");
+
+        return storeGroup;
     }
 
-    private static IResult CreateOrder(CreateOrderRequest request)
+    private static async Task<IResult> CreateOrder(
+        CreateOrderRequest request,
+        IOrderCommandService service,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
     {
-        var orderId = Guid.NewGuid();
-        _ = request;
-        return Results.Created($"{OrderRoutes.Base}/{orderId}", new OrderCreatedResponse(orderId, "Pending"));
-    }
-
-    private static IResult ListOrders()
-    {
-        return Results.Ok(new[] { BuildOrderResponse(Guid.NewGuid()) });
-    }
-
-    private static IResult GetOrder(Guid orderId)
-    {
-        return Results.Ok(BuildOrderResponse(orderId));
-    }
-
-    private static IResult ManualCompleteOrder(Guid orderId, ManualCompleteOrderRequest request)
-    {
-        return Results.Ok(new ManualCompleteOrderResponse(
-            orderId,
-            "Completed",
-            request.TrackingCode ?? "TRK-STUB",
-            request.TransactionId ?? "TX-STUB",
-            "manual"));
-    }
-
-    private static IResult ManualCancelOrder(Guid orderId, ManualCancelOrderRequest request)
-    {
-        return Results.Ok(new ManualCancelOrderResponse(orderId, "Cancelled", request.Reason ?? "Cancelled manually", "manual"));
-    }
-
-    private static OrderResponse BuildOrderResponse(Guid orderId)
-    {
-        var items = new[]
+        try
         {
-            new OrderItemResponse(Guid.NewGuid(), "STUB-SKU", "Stub item", 1, 10m)
-        };
-        var customer = new OrderCustomerResponse("Stub", "User", "stub@example.com", "+390000000000");
-        var address = new OrderAddressResponse("Stub street 1", "Rome", "00100", "IT");
-        return new OrderResponse(
-            orderId,
-            Guid.NewGuid(),
-            Guid.NewGuid(),
-            "authenticated",
-            "card",
-            Guid.NewGuid(),
-            null,
-            customer,
-            address,
-            address,
-            "Pending",
-            items.Sum(i => i.Quantity * i.UnitPrice),
-            items,
-            string.Empty,
-            string.Empty,
-            string.Empty);
+            var correlationId = CorrelationIdResolver.Resolve(httpContext);
+            var order = await service.CreateAsync(request.ToCreateCommand(null, correlationId), cancellationToken);
+            return Results.Created($"{OrderRoutes.StoreBase}/{order.Id}", new OrderCreatedResponse(order.Id, order.Status));
+        }
+        catch (Exception exception)
+        {
+            return ExceptionHttpResultMapper.Map(exception);
+        }
+    }
+
+    private static async Task<IResult> ListOrders(
+        IOrderQueryService service,
+        int? limit,
+        int? offset,
+        string? searchTerm,
+        CancellationToken cancellationToken)
+    {
+        var (normalizedLimit, normalizedOffset) = PaginationNormalizer.Normalize(limit, offset);
+
+        var orders = (await service.ListAsync(cancellationToken))
+            .Select(x => x.ToResponse());
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var token = searchTerm.Trim();
+            orders = orders.Where(x => MatchesSearch(x, token));
+        }
+
+        var page = orders
+            .Skip(normalizedOffset)
+            .Take(normalizedLimit)
+            .ToArray();
+
+        return Results.Ok(page);
+    }
+
+    private static async Task<IResult> StoreListOrders(
+        IOrderQueryService service,
+        int? limit,
+        int? offset,
+        CancellationToken cancellationToken)
+    {
+        var (normalizedLimit, normalizedOffset) = PaginationNormalizer.Normalize(limit, offset);
+        var source = await service.ListAsync(cancellationToken);
+
+        var page = source
+            .Skip(normalizedOffset)
+            .Take(normalizedLimit)
+            .Select(x => x.ToResponse())
+            .ToArray();
+
+        return Results.Ok(page);
+    }
+
+    private static async Task<IResult> GetOrder(
+        Guid orderId,
+        IOrderQueryService service,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var order = await service.GetByIdAsync(orderId, cancellationToken);
+            var response = order.ToResponse();
+
+            return Results.Ok(response);
+        }
+        catch (Exception exception)
+        {
+            return ExceptionHttpResultMapper.Map(exception);
+        }
+    }
+
+    private static async Task<IResult> StoreManualCancelOrder(
+        Guid orderId,
+        ManualCancelOrderRequest request,
+        IOrderCommandService service,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var order = await service.StoreManualCancelAsync(new ManualCancelOrderCommand(orderId, request.Reason), cancellationToken);
+            return Results.Ok(new ManualCancelOrderResponse(order.Id, order.Status, order.FailureReason, "manual"));
+        }
+        catch (Exception exception)
+        {
+            return ExceptionHttpResultMapper.Map(exception);
+        }
+    }
+
+    private static bool MatchesSearch(OrderResponse response, string searchToken)
+    {
+        return response.Id.ToString().Contains(searchToken, StringComparison.OrdinalIgnoreCase)
+            || response.CartId.ToString().Contains(searchToken, StringComparison.OrdinalIgnoreCase)
+            || response.UserId.ToString().Contains(searchToken, StringComparison.OrdinalIgnoreCase)
+            || response.Status.Contains(searchToken, StringComparison.OrdinalIgnoreCase)
+            || response.PaymentMethod.Contains(searchToken, StringComparison.OrdinalIgnoreCase)
+            || response.IdentityType.Contains(searchToken, StringComparison.OrdinalIgnoreCase)
+            || (response.TrackingCode?.Contains(searchToken, StringComparison.OrdinalIgnoreCase) ?? false)
+            || (response.TransactionId?.Contains(searchToken, StringComparison.OrdinalIgnoreCase) ?? false)
+            || (response.FailureReason?.Contains(searchToken, StringComparison.OrdinalIgnoreCase) ?? false)
+            || (response.AuthenticatedUserId?.ToString().Contains(searchToken, StringComparison.OrdinalIgnoreCase) ?? false)
+            || (response.AnonymousId?.ToString().Contains(searchToken, StringComparison.OrdinalIgnoreCase) ?? false)
+            || response.Customer.FirstName.Contains(searchToken, StringComparison.OrdinalIgnoreCase)
+            || response.Customer.LastName.Contains(searchToken, StringComparison.OrdinalIgnoreCase)
+            || response.Customer.Email.Contains(searchToken, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -7,13 +7,13 @@ namespace Catalog.Infrastructure.Persistence.Repositories;
 
 public sealed class CollectionRepository(CatalogDbContext dbContext) : ICollectionRepository
 {
-    public async Task<IReadOnlyList<CatalogCollection>> ListAsync(string? searchTerm, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Collection>> ListAsync(string? searchTerm, CancellationToken cancellationToken)
     {
         var query = CollectionSearchQuery.Apply(dbContext.Collections.AsNoTracking(), searchTerm);
         return await query.OrderBy(x => x.Name).ToListAsync(cancellationToken);
     }
 
-    public Task<CatalogCollection?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    public Task<Collection?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         return dbContext.Collections.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
@@ -39,12 +39,12 @@ public sealed class CollectionRepository(CatalogDbContext dbContext) : ICollecti
         return count == ids.Count;
     }
 
-    public void Add(CatalogCollection collection)
+    public void Add(Collection collection)
     {
         dbContext.Collections.Add(collection);
     }
 
-    public void Remove(CatalogCollection collection)
+    public void Remove(Collection collection)
     {
         dbContext.Collections.Remove(collection);
     }

@@ -4,7 +4,7 @@ namespace Catalog.Infrastructure.Persistence.Queries;
 
 public static class CollectionSearchQuery
 {
-    public static IQueryable<CatalogCollection> Apply(IQueryable<CatalogCollection> query, string? searchTerm)
+    public static IQueryable<Collection> Apply(IQueryable<Collection> query, string? searchTerm)
     {
         var normalizedSearch = searchTerm?.Trim().ToLowerInvariant();
         if (string.IsNullOrWhiteSpace(normalizedSearch))

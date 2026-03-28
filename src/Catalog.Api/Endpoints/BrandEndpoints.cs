@@ -1,11 +1,11 @@
 using Catalog.Api.Contracts;
 using Catalog.Api.Contracts.Requests;
-using Catalog.Api.Contracts.Responses;
 using Catalog.Api.Mappers;
 using Catalog.Application.Abstractions.Commands;
 using Catalog.Application.Abstractions.Queries;
 using Shared.BuildingBlocks.Api.Correlation;
 using Shared.BuildingBlocks.Api.Errors;
+using Shared.BuildingBlocks.Api.Pagination;
 
 namespace Catalog.Api.Endpoints;
 
@@ -13,22 +13,31 @@ public static class BrandEndpoints
 {
     public static RouteGroupBuilder MapBrandEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup(CatalogRoutes.Brands)
+        var group = app.MapGroup(CatalogRoutes.StoreBrands)
             .WithTags("Catalog");
 
-        group.MapGet("/", GetBrands).WithName("GetBrands");
-        group.MapGet("/{id:guid}", GetBrandById).WithName("GetBrandById");
-        group.MapPost("/", CreateBrand).WithName("CreateBrand");
-        group.MapPut("/{id:guid}", UpdateBrand).WithName("UpdateBrand");
-        group.MapDelete("/{id:guid}", DeleteBrand).WithName("DeleteBrand");
+        group.MapGet("/", GetBrands).WithName("StoreGetBrands");
+        group.MapGet("/{id:guid}", GetBrandById).WithName("StoreGetBrandById");
+        group.MapPost("/", CreateBrand).WithName("StoreCreateBrand");
+        group.MapPut("/{id:guid}", UpdateBrand).WithName("StoreUpdateBrand");
+        group.MapDelete("/{id:guid}", DeleteBrand).WithName("StoreDeleteBrand");
 
         return group;
     }
 
-    private static async Task<IResult> GetBrands(string? searchTerm, IBrandQueryService service, CancellationToken cancellationToken)
+    private static async Task<IResult> GetBrands(
+        int? limit,
+        int? offset,
+        string? searchTerm,
+        IBrandQueryService service,
+        CancellationToken cancellationToken)
     {
+        var (normalizedLimit, normalizedOffset) = PaginationNormalizer.Normalize(limit, offset);
         var brands = await service.ListAsync(searchTerm, cancellationToken);
-        return Results.Ok(brands.Select(x => x.ToResponse()));
+        return Results.Ok(brands
+            .Skip(normalizedOffset)
+            .Take(normalizedLimit)
+            .Select(x => x.ToResponse()));
     }
 
     private static async Task<IResult> GetBrandById(Guid id, IBrandQueryService service, CancellationToken cancellationToken)
@@ -51,7 +60,7 @@ public static class BrandEndpoints
             var correlationId = CorrelationIdResolver.Resolve(httpContext);
             var brand = await service.CreateAsync(request.Name, request.Slug, request.Description, correlationId, cancellationToken);
             var response = brand.ToResponse();
-            return Results.Created($"{CatalogRoutes.Brands}/{brand.Id}", response);
+            return Results.Created($"{CatalogRoutes.StoreBrands}/{brand.Id}", response);
         }
         catch (Exception exception)
         {

@@ -1,11 +1,11 @@
 using Catalog.Api.Contracts;
 using Catalog.Api.Contracts.Requests;
-using Catalog.Api.Contracts.Responses;
 using Catalog.Api.Mappers;
 using Catalog.Application.Abstractions.Commands;
 using Catalog.Application.Abstractions.Queries;
 using Shared.BuildingBlocks.Api.Correlation;
 using Shared.BuildingBlocks.Api.Errors;
+using Shared.BuildingBlocks.Api.Pagination;
 
 namespace Catalog.Api.Endpoints;
 
@@ -13,22 +13,31 @@ public static class CategoryEndpoints
 {
     public static RouteGroupBuilder MapCategoryEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup(CatalogRoutes.Categories)
+        var group = app.MapGroup(CatalogRoutes.StoreCategories)
             .WithTags("Catalog");
 
-        group.MapGet("/", GetCategories).WithName("GetCategories");
-        group.MapGet("/{id:guid}", GetCategoryById).WithName("GetCategoryById");
-        group.MapPost("/", CreateCategory).WithName("CreateCategory");
-        group.MapPut("/{id:guid}", UpdateCategory).WithName("UpdateCategory");
-        group.MapDelete("/{id:guid}", DeleteCategory).WithName("DeleteCategory");
+        group.MapGet("/", GetCategories).WithName("StoreGetCategories");
+        group.MapGet("/{id:guid}", GetCategoryById).WithName("StoreGetCategoryById");
+        group.MapPost("/", CreateCategory).WithName("StoreCreateCategory");
+        group.MapPut("/{id:guid}", UpdateCategory).WithName("StoreUpdateCategory");
+        group.MapDelete("/{id:guid}", DeleteCategory).WithName("StoreDeleteCategory");
 
         return group;
     }
 
-    private static async Task<IResult> GetCategories(string? searchTerm, ICategoryQueryService service, CancellationToken cancellationToken)
+    private static async Task<IResult> GetCategories(
+        int? limit,
+        int? offset,
+        string? searchTerm,
+        ICategoryQueryService service,
+        CancellationToken cancellationToken)
     {
+        var (normalizedLimit, normalizedOffset) = PaginationNormalizer.Normalize(limit, offset);
         var categories = await service.ListAsync(searchTerm, cancellationToken);
-        return Results.Ok(categories.Select(x => x.ToResponse()));
+        return Results.Ok(categories
+            .Skip(normalizedOffset)
+            .Take(normalizedLimit)
+            .Select(x => x.ToResponse()));
     }
 
     private static async Task<IResult> GetCategoryById(Guid id, ICategoryQueryService service, CancellationToken cancellationToken)
@@ -51,7 +60,7 @@ public static class CategoryEndpoints
             var correlationId = CorrelationIdResolver.Resolve(httpContext);
             var category = await service.CreateAsync(request.Name, request.Slug, request.Description, correlationId, cancellationToken);
             var response = category.ToResponse();
-            return Results.Created($"{CatalogRoutes.Categories}/{category.Id}", response);
+            return Results.Created($"{CatalogRoutes.StoreCategories}/{category.Id}", response);
         }
         catch (Exception exception)
         {

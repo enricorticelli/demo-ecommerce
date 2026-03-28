@@ -7,7 +7,7 @@ namespace Catalog.Tests;
 public sealed class CatalogDbContextModelTests
 {
     [Fact]
-    public void Model_should_define_expected_tables()
+    public void Model_WhenBuilt_DefinesExpectedTables()
     {
         var options = new DbContextOptionsBuilder<CatalogDbContext>()
             .UseInMemoryDatabase("catalog-model-test")
@@ -18,8 +18,9 @@ public sealed class CatalogDbContextModelTests
 
         Assert.NotNull(model.FindEntityType("Catalog.Domain.Entities.Brand")?.GetTableName());
         Assert.NotNull(model.FindEntityType("Catalog.Domain.Entities.Category")?.GetTableName());
-        Assert.NotNull(model.FindEntityType("Catalog.Domain.Entities.CatalogCollection")?.GetTableName());
+        Assert.NotNull(model.FindEntityType("Catalog.Domain.Entities.Collection")?.GetTableName());
         Assert.NotNull(model.FindEntityType("Catalog.Domain.Entities.Product")?.GetTableName());
         Assert.NotNull(model.FindEntityType("Catalog.Domain.Entities.ProductCollection")?.GetTableName());
     }
 }
+

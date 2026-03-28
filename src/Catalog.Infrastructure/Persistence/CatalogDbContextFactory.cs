@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Shared.BuildingBlocks.Configuration;
 
 namespace Catalog.Infrastructure.Persistence;
 
@@ -7,8 +8,7 @@ public sealed class CatalogDbContextFactory : IDesignTimeDbContextFactory<Catalo
 {
     public CatalogDbContext CreateDbContext(string[] args)
     {
-        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__CatalogDb")
-            ?? "Host=localhost;Port=5432;Database=catalog_db;Username=postgres;Password=postgres";
+        var connectionString = EnvironmentVariableReader.ResolveRequired("ConnectionStrings__CatalogDb");
 
         var optionsBuilder = new DbContextOptionsBuilder<CatalogDbContext>();
         optionsBuilder.UseNpgsql(connectionString);

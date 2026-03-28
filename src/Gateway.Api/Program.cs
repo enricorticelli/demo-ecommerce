@@ -17,12 +17,38 @@ builder.Services.AddCors(options =>
 
 var routes = new List<RouteConfig>
 {
-    CreateRoute("catalog-route", "catalog-cluster", "/api/catalog/{**catch-all}", "/api/catalog"),
-    CreateRoute("cart-route", "cart-cluster", "/api/cart/{**catch-all}", "/api/cart"),
-    CreateRoute("order-route", "order-cluster", "/api/order/{**catch-all}", "/api/order"),
-    CreateRoute("payment-route", "payment-cluster", "/api/payment/{**catch-all}", "/api/payment"),
-    CreateRoute("warehouse-route", "warehouse-cluster", "/api/warehouse/{**catch-all}", "/api/warehouse"),
-    CreateRoute("shipping-route", "shipping-cluster", "/api/shipping/{**catch-all}", "/api/shipping")
+    // store/catalog
+    CreateContextRoute("store-catalog-products-collection-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products", "GET", "POST"),
+    CreateContextRoute("store-catalog-products-new-arrivals-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products/new-arrivals", "GET"),
+    CreateContextRoute("store-catalog-products-best-sellers-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products/best-sellers", "GET"),
+    CreateContextRoute("store-catalog-products-by-id-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products/{id}", "GET", "PUT", "DELETE"),
+    CreateContextRoute("store-catalog-brands-collection-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/brands", "GET", "POST"),
+    CreateContextRoute("store-catalog-brands-item-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/brands/{id}", "GET", "PUT", "DELETE"),
+    CreateContextRoute("store-catalog-categories-collection-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/categories", "GET", "POST"),
+    CreateContextRoute("store-catalog-categories-item-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/categories/{id}", "GET", "PUT", "DELETE"),
+    CreateContextRoute("store-catalog-collections-collection-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/collections", "GET", "POST"),
+    CreateContextRoute("store-catalog-collections-item-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/collections/{id}", "GET", "PUT", "DELETE"),
+
+    // store/cart
+    CreateContextRoute("store-cart-get-route", "cart-cluster", "store", "cart", "/api/store/cart/v1/carts/{cartId}", "GET"),
+    CreateContextRoute("store-cart-add-item-route", "cart-cluster", "store", "cart", "/api/store/cart/v1/carts/{cartId}/items", "POST"),
+    CreateContextRoute("store-cart-remove-item-route", "cart-cluster", "store", "cart", "/api/store/cart/v1/carts/{cartId}/items/{productId}", "DELETE"),
+
+    // store/order
+    CreateContextRoute("store-order-create-route", "order-cluster", "store", "order", "/api/store/order/v1/orders", "POST"),
+    CreateContextRoute("store-order-list-route", "order-cluster", "store", "order", "/api/store/order/v1/orders", "GET"),
+    CreateContextRoute("store-order-get-route", "order-cluster", "store", "order", "/api/store/order/v1/orders/{orderId}", "GET"),
+    CreateContextRoute("store-order-manual-cancel-route", "order-cluster", "store", "order", "/api/store/order/v1/orders/{orderId}/manual-cancel", "POST"),
+
+    // store/payment
+    CreateContextRoute("store-payment-session-by-order-route", "payment-cluster", "store", "payment", "/api/store/payment/v1/payments/sessions/orders/{orderId}", "GET"),
+    CreateContextRoute("store-payment-session-by-id-route", "payment-cluster", "store", "payment", "/api/store/payment/v1/payments/sessions/{sessionId}", "GET"),
+    CreateContextRoute("store-payment-webhook-stripe-route", "payment-cluster", "store", "payment", "/api/store/payment/v1/payments/webhooks/stripe", "POST"),
+    CreateContextRoute("store-payment-webhook-paypal-route", "payment-cluster", "store", "payment", "/api/store/payment/v1/payments/webhooks/paypal", "POST"),
+    CreateContextRoute("store-payment-webhook-satispay-route", "payment-cluster", "store", "payment", "/api/store/payment/v1/payments/webhooks/satispay", "POST"),
+
+    // store/shipping
+    CreateContextRoute("store-shipping-by-order-route", "shipping-cluster", "store", "shipping", "/api/store/shipping/v1/shipments/orders/{orderId}", "GET")
 };
 
 var clusters = new List<ClusterConfig>
@@ -52,12 +78,12 @@ app.MapHealthChecks("/health/live");
 app.MapHealthChecks("/health/ready");
 app.MapScalarApiReference("/scalar", options =>
 {
-    options.WithTitle("CQRS E-commerce Gateway API");
+    options.WithTitle("E-commerce Gateway API");
 });
 
 app.MapGet("/v1/system/info", () => TypedResults.Ok(new
 {
-    Name = "cqrs-ecommerce-gateway",
+    Name = "ecommerce-gateway",
     Version = "v1",
     Timestamp = DateTimeOffset.UtcNow
 }))
@@ -67,18 +93,27 @@ app.MapGet("/v1/system/info", () => TypedResults.Ok(new
 app.MapReverseProxy();
 await app.RunAsync();
 
-static RouteConfig CreateRoute(string routeId, string clusterId, string matchPath, string removePrefix)
+static RouteConfig CreateContextRoute(
+    string routeId,
+    string clusterId,
+    string context,
+    string service,
+    string matchPath,
+    params string[] methods)
 {
-    return new RouteConfig
+    var route = new RouteConfig
     {
         RouteId = routeId,
         ClusterId = clusterId,
-        Match = new RouteMatch { Path = matchPath },
+        Match = new RouteMatch { Path = matchPath, Methods = methods },
         Transforms =
         [
-            new Dictionary<string, string> { ["PathRemovePrefix"] = removePrefix }
+            new Dictionary<string, string> { ["PathRemovePrefix"] = $"/api/{context}/{service}" },
+            new Dictionary<string, string> { ["PathPrefix"] = $"/{context}" }
         ]
     };
+
+    return route;
 }
 
 static ClusterConfig CreateCluster(string clusterId, string destinationAddress)

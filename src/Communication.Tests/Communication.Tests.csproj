@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="NetArchTest.Rules" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Communication.Api/Communication.Api.csproj" />
+    <ProjectReference Include="../Communication.Application/Communication.Application.csproj" />
+    <ProjectReference Include="../Communication.Domain/Communication.Domain.csproj" />
+    <ProjectReference Include="../Communication.Infrastructure/Communication.Infrastructure.csproj" />
+    <ProjectReference Include="../Shared.BuildingBlocks/Shared.BuildingBlocks.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../Architecture.Tests.Common/**/*.cs" LinkBase="Architecture.Tests.Common" />
+  </ItemGroup>
+</Project>

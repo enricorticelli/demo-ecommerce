@@ -1,7 +1,10 @@
 using Shipping.Api.Contracts;
-using Shipping.Api.Contracts.Requests;
-using Shipping.Api.Contracts.Responses;
+using Shipping.Api.Mappers;
+using Shipping.Application.Abstractions.Queries;
+using Shipping.Application.Views;
 using Shared.BuildingBlocks.Api;
+using Shared.BuildingBlocks.Api.Errors;
+using Shared.BuildingBlocks.Exceptions;
 
 namespace Shipping.Api.Endpoints;
 
@@ -9,53 +12,38 @@ public static class ShippingEndpoints
 {
     public static RouteGroupBuilder MapShippingEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup(ShippingRoutes.Base)
+        var storeGroup = app.MapGroup(ShippingRoutes.StoreBase)
             .WithTags("Shipping");
 
-        group.MapPost("/", CreateShipment)
-            .WithName("CreateShipment");
-        group.MapGet("/", ListShipments)
-            .WithName("ListShipments");
-        group.MapGet("/orders/{orderId:guid}", GetShipmentByOrder)
-            .WithName("GetShipmentByOrder");
-        group.MapPost("/{shipmentId:guid}/status", UpdateShipmentStatus)
-            .WithName("UpdateShipmentStatus");
-        return group;
+        storeGroup.MapGet("/orders/{orderId:guid}", StoreGetShipmentByOrder)
+            .WithName("StoreGetShipmentByOrder");
+        return storeGroup;
     }
 
-    private static IResult CreateShipment(CreateShipmentRequest request)
+    private static async Task<IResult> StoreGetShipmentByOrder(
+        HttpContext context,
+        Guid orderId,
+        IShippingQueryService service,
+        CancellationToken cancellationToken)
     {
-        var trackingCode = $"TRK-{Guid.NewGuid():N}"[..16];
-        var response = new CreateShipmentResponse(request.OrderId, trackingCode);
-        return Results.Created($"{ShippingRoutes.Base}/orders/{request.OrderId}", response);
+        try
+        {
+            var actorUserId = context.ResolveActorId();
+            var shipment = await service.GetByOrderIdAsync(orderId, cancellationToken);
+            EnsureShipmentOwnership(shipment, actorUserId);
+            return Results.Ok(shipment.ToResponse());
+        }
+        catch (Exception exception)
+        {
+            return ExceptionHttpResultMapper.Map(exception);
+        }
     }
 
-    private static IResult ListShipments()
+    private static void EnsureShipmentOwnership(ShipmentView shipment, Guid authenticatedUserId)
     {
-        return Results.Ok(new[] { BuildShipment(Guid.NewGuid(), Guid.NewGuid(), "InPreparation") });
-    }
-
-    private static IResult GetShipmentByOrder(Guid orderId)
-    {
-        return Results.Ok(BuildShipment(Guid.NewGuid(), orderId, "InPreparation"));
-    }
-
-    private static IResult UpdateShipmentStatus(Guid shipmentId, UpdateShipmentStatusRequest request)
-    {
-        return Results.Ok(BuildShipment(shipmentId, Guid.NewGuid(), request.Status));
-    }
-
-    private static ShipmentResponse BuildShipment(Guid shipmentId, Guid orderId, string status)
-    {
-        var now = DateTimeOffset.UtcNow;
-        return new ShipmentResponse(
-            shipmentId,
-            orderId,
-            Guid.NewGuid(),
-            $"TRK-{shipmentId:N}"[..16],
-            status,
-            now.AddMinutes(-30),
-            now,
-            status.Equals("Delivered", StringComparison.OrdinalIgnoreCase) ? now : null);
+        if (shipment.UserId != authenticatedUserId)
+        {
+            throw new ForbiddenAppException("The shipment does not belong to the authenticated user.");
+        }
     }
 }

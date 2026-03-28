@@ -9,11 +9,18 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Moq" />
+    <PackageReference Include="NetArchTest.Rules" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="../Catalog.Api/Catalog.Api.csproj" />
     <ProjectReference Include="../Catalog.Application/Catalog.Application.csproj" />
+    <ProjectReference Include="../Catalog.Domain/Catalog.Domain.csproj" />
     <ProjectReference Include="../Catalog.Infrastructure/Catalog.Infrastructure.csproj" />
+    <ProjectReference Include="../Shared.BuildingBlocks/Shared.BuildingBlocks.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../Architecture.Tests.Common/**/*.cs" LinkBase="Architecture.Tests.Common" />
   </ItemGroup>
 </Project>

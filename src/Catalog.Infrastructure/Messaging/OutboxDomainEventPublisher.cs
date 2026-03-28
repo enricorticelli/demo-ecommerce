@@ -12,4 +12,14 @@ public sealed class OutboxDomainEventPublisher(IDbContextOutbox<CatalogDbContext
         await outbox.PublishAsync(integrationEvent);
         await outbox.SaveChangesAndFlushMessagesAsync(cancellationToken);
     }
+
+    public async Task PublishBatchAndFlushAsync(IReadOnlyCollection<IntegrationEventBase> integrationEvents, CancellationToken cancellationToken)
+    {
+        foreach (var integrationEvent in integrationEvents)
+        {
+            await outbox.PublishAsync(integrationEvent);
+        }
+
+        await outbox.SaveChangesAndFlushMessagesAsync(cancellationToken);
+    }
 }

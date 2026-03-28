@@ -19,7 +19,7 @@ Gestire il catalogo prodotti e i metadati commerciali (brand, categorie, collezi
 
 ## Integrazioni
 
-- Espone API al frontend/backoffice via gateway.
+- Espone API allo storefront via gateway.
 - Pubblica eventi quando cambiano informazioni rilevanti per altri contesti.
 
 ## Convenzioni implementative adottate

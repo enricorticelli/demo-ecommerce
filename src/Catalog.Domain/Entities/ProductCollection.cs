@@ -6,5 +6,5 @@ public sealed class ProductCollection
     public Guid CollectionId { get; set; }
 
     public Product Product { get; set; } = null!;
-    public CatalogCollection Collection { get; set; } = null!;
+    public Collection Collection { get; set; } = null!;
 }

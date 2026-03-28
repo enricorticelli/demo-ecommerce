@@ -6,6 +6,7 @@ using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Shared.BuildingBlocks.Configuration;
 
 namespace Shared.BuildingBlocks.Observability;
 
@@ -13,8 +14,8 @@ public static class ObservabilityExtensions
 {
     public static WebApplicationBuilder AddObservability(this WebApplicationBuilder builder)
     {
-        var serviceName = Environment.GetEnvironmentVariable("OTEL_SERVICE_NAME")
-            ?? builder.Environment.ApplicationName;
+        var serviceName = EnvironmentVariableReader.Resolve("OTEL_SERVICE_NAME")
+                          ?? builder.Environment.ApplicationName;
 
         builder.Logging.AddOpenTelemetry(logging =>
         {

@@ -15,7 +15,7 @@ public sealed class CollectionCommandService(
     ICollectionRepository collectionRepository,
     ICollectionRules collectionRules,
     IDomainEventPublisher eventPublisher,
-    IViewMapper<CatalogCollection, CollectionView> mapper) : ICollectionCommandService
+    IViewMapper<Collection, CollectionView> mapper) : ICollectionCommandService
 {
     public async Task<CollectionView> CreateAsync(string name, string slug, string description, bool isFeatured, string correlationId, CancellationToken cancellationToken)
     {
@@ -25,7 +25,7 @@ public sealed class CollectionCommandService(
 
         await collectionRules.EnsureSlugIsUniqueAsync(normalizedSlug, null, cancellationToken);
 
-        var collection = new CatalogCollection
+        var collection = new Collection
         {
             Id = Guid.NewGuid(),
             Name = normalizedName,

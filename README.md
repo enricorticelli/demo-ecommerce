@@ -1,6 +1,6 @@
-# CQRS E-commerce
+# E-commerce
 
-Backend e-commerce basato su microservizi pragmatici con CQRS, Clean Architecture e event-driven integration.
+Backend e-commerce basato su microservizi pragmatici con Clean Architecture e event-driven integration.
 
 ---
 
@@ -18,6 +18,7 @@ Bounded context inclusi:
 | `Payment`   | Autorizzazione e stato pagamento                    |
 | `Shipping`  | Creazione e avanzamento spedizioni                  |
 | `Warehouse` | Disponibilità e riserva stock                       |
+| `Communication` | Invio comunicazioni esterne (email)             |
 | `Gateway`   | Routing HTTP, nessuna logica di dominio             |
 
 ---
@@ -43,8 +44,35 @@ docker compose up -d
 node scripts/seeding/seed-catalog.js
 ```
 
-I servizi saranno disponibili tramite il gateway su `http://localhost:5000`.
-L'Aspire Dashboard per l'osservabilità è raggiungibile su `http://localhost:18888`.
+Lo script di seeding opera direttamente sugli endpoint store catalogo e non richiede autenticazione.
+
+I servizi saranno disponibili tramite il gateway su `http://localhost:18080`.
+L'Aspire Dashboard per l'osservabilità è raggiungibile su `http://localhost:18890`.
+Mailpit (mock SMTP + inbox UI) è disponibile su `http://localhost:18025`.
+Payment mock gateway (hosted checkout esterno) è disponibile su `http://localhost:18082`.
+
+### Hot reload microservizi .NET (Docker)
+
+```bash
+docker compose up -d
+
+# stop completo
+docker compose down
+```
+
+Note:
+- Il primo avvio e piu lento per restore/build.
+- Su Windows e abilitato `DOTNET_USE_POLLING_FILE_WATCHER=1` per rilevare correttamente le modifiche dei file montati.
+
+### Contesti API
+
+Il gateway espone solo endpoint contestualizzati:
+
+- `store`: `/api/store/{service}/v1/...`
+
+Esempi:
+
+- Storefront catalogo: `GET /api/store/catalog/v1/products`
 
 ---
 

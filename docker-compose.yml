@@ -6,16 +6,23 @@ x-api-infra-dependencies: &api-infra-dependencies
   aspire-dashboard:
     condition: service_healthy
 
+x-container-logging: &container-logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
 services:
   postgres:
-    container_name: postgres
+    <<: *container-logging
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_MULTIPLE_DATABASES: catalog_db,cart_db,order_db,payment_db,shipping_db,warehouse_db
+      POSTGRES_MULTIPLE_DATABASES: catalog_db,cart_db,order_db,payment_db,shipping_db,warehouse_db,communication_db
     ports:
-      - "5432:5432"
+      - "${POSTGRES_HOST_PORT:-55432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./scripts/postgres/init-multiple-databases.sh:/docker-entrypoint-initdb.d/01-init-multiple-databases.sh:ro
@@ -26,14 +33,14 @@ services:
       retries: 20
 
   rabbitmq:
-    container_name: rabbitmq
+    <<: *container-logging
     image: rabbitmq:4.1-management-alpine
     environment:
       RABBITMQ_DEFAULT_USER: ${MessageBus__Username}
       RABBITMQ_DEFAULT_PASS: ${MessageBus__Password}
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "${RABBITMQ_HOST_PORT:-55672}:5672"
+      - "${RABBITMQ_MANAGEMENT_HOST_PORT:-15673}:15672"
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
@@ -43,13 +50,13 @@ services:
       retries: 20
 
   aspire-dashboard:
-    container_name: aspire-dashboard
+    <<: *container-logging
     image: mcr.microsoft.com/dotnet/aspire-dashboard:13
     environment:
       DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
     ports:
-      - "18888:18888"
-      - "18889:18889"
+      - "${ASPIRE_DASHBOARD_HOST_PORT:-18890}:18888"
+      - "${ASPIRE_OTLP_HOST_PORT:-18891}:18889"
     healthcheck:
       test: ["CMD", "dotnet", "--info"]
       interval: 10s
@@ -57,7 +64,7 @@ services:
       retries: 20
 
   catalog-api:
-    container_name: catalog-api
+    <<: *container-logging
     build:
       context: .
       dockerfile: src/Catalog.Api/Dockerfile
@@ -74,7 +81,7 @@ services:
       retries: 20
 
   cart-api:
-    container_name: cart-api
+    <<: *container-logging
     build:
       context: .
       dockerfile: src/Cart.Api/Dockerfile
@@ -87,7 +94,7 @@ services:
     healthcheck: *api-health
 
   order-api:
-    container_name: order-api
+    <<: *container-logging
     build:
       context: .
       dockerfile: src/Order.Api/Dockerfile
@@ -102,7 +109,7 @@ services:
     healthcheck: *api-health
 
   warehouse-api:
-    container_name: warehouse-api
+    <<: *container-logging
     build:
       context: .
       dockerfile: src/Warehouse.Api/Dockerfile
@@ -115,7 +122,7 @@ services:
     healthcheck: *api-health
 
   payment-api:
-    container_name: payment-api
+    <<: *container-logging
     build:
       context: .
       dockerfile: src/Payment.Api/Dockerfile
@@ -127,8 +134,25 @@ services:
       <<: *api-infra-dependencies
     healthcheck: *api-health
 
+  payment-mock-gateway:
+    <<: *container-logging
+    build:
+      context: .
+      dockerfile: frontend/payment-mock-gateway/Dockerfile
+    env_file:
+      - .env
+    environment:
+      OTEL_SERVICE_NAME: payment-mock-gateway
+    ports:
+      - "127.0.0.1:${PAYMENT_MOCK_GATEWAY_HOST_PORT:-18082}:8080"
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health/ready',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+
   shipping-api:
-    container_name: shipping-api
+    <<: *container-logging
     build:
       context: .
       dockerfile: src/Shipping.Api/Dockerfile
@@ -140,8 +164,30 @@ services:
       <<: *api-infra-dependencies
     healthcheck: *api-health
 
+  communication-api:
+    <<: *container-logging
+    build:
+      context: .
+      dockerfile: src/Communication.Api/Dockerfile
+    env_file:
+      - .env
+    environment:
+      OTEL_SERVICE_NAME: communication-api
+    depends_on:
+      <<: *api-infra-dependencies
+      mailpit:
+        condition: service_started
+    healthcheck: *api-health
+
+  mailpit:
+    <<: *container-logging
+    image: axllent/mailpit:v1.26.2
+    ports:
+      - "127.0.0.1:${MAILPIT_SMTP_HOST_PORT:-11025}:1025"
+      - "127.0.0.1:${MAILPIT_UI_HOST_PORT:-18025}:8025"
+
   gateway-api:
-    container_name: gateway-api
+    <<: *container-logging
     build:
       context: .
       dockerfile: src/Gateway.Api/Dockerfile
@@ -150,7 +196,7 @@ services:
     environment:
       OTEL_SERVICE_NAME: gateway-api
     ports:
-      - "8080:8080"
+      - "127.0.0.1:${GATEWAY_HOST_PORT:-18080}:8080"
     depends_on:
       <<: *api-infra-dependencies
       catalog-api:
@@ -165,10 +211,12 @@ services:
         condition: service_healthy
       shipping-api:
         condition: service_healthy
+      communication-api:
+        condition: service_healthy
     healthcheck: *api-health
 
   frontend-web:
-    container_name: frontend-web
+    <<: *container-logging
     build:
       context: .
       dockerfile: frontend/web/Dockerfile
@@ -179,34 +227,12 @@ services:
       - ./frontend/web:/app
       - /app/node_modules
     ports:
-      - "3000:3000"
+      - "127.0.0.1:${FRONTEND_WEB_HOST_PORT:-13000}:3000"
     depends_on:
       gateway-api:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:3000 || exit 1"]
-      interval: 10s
-      timeout: 3s
-      retries: 20
-
-  frontend-admin:
-    container_name: frontend-admin
-    build:
-      context: .
-      dockerfile: frontend/admin/Dockerfile
-    env_file:
-      - .env
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 3001"
-    volumes:
-      - ./frontend/admin:/app
-      - /app/node_modules
-    ports:
-      - "3001:3001"
-    depends_on:
-      gateway-api:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:3001 || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 20

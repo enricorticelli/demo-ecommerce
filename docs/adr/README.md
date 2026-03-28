@@ -19,6 +19,7 @@
 | [0006](./0006-idempotenza-deduplica.md) | Idempotenza e deduplica messaggi | Accepted | 2026-03-07 |
 | [0007](./0007-osservabilita-distribuita-minima.md) | Osservabilita distribuita minima | Accepted | 2026-03-07 |
 | [0008](./0008-strategia-test-backend.md) | Strategia test backend | Accepted | 2026-03-07 |
+| [0009](./0009-servizio-comunicazioni-email-event-driven.md) | Servizio Communication per email esterne event-driven | Accepted | 2026-03-08 |
 
 ## Regole di manutenzione
 
