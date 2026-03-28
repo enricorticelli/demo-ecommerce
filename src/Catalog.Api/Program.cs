@@ -5,15 +5,12 @@ using Shared.BuildingBlocks.Api;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddDefaultApiServices();
-builder.AddAdminAuthentication();
 builder.AddCatalogModule();
 
 var app = builder.Build();
 await app.UseCatalogModuleAsync();
 
 app.UseDefaultApiPipeline();
-app.UseAuthentication();
-app.UseAuthorization();
 
 app.MapProductEndpoints();
 app.MapCategoryEndpoints();

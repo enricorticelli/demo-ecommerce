@@ -6,7 +6,6 @@ using Catalog.Application.Abstractions.Queries;
 using Shared.BuildingBlocks.Api.Correlation;
 using Shared.BuildingBlocks.Api.Errors;
 using Shared.BuildingBlocks.Api.Pagination;
-using Shared.BuildingBlocks.Api;
 
 namespace Catalog.Api.Endpoints;
 
@@ -21,38 +20,17 @@ public static class ProductEndpoints
         storeGroup.MapGet("/new-arrivals", GetNewArrivals).WithName("StoreGetNewArrivals");
         storeGroup.MapGet("/best-sellers", GetBestSellers).WithName("StoreGetBestSellers");
         storeGroup.MapGet("/{id:guid}", GetProductById).WithName("StoreGetProductById");
+        storeGroup.MapPost("/", CreateProduct).WithName("StoreCreateProduct");
+        storeGroup.MapPut("/{id:guid}", UpdateProduct).WithName("StoreUpdateProduct");
+        storeGroup.MapDelete("/{id:guid}", DeleteProduct).WithName("StoreDeleteProduct");
 
-        var adminGroup = app.MapGroup(CatalogRoutes.AdminProducts)
-            .WithTags("Catalog");
-
-        adminGroup.MapGet("/", AdminGetProducts).RequireAuthorization(AuthorizationPolicies.CatalogReadPolicy).WithName("AdminGetProducts");
-        adminGroup.MapGet("/{id:guid}", GetProductById).RequireAuthorization(AuthorizationPolicies.CatalogReadPolicy).WithName("AdminGetProductById");
-        adminGroup.MapPost("/", CreateProduct).RequireAuthorization(AuthorizationPolicies.CatalogWritePolicy).WithName("AdminCreateProduct");
-        adminGroup.MapPut("/{id:guid}", UpdateProduct).RequireAuthorization(AuthorizationPolicies.CatalogWritePolicy).WithName("AdminUpdateProduct");
-        adminGroup.MapDelete("/{id:guid}", DeleteProduct).RequireAuthorization(AuthorizationPolicies.CatalogWritePolicy).WithName("AdminDeleteProduct");
-
-        return adminGroup;
+        return storeGroup;
     }
 
     private static async Task<IResult> GetProducts(string? searchTerm, IProductQueryService service, CancellationToken cancellationToken)
     {
         var products = await service.ListAsync(searchTerm, cancellationToken);
         return Results.Ok(products.Select(x => x.ToResponse()));
-    }
-
-    private static async Task<IResult> AdminGetProducts(
-        int? limit,
-        int? offset,
-        string? searchTerm,
-        IProductQueryService service,
-        CancellationToken cancellationToken)
-    {
-        var (normalizedLimit, normalizedOffset) = PaginationNormalizer.Normalize(limit, offset);
-        var products = await service.ListAsync(searchTerm, cancellationToken);
-        return Results.Ok(products
-            .Skip(normalizedOffset)
-            .Take(normalizedLimit)
-            .Select(x => x.ToResponse()));
     }
 
     private static async Task<IResult> GetNewArrivals(string? searchTerm, IProductQueryService service, CancellationToken cancellationToken)
@@ -98,7 +76,7 @@ public static class ProductEndpoints
             correlationId,
             cancellationToken);
 
-            return Results.Created($"{CatalogRoutes.AdminProducts}/{product.Id}", product.ToResponse());
+            return Results.Created($"{CatalogRoutes.StoreProducts}/{product.Id}", product.ToResponse());
         }
         catch (Exception exception)
         {

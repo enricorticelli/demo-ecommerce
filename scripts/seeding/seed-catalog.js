@@ -31,45 +31,13 @@ async function main() {
   const concurrency = Math.max(1, toInt(args.concurrency || process.env.SEED_CONCURRENCY || envFromFile.SEED_CONCURRENCY, 12));
   const dryRun = Boolean(args.dryRun);
   const verbose = Boolean(args.verbose);
-  const adminUsername =
-    args.adminUsername ||
-    envFromFile.Account__Admin__Username ||
-    process.env.Account__Admin__Username ||
-    envFromFile.SEED_ADMIN_USERNAME ||
-    process.env.SEED_ADMIN_USERNAME;
-  const adminPassword =
-    args.adminPassword ||
-    envFromFile.Account__Admin__Password ||
-    process.env.Account__Admin__Password ||
-    envFromFile.SEED_ADMIN_PASSWORD ||
-    process.env.SEED_ADMIN_PASSWORD;
-
   const correlationPrefix = `seed-catalog-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-
-  const publicHttp = createHttpClient({ baseUrl, timeoutMs, correlationPrefix, verbose });
-  let adminAccessToken =
-    args.adminAccessToken ||
-    envFromFile.SEED_ADMIN_ACCESS_TOKEN ||
-    process.env.SEED_ADMIN_ACCESS_TOKEN;
-
-  if (!adminAccessToken) {
-    if (!adminUsername || !adminPassword) {
-      throw new Error(
-        'Missing admin credentials. Configure Account__Admin__Username and Account__Admin__Password in .env ' +
-        'or pass --admin-username and --admin-password.'
-      );
-    }
-
-    console.log(`[seed] Authenticating as admin '${adminUsername}'`);
-    adminAccessToken = await loginAsAdmin(publicHttp, adminUsername, adminPassword);
-  }
 
   const http = createHttpClient({
     baseUrl,
     timeoutMs,
     correlationPrefix,
-    verbose,
-    getAccessToken: () => adminAccessToken
+    verbose
   });
 
   const startedAt = Date.now();
@@ -99,10 +67,10 @@ async function main() {
   logVerbose(verbose, `[seed] Existing: ${JSON.stringify(report.existing)}`);
 
   const resetOps = [
-    { key: 'products', items: existing.products, deletePath: (x) => `/api/admin/catalog/v1/products/${x.id}` },
-    { key: 'collections', items: existing.collections, deletePath: (x) => `/api/admin/catalog/v1/collections/${x.id}` },
-    { key: 'categories', items: existing.categories, deletePath: (x) => `/api/admin/catalog/v1/categories/${x.id}` },
-    { key: 'brands', items: existing.brands, deletePath: (x) => `/api/admin/catalog/v1/brands/${x.id}` }
+    { key: 'products', items: existing.products, deletePath: (x) => `/api/store/catalog/v1/products/${x.id}` },
+    { key: 'collections', items: existing.collections, deletePath: (x) => `/api/store/catalog/v1/collections/${x.id}` },
+    { key: 'categories', items: existing.categories, deletePath: (x) => `/api/store/catalog/v1/categories/${x.id}` },
+    { key: 'brands', items: existing.brands, deletePath: (x) => `/api/store/catalog/v1/brands/${x.id}` }
   ];
 
   for (const op of resetOps) {
@@ -155,7 +123,7 @@ async function main() {
         throw new Error(`Invalid product references for sku '${payload.sku}'`);
       }
 
-      await http.request('POST', '/api/admin/catalog/v1/products', payload);
+      await http.request('POST', '/api/store/catalog/v1/products', payload);
     });
 
     report.created.products = creation.ok;
@@ -212,21 +180,6 @@ function parseArgs(argv) {
       continue;
     }
 
-    if (token === '--admin-username') {
-      args.adminUsername = argv[++i];
-      continue;
-    }
-
-    if (token === '--admin-password') {
-      args.adminPassword = argv[++i];
-      continue;
-    }
-
-    if (token === '--admin-access-token') {
-      args.adminAccessToken = argv[++i];
-      continue;
-    }
-
     if (token === '--concurrency') {
       args.concurrency = argv[++i];
       continue;
@@ -270,7 +223,7 @@ function loadEnvFile(filePath) {
   return result;
 }
 
-function createHttpClient({ baseUrl, timeoutMs, correlationPrefix, verbose, getAccessToken }) {
+function createHttpClient({ baseUrl, timeoutMs, correlationPrefix, verbose }) {
   let counter = 0;
 
   return {
@@ -288,12 +241,6 @@ function createHttpClient({ baseUrl, timeoutMs, correlationPrefix, verbose, getA
           const headers = {
             'x-correlation-id': correlationId
           };
-          const accessToken = typeof getAccessToken === 'function' ? getAccessToken() : null;
-
-          if (accessToken) {
-            headers.authorization = `Bearer ${accessToken}`;
-          }
-
           if (body !== undefined) {
             headers['content-type'] = 'application/json';
           }
@@ -345,26 +292,12 @@ function createHttpClient({ baseUrl, timeoutMs, correlationPrefix, verbose, getA
   };
 }
 
-async function loginAsAdmin(http, username, password) {
-  const response = await http.request('POST', '/api/admin/account/v1/users/login', {
-    username,
-    password
-  });
-
-  const token = response?.accessToken || response?.AccessToken;
-  if (!token || typeof token !== 'string') {
-    throw new Error('Admin login succeeded but access token is missing in response.');
-  }
-
-  return token;
-}
-
 async function fetchExisting(http) {
   const [brands, categories, collections, products] = await Promise.all([
-    http.request('GET', '/api/admin/catalog/v1/brands'),
-    http.request('GET', '/api/admin/catalog/v1/categories'),
-    http.request('GET', '/api/admin/catalog/v1/collections'),
-    http.request('GET', '/api/admin/catalog/v1/products')
+    http.request('GET', '/api/store/catalog/v1/brands'),
+    http.request('GET', '/api/store/catalog/v1/categories'),
+    http.request('GET', '/api/store/catalog/v1/collections'),
+    http.request('GET', '/api/store/catalog/v1/products')
   ]);
 
   return {
@@ -378,7 +311,7 @@ async function fetchExisting(http) {
 async function createBrands(http, brands, concurrency, report) {
   const map = new Map();
   const result = await runPool(brands, concurrency, async (brand) => {
-    const created = await http.request('POST', '/api/admin/catalog/v1/brands', {
+    const created = await http.request('POST', '/api/store/catalog/v1/brands', {
       name: brand.name,
       slug: brand.slug,
       description: brand.description
@@ -396,7 +329,7 @@ async function createBrands(http, brands, concurrency, report) {
 async function createCategories(http, categories, concurrency, report) {
   const map = new Map();
   const result = await runPool(categories, concurrency, async (category) => {
-    const created = await http.request('POST', '/api/admin/catalog/v1/categories', {
+    const created = await http.request('POST', '/api/store/catalog/v1/categories', {
       name: category.name,
       slug: category.slug,
       description: category.description
@@ -414,7 +347,7 @@ async function createCategories(http, categories, concurrency, report) {
 async function createCollections(http, collections, concurrency, report) {
   const map = new Map();
   const result = await runPool(collections, concurrency, async (collection) => {
-    const created = await http.request('POST', '/api/admin/catalog/v1/collections', {
+    const created = await http.request('POST', '/api/store/catalog/v1/collections', {
       name: collection.name,
       slug: collection.slug,
       description: collection.description,

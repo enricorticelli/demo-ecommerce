@@ -2,13 +2,10 @@
   import { onMount } from 'svelte';
   import {
     createOrder,
-    fetchMyAddresses,
-    fetchMyProfile,
     getPaymentSessionByOrder,
     pollOrderUntilDone,
     type PaymentSession,
   } from '../lib/api';
-  import { getCurrentUserId, getAccessToken } from '../lib/auth';
   import { getProductImage } from '../lib/catalog-presenter';
   import { formatCurrency } from '../lib/format';
   import { cartId, userId, cartItems, cartTotal, startNewCart } from '../stores/cart';
@@ -37,7 +34,10 @@
 
   let isSubmitting = false;
   let submitError = '';
-  let authenticatedUserId: string | null = null;
+
+  function roundMoney(value: number): number {
+    return Math.round((value + Number.EPSILON) * 100) / 100;
+  }
 
   async function waitForPaymentSession(orderId: string, maxAttempts = 40, intervalMs = 500): Promise<PaymentSession | null> {
     for (let i = 0; i < maxAttempts; i += 1) {
@@ -80,7 +80,7 @@
       const result = await createOrder({
         cartId: $cartId,
         userId: $userId,
-        identityType: authenticatedUserId ? 'Registered' : 'Anonymous',
+        identityType: 'Anonymous',
         paymentMethod,
         items: items.map((item) => ({
           productId: item.productId,
@@ -89,9 +89,9 @@
           quantity: item.quantity,
           unitPrice: item.unitPrice,
         })),
-        totalAmount: subtotal,
-        authenticatedUserId,
-        anonymousId: authenticatedUserId ? null : $userId,
+        totalAmount: roundMoney(items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)),
+        authenticatedUserId: null,
+        anonymousId: $userId,
         customer: {
           firstName,
           lastName,
@@ -111,7 +111,7 @@
           country: billingSameAsShipping ? country : billingCountry,
         },
       }, {
-        anonymousId: authenticatedUserId ? undefined : $userId,
+        anonymousId: $userId,
       });
       const paymentSession = await waitForPaymentSession(result.orderId);
       if (paymentSession) {
@@ -120,7 +120,7 @@
       }
 
       const completedOrder = await pollOrderUntilDone(result.orderId, () => undefined, 30, 1000, {
-        anonymousId: authenticatedUserId ? undefined : $userId,
+        anonymousId: $userId,
       });
       if (completedOrder?.status === 'Completed') {
         startNewCart();
@@ -138,44 +138,9 @@
   }
 
   onMount(async () => {
-    authenticatedUserId = getCurrentUserId();
-
     const params = new URLSearchParams(window.location.search);
     if (params.get('payment') === 'cancelled') {
       addToast('Pagamento annullato. Puoi riprovare il checkout.', 'info');
-    }
-
-    if (authenticatedUserId && getAccessToken()) {
-      const accessToken = getAccessToken();
-      if (accessToken) {
-        try {
-          const profile = await fetchMyProfile(accessToken);
-          firstName = profile.firstName ?? '';
-          lastName = profile.lastName ?? '';
-          email = profile.email ?? '';
-          phone = profile.phone ?? '';
-
-          const addresses = await fetchMyAddresses(accessToken);
-          const preferredAddress =
-            addresses.find((x) => x.isDefaultShipping) ??
-            addresses.find((x) => x.isDefaultBilling) ??
-            addresses[0];
-
-          if (preferredAddress) {
-            address = preferredAddress.street ?? '';
-            city = preferredAddress.city ?? '';
-            zip = preferredAddress.postalCode ?? '';
-            country = preferredAddress.country ?? '';
-
-            billingAddress = preferredAddress.street ?? '';
-            billingCity = preferredAddress.city ?? '';
-            billingZip = preferredAddress.postalCode ?? '';
-            billingCountry = preferredAddress.country ?? '';
-          }
-        } catch {
-          // If profile prefill fails, checkout remains usable with empty fields.
-        }
-      }
     }
 
     if ($cartItems.length === 0) {

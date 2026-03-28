@@ -18,7 +18,7 @@ public sealed class CatalogDbContextModelTests
 
         Assert.NotNull(model.FindEntityType("Catalog.Domain.Entities.Brand")?.GetTableName());
         Assert.NotNull(model.FindEntityType("Catalog.Domain.Entities.Category")?.GetTableName());
-        Assert.NotNull(model.FindEntityType("Catalog.Domain.Entities.CatalogCollection")?.GetTableName());
+        Assert.NotNull(model.FindEntityType("Catalog.Domain.Entities.Collection")?.GetTableName());
         Assert.NotNull(model.FindEntityType("Catalog.Domain.Entities.Product")?.GetTableName());
         Assert.NotNull(model.FindEntityType("Catalog.Domain.Entities.ProductCollection")?.GetTableName());
     }

@@ -7,7 +7,7 @@ public sealed class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
 {
     public DbSet<Brand> Brands => Set<Brand>();
     public DbSet<Category> Categories => Set<Category>();
-    public DbSet<CatalogCollection> Collections => Set<CatalogCollection>();
+    public DbSet<Collection> Collections => Set<Collection>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<ProductCollection> ProductCollections => Set<ProductCollection>();
 
@@ -35,7 +35,7 @@ public sealed class CatalogDbContext(DbContextOptions<CatalogDbContext> options)
             entity.HasIndex(x => x.Slug).IsUnique();
         });
 
-        modelBuilder.Entity<CatalogCollection>(entity =>
+        modelBuilder.Entity<Collection>(entity =>
         {
             entity.ToTable("collections");
             entity.HasKey(x => x.Id);

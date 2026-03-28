@@ -1,14 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { cartCount } from '../stores/cart';
-  import { isLoggedIn } from '../lib/auth';
-
-  let hasAccount = false;
-
-  onMount(() => {
-    hasAccount = isLoggedIn();
-  });
-
 </script>
 
 <div class="border-b border-[#e1e3e5] bg-[#202223] px-4 py-2 text-center text-xs font-medium text-white md:px-8">
@@ -55,14 +46,5 @@
       {/if}
     </a>
 
-    {#if hasAccount}
-      <a href="/account" class="inline-flex items-center gap-2 rounded-xl border border-[#e1e3e5] px-4 py-2 text-sm font-semibold text-[#202223] transition hover:bg-[#f6f6f7]">
-        Account
-      </a>
-    {:else}
-      <a href="/login" class="inline-flex items-center gap-2 rounded-xl border border-[#e1e3e5] px-4 py-2 text-sm font-semibold text-[#202223] transition hover:bg-[#f6f6f7]">
-        Login
-      </a>
-    {/if}
   </div>
 </header>

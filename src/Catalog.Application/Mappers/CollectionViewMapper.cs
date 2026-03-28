@@ -4,9 +4,9 @@ using Shared.BuildingBlocks.Mapping;
 
 namespace Catalog.Application.Mappers;
 
-public sealed class CollectionViewMapper : IViewMapper<CatalogCollection, CollectionView>
+public sealed class CollectionViewMapper : IViewMapper<Collection, CollectionView>
 {
-    public CollectionView Map(CatalogCollection source)
+    public CollectionView Map(Collection source)
     {
         return new CollectionView(source.Id, source.Name, source.Slug, source.Description, source.IsFeatured);
     }

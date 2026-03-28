@@ -36,8 +36,12 @@ userId.subscribe((v) => save('cart:userId', v));
 export const cartItems = atom<CartItemDto[]>(load('cart:items', []));
 cartItems.subscribe((v) => save('cart:items', v));
 
+function roundMoney(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
 export const cartTotal = computed(cartItems, (items) =>
-  items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+  roundMoney(items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0))
 );
 
 export const cartCount = computed(cartItems, (items) =>

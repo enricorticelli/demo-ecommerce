@@ -18,10 +18,16 @@ builder.Services.AddCors(options =>
 var routes = new List<RouteConfig>
 {
     // store/catalog
-    CreateContextRoute("store-catalog-products-list-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products", "GET"),
+    CreateContextRoute("store-catalog-products-collection-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products", "GET", "POST"),
     CreateContextRoute("store-catalog-products-new-arrivals-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products/new-arrivals", "GET"),
     CreateContextRoute("store-catalog-products-best-sellers-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products/best-sellers", "GET"),
-    CreateContextRoute("store-catalog-products-by-id-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products/{id}", "GET"),
+    CreateContextRoute("store-catalog-products-by-id-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products/{id}", "GET", "PUT", "DELETE"),
+    CreateContextRoute("store-catalog-brands-collection-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/brands", "GET", "POST"),
+    CreateContextRoute("store-catalog-brands-item-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/brands/{id}", "GET", "PUT", "DELETE"),
+    CreateContextRoute("store-catalog-categories-collection-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/categories", "GET", "POST"),
+    CreateContextRoute("store-catalog-categories-item-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/categories/{id}", "GET", "PUT", "DELETE"),
+    CreateContextRoute("store-catalog-collections-collection-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/collections", "GET", "POST"),
+    CreateContextRoute("store-catalog-collections-item-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/collections/{id}", "GET", "PUT", "DELETE"),
 
     // store/cart
     CreateContextRoute("store-cart-get-route", "cart-cluster", "store", "cart", "/api/store/cart/v1/carts/{cartId}", "GET"),
@@ -33,24 +39,6 @@ var routes = new List<RouteConfig>
     CreateContextRoute("store-order-list-route", "order-cluster", "store", "order", "/api/store/order/v1/orders", "GET"),
     CreateContextRoute("store-order-get-route", "order-cluster", "store", "order", "/api/store/order/v1/orders/{orderId}", "GET"),
     CreateContextRoute("store-order-manual-cancel-route", "order-cluster", "store", "order", "/api/store/order/v1/orders/{orderId}/manual-cancel", "POST"),
-    CreateContextRoute("store-order-claim-guest-route", "order-cluster", "store", "order", "/api/store/order/v1/orders/claim-guest", "POST"),
-
-    // store/account
-    CreateContextRoute("store-account-register-route", "account-cluster", "store", "account", "/api/store/account/v1/users/register", "POST"),
-    CreateContextRoute("store-account-login-route", "account-cluster", "store", "account", "/api/store/account/v1/users/login", "POST"),
-    CreateContextRoute("store-account-refresh-route", "account-cluster", "store", "account", "/api/store/account/v1/users/refresh", "POST"),
-    CreateContextRoute("store-account-logout-route", "account-cluster", "store", "account", "/api/store/account/v1/users/logout", "POST"),
-    CreateContextRoute("store-account-verify-email-route", "account-cluster", "store", "account", "/api/store/account/v1/users/verify-email", "POST"),
-    CreateContextRoute("store-account-forgot-password-route", "account-cluster", "store", "account", "/api/store/account/v1/users/forgot-password", "POST"),
-    CreateContextRoute("store-account-reset-password-route", "account-cluster", "store", "account", "/api/store/account/v1/users/reset-password", "POST"),
-    CreateContextRoute("store-account-resend-verification-route", "account-cluster", "store", "account", "/api/store/account/v1/users/resend-verification", "POST"),
-    CreateContextRoute("store-account-me-get-route", "account-cluster", "store", "account", "/api/store/account/v1/me", "GET"),
-    CreateContextRoute("store-account-me-put-route", "account-cluster", "store", "account", "/api/store/account/v1/me", "PUT"),
-    CreateContextRoute("store-account-addresses-list-route", "account-cluster", "store", "account", "/api/store/account/v1/me/addresses", "GET"),
-    CreateContextRoute("store-account-addresses-create-route", "account-cluster", "store", "account", "/api/store/account/v1/me/addresses", "POST"),
-    CreateContextRoute("store-account-addresses-update-route", "account-cluster", "store", "account", "/api/store/account/v1/me/addresses/{addressId}", "PUT"),
-    CreateContextRoute("store-account-addresses-delete-route", "account-cluster", "store", "account", "/api/store/account/v1/me/addresses/{addressId}", "DELETE"),
-    CreateContextRoute("store-account-orders-route", "account-cluster", "store", "account", "/api/store/account/v1/me/orders", "GET"),
 
     // store/payment
     CreateContextRoute("store-payment-session-by-order-route", "payment-cluster", "store", "payment", "/api/store/payment/v1/payments/sessions/orders/{orderId}", "GET"),
@@ -60,47 +48,7 @@ var routes = new List<RouteConfig>
     CreateContextRoute("store-payment-webhook-satispay-route", "payment-cluster", "store", "payment", "/api/store/payment/v1/payments/webhooks/satispay", "POST"),
 
     // store/shipping
-    CreateContextRoute("store-shipping-by-order-route", "shipping-cluster", "store", "shipping", "/api/store/shipping/v1/shipments/orders/{orderId}", "GET"),
-
-    // admin/catalog
-    CreateContextRoute("admin-catalog-products-collection-route", "catalog-cluster", "admin", "catalog", "/api/admin/catalog/v1/products", "GET", "POST"),
-    CreateContextRoute("admin-catalog-products-item-route", "catalog-cluster", "admin", "catalog", "/api/admin/catalog/v1/products/{id}", "GET", "PUT", "DELETE"),
-    CreateContextRoute("admin-catalog-brands-collection-route", "catalog-cluster", "admin", "catalog", "/api/admin/catalog/v1/brands", "GET", "POST"),
-    CreateContextRoute("admin-catalog-brands-item-route", "catalog-cluster", "admin", "catalog", "/api/admin/catalog/v1/brands/{id}", "GET", "PUT", "DELETE"),
-    CreateContextRoute("admin-catalog-categories-collection-route", "catalog-cluster", "admin", "catalog", "/api/admin/catalog/v1/categories", "GET", "POST"),
-    CreateContextRoute("admin-catalog-categories-item-route", "catalog-cluster", "admin", "catalog", "/api/admin/catalog/v1/categories/{id}", "GET", "PUT", "DELETE"),
-    CreateContextRoute("admin-catalog-collections-collection-route", "catalog-cluster", "admin", "catalog", "/api/admin/catalog/v1/collections", "GET", "POST"),
-    CreateContextRoute("admin-catalog-collections-item-route", "catalog-cluster", "admin", "catalog", "/api/admin/catalog/v1/collections/{id}", "GET", "PUT", "DELETE"),
-
-    // admin/order
-    CreateContextRoute("admin-order-list-route", "order-cluster", "admin", "order", "/api/admin/order/v1/orders", "GET"),
-    CreateContextRoute("admin-order-get-route", "order-cluster", "admin", "order", "/api/admin/order/v1/orders/{orderId}", "GET"),
-    CreateContextRoute("admin-order-manual-complete-route", "order-cluster", "admin", "order", "/api/admin/order/v1/orders/{orderId}/manual-complete", "POST"),
-    CreateContextRoute("admin-order-manual-cancel-route", "order-cluster", "admin", "order", "/api/admin/order/v1/orders/{orderId}/manual-cancel", "POST"),
-
-    // admin/shipping
-    CreateContextRoute("admin-shipping-list-route", "shipping-cluster", "admin", "shipping", "/api/admin/shipping/v1/shipments", "GET"),
-    CreateContextRoute("admin-shipping-by-order-route", "shipping-cluster", "admin", "shipping", "/api/admin/shipping/v1/shipments/orders/{orderId}", "GET"),
-    CreateContextRoute("admin-shipping-update-status-route", "shipping-cluster", "admin", "shipping", "/api/admin/shipping/v1/shipments/{shipmentId}/status", "POST"),
-
-    // admin/warehouse
-    CreateContextRoute("admin-warehouse-query-stock-route", "warehouse-cluster", "admin", "warehouse", "/api/admin/warehouse/v1/stock/query", "POST"),
-    CreateContextRoute("admin-warehouse-upsert-stock-route", "warehouse-cluster", "admin", "warehouse", "/api/admin/warehouse/v1/stock", "POST"),
-
-    // admin/account
-    CreateContextRoute("admin-account-login-route", "account-cluster", "admin", "account", "/api/admin/account/v1/users/login", "POST"),
-    CreateContextRoute("admin-account-refresh-route", "account-cluster", "admin", "account", "/api/admin/account/v1/users/refresh", "POST"),
-    CreateContextRoute("admin-account-logout-route", "account-cluster", "admin", "account", "/api/admin/account/v1/users/logout", "POST"),
-    CreateContextRoute("admin-account-me-route", "account-cluster", "admin", "account", "/api/admin/account/v1/me", "GET"),
-    CreateContextRoute("admin-account-permissions-route", "account-cluster", "admin", "account", "/api/admin/account/v1/me/permissions", "GET"),
-    CreateContextRoute("admin-account-admins-collection-route", "account-cluster", "admin", "account", "/api/admin/account/v1/admins", "GET", "POST"),
-    CreateContextRoute("admin-account-admins-item-route", "account-cluster", "admin", "account", "/api/admin/account/v1/admins/{adminUserId}", "DELETE"),
-    CreateContextRoute("admin-account-admins-password-reset-route", "account-cluster", "admin", "account", "/api/admin/account/v1/admins/{adminUserId}/password/reset", "POST"),
-    CreateContextRoute("admin-account-customers-collection-route", "account-cluster", "admin", "account", "/api/admin/account/v1/customers", "GET"),
-    CreateContextRoute("admin-account-customers-item-route", "account-cluster", "admin", "account", "/api/admin/account/v1/customers/{customerId}", "GET", "PUT"),
-    CreateContextRoute("admin-account-customers-password-reset-route", "account-cluster", "admin", "account", "/api/admin/account/v1/customers/{customerId}/password/reset", "POST"),
-    CreateContextRoute("admin-account-customers-addresses-collection-route", "account-cluster", "admin", "account", "/api/admin/account/v1/customers/{customerId}/addresses", "GET", "POST"),
-    CreateContextRoute("admin-account-customers-addresses-item-route", "account-cluster", "admin", "account", "/api/admin/account/v1/customers/{customerId}/addresses/{addressId}", "PUT", "DELETE")
+    CreateContextRoute("store-shipping-by-order-route", "shipping-cluster", "store", "shipping", "/api/store/shipping/v1/shipments/orders/{orderId}", "GET")
 };
 
 var clusters = new List<ClusterConfig>
@@ -108,7 +56,6 @@ var clusters = new List<ClusterConfig>
     CreateCluster("catalog-cluster", "http://catalog-api:8080/"),
     CreateCluster("cart-cluster", "http://cart-api:8080/"),
     CreateCluster("order-cluster", "http://order-api:8080/"),
-    CreateCluster("account-cluster", "http://account-api:8080/"),
     CreateCluster("payment-cluster", "http://payment-api:8080/"),
     CreateCluster("warehouse-cluster", "http://warehouse-api:8080/"),
     CreateCluster("shipping-cluster", "http://shipping-api:8080/")

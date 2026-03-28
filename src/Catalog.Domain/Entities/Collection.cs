@@ -1,6 +1,6 @@
 namespace Catalog.Domain.Entities;
 
-public sealed class CatalogCollection
+public sealed class Collection
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;

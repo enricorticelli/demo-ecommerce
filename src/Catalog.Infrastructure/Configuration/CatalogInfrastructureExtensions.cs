@@ -43,7 +43,7 @@ public static class CatalogInfrastructureExtensions
 
         services.AddScoped<IViewMapper<Brand, BrandView>, BrandViewMapper>();
         services.AddScoped<IViewMapper<Category, CategoryView>, CategoryViewMapper>();
-        services.AddScoped<IViewMapper<CatalogCollection, CollectionView>, CollectionViewMapper>();
+        services.AddScoped<IViewMapper<Collection, CollectionView>, CollectionViewMapper>();
         services.AddScoped<IViewMapper<Product, ProductView>, ProductViewMapper>();
 
         services.AddTracedScoped<IBrandCommandService, BrandCommandService>();

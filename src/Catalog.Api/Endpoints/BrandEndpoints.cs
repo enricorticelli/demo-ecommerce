@@ -6,7 +6,6 @@ using Catalog.Application.Abstractions.Queries;
 using Shared.BuildingBlocks.Api.Correlation;
 using Shared.BuildingBlocks.Api.Errors;
 using Shared.BuildingBlocks.Api.Pagination;
-using Shared.BuildingBlocks.Api;
 
 namespace Catalog.Api.Endpoints;
 
@@ -14,14 +13,14 @@ public static class BrandEndpoints
 {
     public static RouteGroupBuilder MapBrandEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup(CatalogRoutes.AdminBrands)
+        var group = app.MapGroup(CatalogRoutes.StoreBrands)
             .WithTags("Catalog");
 
-        group.MapGet("/", GetBrands).RequireAuthorization(AuthorizationPolicies.CatalogReadPolicy).WithName("AdminGetBrands");
-        group.MapGet("/{id:guid}", GetBrandById).RequireAuthorization(AuthorizationPolicies.CatalogReadPolicy).WithName("AdminGetBrandById");
-        group.MapPost("/", CreateBrand).RequireAuthorization(AuthorizationPolicies.CatalogWritePolicy).WithName("AdminCreateBrand");
-        group.MapPut("/{id:guid}", UpdateBrand).RequireAuthorization(AuthorizationPolicies.CatalogWritePolicy).WithName("AdminUpdateBrand");
-        group.MapDelete("/{id:guid}", DeleteBrand).RequireAuthorization(AuthorizationPolicies.CatalogWritePolicy).WithName("AdminDeleteBrand");
+        group.MapGet("/", GetBrands).WithName("StoreGetBrands");
+        group.MapGet("/{id:guid}", GetBrandById).WithName("StoreGetBrandById");
+        group.MapPost("/", CreateBrand).WithName("StoreCreateBrand");
+        group.MapPut("/{id:guid}", UpdateBrand).WithName("StoreUpdateBrand");
+        group.MapDelete("/{id:guid}", DeleteBrand).WithName("StoreDeleteBrand");
 
         return group;
     }
@@ -61,7 +60,7 @@ public static class BrandEndpoints
             var correlationId = CorrelationIdResolver.Resolve(httpContext);
             var brand = await service.CreateAsync(request.Name, request.Slug, request.Description, correlationId, cancellationToken);
             var response = brand.ToResponse();
-            return Results.Created($"{CatalogRoutes.AdminBrands}/{brand.Id}", response);
+            return Results.Created($"{CatalogRoutes.StoreBrands}/{brand.Id}", response);
         }
         catch (Exception exception)
         {

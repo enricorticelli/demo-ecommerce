@@ -19,7 +19,6 @@ Bounded context inclusi:
 | `Shipping`  | Creazione e avanzamento spedizioni                  |
 | `Warehouse` | Disponibilità e riserva stock                       |
 | `Communication` | Invio comunicazioni esterne (email)             |
-| `Account`   | Identity e profilo cliente/backoffice               |
 | `Gateway`   | Routing HTTP, nessuna logica di dominio             |
 
 ---
@@ -45,7 +44,7 @@ docker compose up -d
 node scripts/seeding/seed-catalog.js
 ```
 
-Lo script di seeding esegue login admin automatico con `Account__Admin__Username` e `Account__Admin__Password` definiti in `.env`.
+Lo script di seeding opera direttamente sugli endpoint store catalogo e non richiede autenticazione.
 
 I servizi saranno disponibili tramite il gateway su `http://localhost:18080`.
 L'Aspire Dashboard per l'osservabilità è raggiungibile su `http://localhost:18890`.
@@ -54,10 +53,7 @@ Payment mock gateway (hosted checkout esterno) è disponibile su `http://localho
 
 ### Hot reload microservizi .NET (Docker)
 
-Per sviluppo locale e disponibile `docker-compose.override.yml`, che avvia le API .NET con `dotnet watch`.
-
 ```bash
-# avvio con hot reload (compose carica automaticamente docker-compose.override.yml)
 docker compose up -d
 
 # stop completo
@@ -73,12 +69,10 @@ Note:
 Il gateway espone solo endpoint contestualizzati:
 
 - `store`: `/api/store/{service}/v1/...`
-- `admin`: `/api/admin/{service}/v1/...`
 
 Esempi:
 
 - Storefront catalogo: `GET /api/store/catalog/v1/products`
-- Backoffice catalogo: `POST /api/admin/catalog/v1/products`
 
 ---
 

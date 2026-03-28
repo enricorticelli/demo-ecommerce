@@ -6,7 +6,6 @@ using Catalog.Application.Abstractions.Queries;
 using Shared.BuildingBlocks.Api.Correlation;
 using Shared.BuildingBlocks.Api.Errors;
 using Shared.BuildingBlocks.Api.Pagination;
-using Shared.BuildingBlocks.Api;
 
 namespace Catalog.Api.Endpoints;
 
@@ -14,14 +13,14 @@ public static class CollectionEndpoints
 {
     public static RouteGroupBuilder MapCollectionEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup(CatalogRoutes.AdminCollections)
+        var group = app.MapGroup(CatalogRoutes.StoreCollections)
             .WithTags("Catalog");
 
-        group.MapGet("/", GetCollections).RequireAuthorization(AuthorizationPolicies.CatalogReadPolicy).WithName("AdminGetCollections");
-        group.MapGet("/{id:guid}", GetCollectionById).RequireAuthorization(AuthorizationPolicies.CatalogReadPolicy).WithName("AdminGetCollectionById");
-        group.MapPost("/", CreateCollection).RequireAuthorization(AuthorizationPolicies.CatalogWritePolicy).WithName("AdminCreateCollection");
-        group.MapPut("/{id:guid}", UpdateCollection).RequireAuthorization(AuthorizationPolicies.CatalogWritePolicy).WithName("AdminUpdateCollection");
-        group.MapDelete("/{id:guid}", DeleteCollection).RequireAuthorization(AuthorizationPolicies.CatalogWritePolicy).WithName("AdminDeleteCollection");
+        group.MapGet("/", GetCollections).WithName("StoreGetCollections");
+        group.MapGet("/{id:guid}", GetCollectionById).WithName("StoreGetCollectionById");
+        group.MapPost("/", CreateCollection).WithName("StoreCreateCollection");
+        group.MapPut("/{id:guid}", UpdateCollection).WithName("StoreUpdateCollection");
+        group.MapDelete("/{id:guid}", DeleteCollection).WithName("StoreDeleteCollection");
 
         return group;
     }
@@ -68,7 +67,7 @@ public static class CollectionEndpoints
                 cancellationToken);
 
             var response = collection.ToResponse();
-            return Results.Created($"{CatalogRoutes.AdminCollections}/{collection.Id}", response);
+            return Results.Created($"{CatalogRoutes.StoreCollections}/{collection.Id}", response);
         }
         catch (Exception exception)
         {

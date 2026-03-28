@@ -4,7 +4,6 @@ using Warehouse.Api.Contracts.Responses;
 using Warehouse.Api.Mappers;
 using Warehouse.Application.Abstractions.Commands;
 using Warehouse.Application.Abstractions.Services;
-using Shared.BuildingBlocks.Api;
 using Shared.BuildingBlocks.Api.Errors;
 
 namespace Warehouse.Api.Endpoints;
@@ -13,16 +12,14 @@ public static class WarehouseEndpoints
 {
     public static RouteGroupBuilder MapWarehouseEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup(WarehouseRoutes.AdminBase)
+        var group = app.MapGroup(WarehouseRoutes.StoreBase)
             .WithTags("Warehouse");
 
         group.MapPost("/query", QueryStock)
-            .RequireAuthorization(AuthorizationPolicies.WarehouseReadPolicy)
-            .WithName("AdminQueryStock");
+            .WithName("StoreQueryStock");
 
         group.MapPost("/", UpsertStock)
-            .RequireAuthorization(AuthorizationPolicies.WarehouseWritePolicy)
-            .WithName("AdminUpsertStock");
+            .WithName("StoreUpsertStock");
         return group;
     }
 

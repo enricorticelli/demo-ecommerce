@@ -88,5 +88,4 @@ pnpm-debug.log*
 # Editor / OS
 .DS_Store
 Thumbs.db
-frontend/admin/.astro
 *.sln.DotSettings.user
