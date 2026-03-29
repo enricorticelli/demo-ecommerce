@@ -52,6 +52,6 @@ Adopt a mandatory minimum observability standard:
 
 ## References
 
-- `./0002-comunicazione-inter-context.md`
-- `./0005-eventual-consistency-compensazioni.md`
+- `./0002-inter-context-communication.md`
+- `./0005-eventual-consistency-compensations.md`
 - `../architecture.md`

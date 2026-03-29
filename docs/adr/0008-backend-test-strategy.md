@@ -53,5 +53,5 @@ Adopt a multi-layer test strategy:
 ## References
 
 - `./0004-contract-first-versioning.md`
-- `./0006-idempotenza-deduplica.md`
+- `./0006-idempotency-deduplication.md`
 - `../guidelines/implementation-roadmap.md`

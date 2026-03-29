@@ -18,8 +18,8 @@ Build a non-mock backend based on pragmatic microservices, aligned with domain b
 
 ## Integration model
 
-1. Synchronous HTTP through the gateway for user commands and queries.
-2. Asynchronous event-driven communication for cross-context processes.
+1. Synchronous HTTP is allowed only at the system edge (client to gateway/API), not between bounded contexts.
+2. Cross-context communication is asynchronous and event-driven only.
 3. No direct database access across contexts.
 4. Explicit, versioned integration contracts.
 
@@ -44,7 +44,7 @@ Build a non-mock backend based on pragmatic microservices, aligned with domain b
 ## Architecture acceptance criteria
 
 1. No direct dependencies between domain models of different contexts.
-2. Every cross-context integration uses contract-based APIs or events.
+2. Every cross-context integration uses contract-based integration events only.
 3. Every non-trivial decision is tracked in an ADR.
 4. Every new flow has domain, integration, and contract tests.
 

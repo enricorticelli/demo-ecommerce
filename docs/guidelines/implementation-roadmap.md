@@ -40,11 +40,11 @@ Evolve incrementally by vertical slice while keeping the system always deployabl
 
 ## Related ADRs
 
-- `../adr/0001-microservices-pragmatici.md`
-- `../adr/0002-comunicazione-inter-context.md`
-- `../adr/0003-data-ownership-database-separati.md`
+- `../adr/0001-pragmatic-microservices.md`
+- `../adr/0010-inter-context-communication-events-only.md`
+- `../adr/0003-data-ownership-separate-databases.md`
 - `../adr/0004-contract-first-versioning.md`
-- `../adr/0005-eventual-consistency-compensazioni.md`
-- `../adr/0006-idempotenza-deduplica.md`
-- `../adr/0007-osservabilita-distribuita-minima.md`
-- `../adr/0008-strategia-test-backend.md`
+- `../adr/0005-eventual-consistency-compensations.md`
+- `../adr/0006-idempotency-deduplication.md`
+- `../adr/0007-minimum-distributed-observability.md`
+- `../adr/0008-backend-test-strategy.md`

@@ -1,10 +1,11 @@
 # ADR-0002: Communication between bounded contexts
 
 - Date: 2026-03-07
-- Status: Accepted
+- Status: Superseded
 - Decision Makers: Product/Tech Owner
 - Consulted: Project stakeholders
 - Informed: Backend/frontend team
+- Superseded by: `./0010-inter-context-communication-events-only.md`
 
 ## Context
 
@@ -53,5 +54,5 @@ Adopt a mixed communication model with explicit rules:
 ## References
 
 - `../architecture.md`
-- `./0003-data-ownership-database-separati.md`
+- `./0003-data-ownership-separate-databases.md`
 - `../guidelines/integration-events.md`

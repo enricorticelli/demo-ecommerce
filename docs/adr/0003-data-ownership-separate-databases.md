@@ -53,4 +53,4 @@ Each bounded context owns its data and its own database/schema.
 ## References
 
 - `../architecture.md`
-- `./0002-comunicazione-inter-context.md`
+- `./0002-inter-context-communication.md`

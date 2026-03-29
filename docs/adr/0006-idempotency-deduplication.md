@@ -52,6 +52,6 @@ Make all asynchronous consumers idempotent and add deduplication:
 
 ## References
 
-- `./0002-comunicazione-inter-context.md`
-- `./0005-eventual-consistency-compensazioni.md`
+- `./0002-inter-context-communication.md`
+- `./0005-eventual-consistency-compensations.md`
 - `../guidelines/integration-events.md`

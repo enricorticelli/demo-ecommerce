@@ -34,7 +34,7 @@ Implement real business logic in `Application` and `Domain`, while keeping `Api`
 
 ## Cross-context flow rules
 
-1. Integrate only through API/event contracts.
+1. Integrate between bounded contexts only through integration event contracts (no synchronous HTTP between modules).
 2. Always enforce idempotency in asynchronous consumers.
 3. Define compensation for multi-step failures.
 
@@ -56,10 +56,10 @@ Examples:
 
 ## Related ADRs
 
-- `../adr/0001-microservices-pragmatici.md`
-- `../adr/0002-comunicazione-inter-context.md`
-- `../adr/0003-data-ownership-database-separati.md`
-- `../adr/0005-eventual-consistency-compensazioni.md`
-- `../adr/0006-idempotenza-deduplica.md`
-- `../adr/0008-strategia-test-backend.md`
+- `../adr/0001-pragmatic-microservices.md`
+- `../adr/0010-inter-context-communication-events-only.md`
+- `../adr/0003-data-ownership-separate-databases.md`
+- `../adr/0005-eventual-consistency-compensations.md`
+- `../adr/0006-idempotency-deduplication.md`
+- `../adr/0008-backend-test-strategy.md`
 - `./module-baseline-conventions.md`

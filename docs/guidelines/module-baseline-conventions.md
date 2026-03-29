@@ -54,6 +54,7 @@ Define a reusable and uniform baseline for all backend bounded contexts.
 2. Avoid container classes without clear responsibility.
 3. Use explicit, domain-oriented names.
 4. Never access another bounded context database directly.
+5. Never use synchronous HTTP between bounded contexts; cross-context communication must use integration events only.
 
 ## Minimum testing per module
 

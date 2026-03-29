@@ -57,6 +57,6 @@ For contextual HTTP namespace:
 
 ## References
 
-- `./0002-comunicazione-inter-context.md`
-- `./0003-data-ownership-database-separati.md`
+- `./0010-inter-context-communication-events-only.md`
+- `./0003-data-ownership-separate-databases.md`
 - `../guidelines/integration-events.md`

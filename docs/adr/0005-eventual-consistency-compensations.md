@@ -52,6 +52,6 @@ Adopt eventual consistency across bounded contexts with explicit rules:
 
 ## References
 
-- `./0002-comunicazione-inter-context.md`
-- `./0003-data-ownership-database-separati.md`
+- `./0002-inter-context-communication.md`
+- `./0003-data-ownership-separate-databases.md`
 - `../architecture.md`
