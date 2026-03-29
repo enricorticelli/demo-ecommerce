@@ -6,7 +6,45 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddObservability();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new()
+    {
+        Title = "E-commerce Gateway API",
+        Version = "v1"
+    });
+
+    options.SwaggerDoc("store", new()
+    {
+        Title = "E-commerce Gateway Store API",
+        Version = "v1"
+    });
+
+    options.SwaggerDoc("backoffice", new()
+    {
+        Title = "E-commerce Gateway Backoffice API",
+        Version = "v1"
+    });
+
+    options.DocInclusionPredicate(static (documentName, apiDescription) =>
+    {
+        var relativePath = apiDescription.RelativePath;
+        if (string.IsNullOrWhiteSpace(relativePath))
+        {
+            return false;
+        }
+
+        var normalizedPath = "/" + relativePath.TrimStart('/');
+
+        return documentName switch
+        {
+            "store" => normalizedPath.StartsWith("/api/store/", StringComparison.OrdinalIgnoreCase),
+            "backoffice" => normalizedPath.StartsWith("/api/backoffice/", StringComparison.OrdinalIgnoreCase),
+            "v1" => true,
+            _ => false
+        };
+    });
+});
 builder.Services.AddProblemDetails();
 builder.Services.AddHealthChecks();
 builder.Services.AddCors(options =>
