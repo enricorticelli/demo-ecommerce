@@ -1,5 +1,3 @@
-using Scalar.AspNetCore;
-
 namespace Gateway.Api.Extensions;
 
 public static class GatewayWebApplicationExtensions
@@ -8,11 +6,6 @@ public static class GatewayWebApplicationExtensions
     {
         app.MapHealthChecks("/health/live");
         app.MapHealthChecks("/health/ready");
-
-        app.MapScalarApiReference("/scalar", options =>
-        {
-            options.WithTitle("E-commerce Gateway API");
-        });
 
         app.MapGet("/v1/system/info", () => TypedResults.Ok(new
         {
