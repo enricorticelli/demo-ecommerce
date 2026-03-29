@@ -16,6 +16,8 @@ public static class ProductEndpoints
         var storeGroup = app.MapGroup(CatalogRoutes.StoreProducts)
             .WithTags("Catalog");
 
+        storeGroup.MapGet("/", GetProducts).WithName("StoreGetProducts");
+        storeGroup.MapGet("/{id:guid}", GetProductById).WithName("StoreGetProductById");
         storeGroup.MapGet("/new-arrivals", GetNewArrivals).WithName("StoreGetNewArrivals");
         storeGroup.MapGet("/best-sellers", GetBestSellers).WithName("StoreGetBestSellers");
         var backofficeGroup = app.MapGroup(CatalogRoutes.BackofficeProducts)

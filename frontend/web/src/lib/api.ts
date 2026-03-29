@@ -194,7 +194,7 @@ function buildPaginationQuery(params?: PaginationParams): string {
 // ─── Catalog ─────────────────────────────────────────────────────────────────
 
 export async function fetchProducts(params?: PaginationParams): Promise<Product[]> {
-  return fetchJson(`${gatewayUrl()}/api/backoffice/catalog/v1/products?${buildPaginationQuery(params)}`);
+  return fetchJson(`${gatewayUrl()}/api/store/catalog/v1/products?${buildPaginationQuery(params)}`);
 }
 
 export async function fetchNewArrivals(): Promise<Product[]> {
@@ -206,7 +206,7 @@ export async function fetchBestSellers(): Promise<Product[]> {
 }
 
 export async function fetchProduct(id: string): Promise<Product> {
-  const res = await fetchWithTimeout(`${gatewayUrl()}/api/backoffice/catalog/v1/products/${id}`);
+  const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/catalog/v1/products/${id}`);
   if (res.status === 404) throw new NotFoundError(`Product ${id} not found`);
   if (!res.ok) throw new Error(`Catalog error: ${res.status}`);
   return res.json();

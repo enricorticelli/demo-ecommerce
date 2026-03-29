@@ -56,6 +56,8 @@ builder.Services.AddCors(options =>
 var routes = new List<RouteConfig>
 {
     // store/catalog
+    CreateContextRoute("store-catalog-products-collection-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products", "GET"),
+    CreateContextRoute("store-catalog-products-item-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products/{id}", "GET"),
     CreateContextRoute("store-catalog-products-new-arrivals-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products/new-arrivals", "GET"),
     CreateContextRoute("store-catalog-products-best-sellers-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products/best-sellers", "GET"),
 
