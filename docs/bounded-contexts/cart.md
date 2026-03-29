@@ -1,27 +1,27 @@
 # Bounded Context: Cart
 
-## Scopo
+## Purpose
 
-Gestire il carrello utente fino al checkout.
+Manage the user cart up to checkout.
 
-## Responsabilita
+## Responsibilities
 
-1. Aggiunta/rimozione articoli.
-2. Calcolo totale carrello.
-3. Produzione dei dati necessari all'avvio ordine.
+1. Add/remove items.
+2. Calculate cart total.
+3. Produce data required to start order creation.
 
-## Ownership dati
+## Data ownership
 
-- Carrello.
-- Articoli del carrello.
-- Stato checkout locale al contesto.
+- Cart.
+- Cart items.
+- Context-local checkout state.
 
-## Integrazioni
+## Integrations
 
-- Consuma dati prodotto necessari al carrello tramite contratti.
-- Espone API per frontend.
-- Pubblica eventi legati al checkout.
+- Consumes product data needed by the cart through contracts.
+- Exposes frontend APIs in the `store` context.
+- Publishes checkout-related events.
 
-## Confini
+## Boundaries
 
-Il carrello non modifica ordini o pagamenti: invia solo intent/eventi.
+Cart does not modify orders or payments directly; it only emits intents/events.

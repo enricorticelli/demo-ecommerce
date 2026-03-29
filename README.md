@@ -44,7 +44,7 @@ docker compose up -d
 node scripts/seeding/seed-catalog.js
 ```
 
-Lo script di seeding opera direttamente sugli endpoint store catalogo e non richiede autenticazione.
+Lo script di seeding opera sugli endpoint backoffice catalogo e non richiede autenticazione.
 
 I servizi saranno disponibili tramite il gateway su `http://localhost:18080`.
 L'Aspire Dashboard per l'osservabilità è raggiungibile su `http://localhost:18890`.
@@ -69,10 +69,12 @@ Note:
 Il gateway espone solo endpoint contestualizzati:
 
 - `store`: `/api/store/{service}/v1/...`
+- `backoffice`: `/api/backoffice/{service}/v1/...`
 
 Esempi:
 
-- Storefront catalogo: `GET /api/store/catalog/v1/products`
+- Storefront catalogo: `GET /api/store/catalog/v1/products/new-arrivals`
+- Backoffice catalogo (creazione prodotto): `POST /api/backoffice/catalog/v1/products`
 
 ---
 
@@ -115,7 +117,7 @@ La documentazione estesa si trova nella cartella [`docs/`](docs/):
 | Documento | Contenuto |
 |-----------|-----------|
 | [docs/architecture.md](docs/architecture.md) | Vista architetturale target e vincoli |
-| [docs/agent-guidelines.md](docs/agent-guidelines.md) | Linee guida operative di sviluppo |
+| [docs/ai.md](docs/ai.md) | Linee guida operative di sviluppo |
 | [docs/adr/](docs/adr/) | Architecture Decision Records |
 | [docs/bounded-contexts/](docs/bounded-contexts/) | Responsabilità e confini di ciascun contesto |
 | [docs/guidelines/](docs/guidelines/) | Linee guida implementative per vertical slice |

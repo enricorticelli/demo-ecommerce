@@ -12,14 +12,14 @@ public static class WarehouseEndpoints
 {
     public static RouteGroupBuilder MapWarehouseEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup(WarehouseRoutes.StoreBase)
+        var group = app.MapGroup(WarehouseRoutes.BackofficeBase)
             .WithTags("Warehouse");
 
         group.MapPost("/query", QueryStock)
-            .WithName("StoreQueryStock");
+            .WithName("BackofficeQueryStock");
 
         group.MapPost("/", UpsertStock)
-            .WithName("StoreUpsertStock");
+            .WithName("BackofficeUpsertStock");
         return group;
     }
 

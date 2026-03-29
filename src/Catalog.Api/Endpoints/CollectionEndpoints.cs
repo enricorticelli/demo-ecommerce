@@ -13,16 +13,16 @@ public static class CollectionEndpoints
 {
     public static RouteGroupBuilder MapCollectionEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup(CatalogRoutes.StoreCollections)
+        var backofficeGroup = app.MapGroup(CatalogRoutes.BackofficeCollections)
             .WithTags("Catalog");
 
-        group.MapGet("/", GetCollections).WithName("StoreGetCollections");
-        group.MapGet("/{id:guid}", GetCollectionById).WithName("StoreGetCollectionById");
-        group.MapPost("/", CreateCollection).WithName("StoreCreateCollection");
-        group.MapPut("/{id:guid}", UpdateCollection).WithName("StoreUpdateCollection");
-        group.MapDelete("/{id:guid}", DeleteCollection).WithName("StoreDeleteCollection");
+        backofficeGroup.MapGet("/", GetCollections).WithName("BackofficeGetCollections");
+        backofficeGroup.MapGet("/{id:guid}", GetCollectionById).WithName("BackofficeGetCollectionById");
+        backofficeGroup.MapPost("/", CreateCollection).WithName("BackofficeCreateCollection");
+        backofficeGroup.MapPut("/{id:guid}", UpdateCollection).WithName("BackofficeUpdateCollection");
+        backofficeGroup.MapDelete("/{id:guid}", DeleteCollection).WithName("BackofficeDeleteCollection");
 
-        return group;
+        return backofficeGroup;
     }
 
     private static async Task<IResult> GetCollections(
@@ -67,7 +67,7 @@ public static class CollectionEndpoints
                 cancellationToken);
 
             var response = collection.ToResponse();
-            return Results.Created($"{CatalogRoutes.StoreCollections}/{collection.Id}", response);
+            return Results.Created($"{CatalogRoutes.BackofficeCollections}/{collection.Id}", response);
         }
         catch (Exception exception)
         {

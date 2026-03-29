@@ -1,56 +1,56 @@
-# ADR-0002: Comunicazione tra bounded context
+# ADR-0002: Communication between bounded contexts
 
-- Data: 2026-03-07
-- Stato: Accepted
-- Decisori: Product/Tech Owner
-- Consultati: Stakeholder progetto
-- Informati: Team backend/frontend
+- Date: 2026-03-07
+- Status: Accepted
+- Decision Makers: Product/Tech Owner
+- Consulted: Project stakeholders
+- Informed: Backend/frontend team
 
-## Contesto
+## Context
 
-I processi di business coinvolgono piu contesti (es. ordine, pagamento, spedizione, magazzino). Serve una strategia uniforme per scegliere tra comunicazione sincrona e asincrona, evitando accoppiamenti forti e semantica ambigua.
+Business processes span multiple contexts (for example order, payment, shipping, warehouse). A consistent strategy is needed to choose between synchronous and asynchronous communication, avoiding strong coupling and ambiguous semantics.
 
-## Decisione
+## Decision
 
-Adottare un modello di comunicazione misto con regole esplicite:
+Adopt a mixed communication model with explicit rules:
 
-1. HTTP sincrono per richieste utente, query immediate e comandi a confine API.
-2. Event-driven asincrono per processi cross-context e transizioni di stato multi-step.
-3. API gateway solo per routing e policy trasversali, mai per orchestrazione di dominio.
-4. Contratti di integrazione versionati e backward-compatible.
+1. synchronous HTTP for user requests, immediate queries, and API-boundary commands;
+2. asynchronous event-driven communication for cross-context workflows and multi-step state transitions;
+3. API gateway only for routing and cross-cutting policies, never for domain orchestration;
+4. versioned and backward-compatible integration contracts.
 
-## Alternative considerate
+## Alternatives considered
 
-1. Solo HTTP sincrono: semplice all'inizio, ma fragile su resilienza e coupling temporale.
-2. Solo event-driven: disaccoppiato ma complesso per use case semplici e debugging.
-3. Orchestrazione centralizzata nel gateway: viola i confini di dominio.
+1. HTTP-only synchronous: simple at first, but fragile for resilience and temporal coupling.
+2. Event-driven only: decoupled but over-complex for simple use cases and debugging.
+3. Centralized orchestration in gateway: violates domain boundaries.
 
-## Conseguenze
+## Consequences
 
 ### Positive
 
-- Riduzione del coupling temporale tra contesti.
-- Migliore resilienza dei workflow distribuiti.
-- Maggiore chiarezza su responsabilita e ownership.
+- Reduced temporal coupling between contexts.
+- Better resilience for distributed workflows.
+- Clearer responsibilities and ownership.
 
-### Negative / Trade-off
+### Negative / Trade-offs
 
-- Aumento complessita su osservabilita e tracing.
-- Necessita di politiche chiare su retry, idempotenza e ordering.
+- Increased observability and tracing complexity.
+- Need explicit policies for retry, idempotency, and ordering.
 
-## Impatto su implementazione
+## Implementation impact
 
-- Definire linee guida per eventi in `docs/guidelines/integration-events.md`.
-- Introdurre test di contratto per API/eventi cross-context.
-- Standardizzare correlation id e logging strutturato.
+- Define event guidelines in `docs/guidelines/integration-events.md`.
+- Add contract tests for cross-context APIs/events.
+- Standardize correlation id and structured logging.
 
-## Piano di adozione
+## Adoption plan
 
-1. Definire eventi del dominio applicativo per ogni context.
-2. Applicare policy di retry/idempotenza su handler.
-3. Monitorare i workflow distribuiti con metriche e tracing.
+1. Define application-domain events per context.
+2. Apply retry/idempotency policies in handlers.
+3. Monitor distributed workflows with metrics and tracing.
 
-## Riferimenti
+## References
 
 - `../architecture.md`
 - `./0003-data-ownership-database-separati.md`

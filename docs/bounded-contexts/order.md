@@ -1,27 +1,27 @@
 # Bounded Context: Order
 
-## Scopo
+## Purpose
 
-Gestire il lifecycle dell'ordine come core process, dal create alla chiusura.
+Manage order lifecycle as the core process, from creation to completion/cancellation.
 
-## Responsabilita
+## Responsibilities
 
-1. Creazione ordine con invarianti di dominio.
-2. Gestione transizioni di stato ordine.
-3. Coordinamento logico del processo cross-context tramite eventi.
+1. Create orders with domain invariants.
+2. Manage order state transitions.
+3. Coordinate cross-context process logic through events.
 
-## Ownership dati
+## Data ownership
 
-- Ordine.
-- Stato ordine.
-- Informazioni cliente e indirizzi associati all'ordine.
+- Order.
+- Order status.
+- Customer and address information associated with the order.
 
-## Integrazioni
+## Integrations
 
-- Riceve eventi da Warehouse, Payment, Shipping.
-- Pubblica eventi verso Cart e altri contesti interessati.
-- Espone API query/comandi per stato ordine.
+- Consumes events from Warehouse, Payment, and Shipping.
+- Publishes events to Cart and other interested contexts.
+- Exposes order query/command APIs in the `store` context.
 
-## Confini
+## Boundaries
 
-Order non accede ai database esterni e non incorpora regole interne di payment/shipping.
+Order does not access external databases and does not embed payment/shipping internal rules.

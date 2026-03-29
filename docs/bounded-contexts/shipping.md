@@ -1,27 +1,27 @@
 # Bounded Context: Shipping
 
-## Scopo
+## Purpose
 
-Gestire creazione spedizioni e avanzamento dello stato logistico.
+Manage shipment creation and logistics status progression.
 
-## Responsabilita
+## Responsibilities
 
-1. Creazione shipment a seguito di trigger di processo.
-2. Generazione tracking code.
-3. Aggiornamento stato spedizione nel tempo.
+1. Create shipments after process triggers.
+2. Generate tracking codes.
+3. Update shipment status over time.
 
-## Ownership dati
+## Data ownership
 
-- Spedizione.
+- Shipment.
 - Tracking code.
-- Stato consegna.
+- Delivery status.
 
-## Integrazioni
+## Integrations
 
-- Consuma richieste di creazione da Order.
-- Pubblica esiti/aggiornamenti verso Order.
-- Espone API per query stato spedizione.
+- Consumes creation requests from Order.
+- Publishes outcomes/updates to Order.
+- Exposes shipment status query APIs in the `store` context.
 
-## Confini
+## Boundaries
 
-Shipping non gestisce logiche di pagamento o stock.
+Shipping does not handle payment or stock business logic.

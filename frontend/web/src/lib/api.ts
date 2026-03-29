@@ -194,7 +194,7 @@ function buildPaginationQuery(params?: PaginationParams): string {
 // ─── Catalog ─────────────────────────────────────────────────────────────────
 
 export async function fetchProducts(params?: PaginationParams): Promise<Product[]> {
-  return fetchJson(`${gatewayUrl()}/api/store/catalog/v1/products?${buildPaginationQuery(params)}`);
+  return fetchJson(`${gatewayUrl()}/api/backoffice/catalog/v1/products?${buildPaginationQuery(params)}`);
 }
 
 export async function fetchNewArrivals(): Promise<Product[]> {
@@ -206,70 +206,70 @@ export async function fetchBestSellers(): Promise<Product[]> {
 }
 
 export async function fetchProduct(id: string): Promise<Product> {
-  const res = await fetchWithTimeout(`${gatewayUrl()}/api/store/catalog/v1/products/${id}`);
+  const res = await fetchWithTimeout(`${gatewayUrl()}/api/backoffice/catalog/v1/products/${id}`);
   if (res.status === 404) throw new NotFoundError(`Product ${id} not found`);
   if (!res.ok) throw new Error(`Catalog error: ${res.status}`);
   return res.json();
 }
 
 export async function createProduct(_payload: ProductInput): Promise<Product> {
-  return postJson<Product>(`${gatewayUrl()}/api/store/catalog/v1/products`, _payload);
+  return postJson<Product>(`${gatewayUrl()}/api/backoffice/catalog/v1/products`, _payload);
 }
 
 export async function updateProduct(_id: string, _payload: ProductInput): Promise<Product> {
-  return putJson<Product>(`${gatewayUrl()}/api/store/catalog/v1/products/${_id}`, _payload);
+  return putJson<Product>(`${gatewayUrl()}/api/backoffice/catalog/v1/products/${_id}`, _payload);
 }
 
 export async function deleteProduct(_id: string): Promise<void> {
-  return deleteJson(`${gatewayUrl()}/api/store/catalog/v1/products/${_id}`);
+  return deleteJson(`${gatewayUrl()}/api/backoffice/catalog/v1/products/${_id}`);
 }
 
 export async function fetchBrands(): Promise<Brand[]> {
-  return fetchJson(`${gatewayUrl()}/api/store/catalog/v1/brands?${buildPaginationQuery()}`);
+  return fetchJson(`${gatewayUrl()}/api/backoffice/catalog/v1/brands?${buildPaginationQuery()}`);
 }
 
 export async function createBrand(_payload: Omit<Brand, 'id'>): Promise<Brand> {
-  return postJson<Brand>(`${gatewayUrl()}/api/store/catalog/v1/brands`, _payload);
+  return postJson<Brand>(`${gatewayUrl()}/api/backoffice/catalog/v1/brands`, _payload);
 }
 
 export async function updateBrand(_id: string, _payload: Omit<Brand, 'id'>): Promise<Brand> {
-  return putJson<Brand>(`${gatewayUrl()}/api/store/catalog/v1/brands/${_id}`, _payload);
+  return putJson<Brand>(`${gatewayUrl()}/api/backoffice/catalog/v1/brands/${_id}`, _payload);
 }
 
 export async function deleteBrand(_id: string): Promise<void> {
-  return deleteJson(`${gatewayUrl()}/api/store/catalog/v1/brands/${_id}`);
+  return deleteJson(`${gatewayUrl()}/api/backoffice/catalog/v1/brands/${_id}`);
 }
 
 export async function fetchCategories(): Promise<Category[]> {
-  return fetchJson(`${gatewayUrl()}/api/store/catalog/v1/categories?${buildPaginationQuery()}`);
+  return fetchJson(`${gatewayUrl()}/api/backoffice/catalog/v1/categories?${buildPaginationQuery()}`);
 }
 
 export async function createCategory(_payload: Omit<Category, 'id'>): Promise<Category> {
-  return postJson<Category>(`${gatewayUrl()}/api/store/catalog/v1/categories`, _payload);
+  return postJson<Category>(`${gatewayUrl()}/api/backoffice/catalog/v1/categories`, _payload);
 }
 
 export async function updateCategory(_id: string, _payload: Omit<Category, 'id'>): Promise<Category> {
-  return putJson<Category>(`${gatewayUrl()}/api/store/catalog/v1/categories/${_id}`, _payload);
+  return putJson<Category>(`${gatewayUrl()}/api/backoffice/catalog/v1/categories/${_id}`, _payload);
 }
 
 export async function deleteCategory(_id: string): Promise<void> {
-  return deleteJson(`${gatewayUrl()}/api/store/catalog/v1/categories/${_id}`);
+  return deleteJson(`${gatewayUrl()}/api/backoffice/catalog/v1/categories/${_id}`);
 }
 
 export async function fetchCollections(): Promise<Collection[]> {
-  return fetchJson(`${gatewayUrl()}/api/store/catalog/v1/collections?${buildPaginationQuery()}`);
+  return fetchJson(`${gatewayUrl()}/api/backoffice/catalog/v1/collections?${buildPaginationQuery()}`);
 }
 
 export async function createCollection(_payload: Omit<Collection, 'id'>): Promise<Collection> {
-  return postJson<Collection>(`${gatewayUrl()}/api/store/catalog/v1/collections`, _payload);
+  return postJson<Collection>(`${gatewayUrl()}/api/backoffice/catalog/v1/collections`, _payload);
 }
 
 export async function updateCollection(_id: string, _payload: Omit<Collection, 'id'>): Promise<Collection> {
-  return putJson<Collection>(`${gatewayUrl()}/api/store/catalog/v1/collections/${_id}`, _payload);
+  return putJson<Collection>(`${gatewayUrl()}/api/backoffice/catalog/v1/collections/${_id}`, _payload);
 }
 
 export async function deleteCollection(_id: string): Promise<void> {
-  return deleteJson(`${gatewayUrl()}/api/store/catalog/v1/collections/${_id}`);
+  return deleteJson(`${gatewayUrl()}/api/backoffice/catalog/v1/collections/${_id}`);
 }
 
 // ─── Cart ─────────────────────────────────────────────────────────────────────

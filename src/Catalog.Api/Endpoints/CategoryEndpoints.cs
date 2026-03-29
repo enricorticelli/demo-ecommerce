@@ -13,16 +13,16 @@ public static class CategoryEndpoints
 {
     public static RouteGroupBuilder MapCategoryEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup(CatalogRoutes.StoreCategories)
+        var backofficeGroup = app.MapGroup(CatalogRoutes.BackofficeCategories)
             .WithTags("Catalog");
 
-        group.MapGet("/", GetCategories).WithName("StoreGetCategories");
-        group.MapGet("/{id:guid}", GetCategoryById).WithName("StoreGetCategoryById");
-        group.MapPost("/", CreateCategory).WithName("StoreCreateCategory");
-        group.MapPut("/{id:guid}", UpdateCategory).WithName("StoreUpdateCategory");
-        group.MapDelete("/{id:guid}", DeleteCategory).WithName("StoreDeleteCategory");
+        backofficeGroup.MapGet("/", GetCategories).WithName("BackofficeGetCategories");
+        backofficeGroup.MapGet("/{id:guid}", GetCategoryById).WithName("BackofficeGetCategoryById");
+        backofficeGroup.MapPost("/", CreateCategory).WithName("BackofficeCreateCategory");
+        backofficeGroup.MapPut("/{id:guid}", UpdateCategory).WithName("BackofficeUpdateCategory");
+        backofficeGroup.MapDelete("/{id:guid}", DeleteCategory).WithName("BackofficeDeleteCategory");
 
-        return group;
+        return backofficeGroup;
     }
 
     private static async Task<IResult> GetCategories(
@@ -60,7 +60,7 @@ public static class CategoryEndpoints
             var correlationId = CorrelationIdResolver.Resolve(httpContext);
             var category = await service.CreateAsync(request.Name, request.Slug, request.Description, correlationId, cancellationToken);
             var response = category.ToResponse();
-            return Results.Created($"{CatalogRoutes.StoreCategories}/{category.Id}", response);
+            return Results.Created($"{CatalogRoutes.BackofficeCategories}/{category.Id}", response);
         }
         catch (Exception exception)
         {

@@ -18,16 +18,18 @@ builder.Services.AddCors(options =>
 var routes = new List<RouteConfig>
 {
     // store/catalog
-    CreateContextRoute("store-catalog-products-collection-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products", "GET", "POST"),
     CreateContextRoute("store-catalog-products-new-arrivals-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products/new-arrivals", "GET"),
     CreateContextRoute("store-catalog-products-best-sellers-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products/best-sellers", "GET"),
-    CreateContextRoute("store-catalog-products-by-id-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products/{id}", "GET", "PUT", "DELETE"),
-    CreateContextRoute("store-catalog-brands-collection-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/brands", "GET", "POST"),
-    CreateContextRoute("store-catalog-brands-item-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/brands/{id}", "GET", "PUT", "DELETE"),
-    CreateContextRoute("store-catalog-categories-collection-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/categories", "GET", "POST"),
-    CreateContextRoute("store-catalog-categories-item-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/categories/{id}", "GET", "PUT", "DELETE"),
-    CreateContextRoute("store-catalog-collections-collection-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/collections", "GET", "POST"),
-    CreateContextRoute("store-catalog-collections-item-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/collections/{id}", "GET", "PUT", "DELETE"),
+
+    // backoffice/catalog
+    CreateContextRoute("backoffice-catalog-products-collection-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/products", "GET", "POST"),
+    CreateContextRoute("backoffice-catalog-products-item-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/products/{id}", "GET", "PUT", "DELETE"),
+    CreateContextRoute("backoffice-catalog-brands-collection-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/brands", "GET", "POST"),
+    CreateContextRoute("backoffice-catalog-brands-item-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/brands/{id}", "GET", "PUT", "DELETE"),
+    CreateContextRoute("backoffice-catalog-categories-collection-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/categories", "GET", "POST"),
+    CreateContextRoute("backoffice-catalog-categories-item-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/categories/{id}", "GET", "PUT", "DELETE"),
+    CreateContextRoute("backoffice-catalog-collections-collection-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/collections", "GET", "POST"),
+    CreateContextRoute("backoffice-catalog-collections-item-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/collections/{id}", "GET", "PUT", "DELETE"),
 
     // store/cart
     CreateContextRoute("store-cart-get-route", "cart-cluster", "store", "cart", "/api/store/cart/v1/carts/{cartId}", "GET"),
@@ -48,7 +50,11 @@ var routes = new List<RouteConfig>
     CreateContextRoute("store-payment-webhook-satispay-route", "payment-cluster", "store", "payment", "/api/store/payment/v1/payments/webhooks/satispay", "POST"),
 
     // store/shipping
-    CreateContextRoute("store-shipping-by-order-route", "shipping-cluster", "store", "shipping", "/api/store/shipping/v1/shipments/orders/{orderId}", "GET")
+    CreateContextRoute("store-shipping-by-order-route", "shipping-cluster", "store", "shipping", "/api/store/shipping/v1/shipments/orders/{orderId}", "GET"),
+
+    // backoffice/warehouse
+    CreateContextRoute("backoffice-warehouse-query-route", "warehouse-cluster", "backoffice", "warehouse", "/api/backoffice/warehouse/v1/stock/query", "POST"),
+    CreateContextRoute("backoffice-warehouse-upsert-route", "warehouse-cluster", "backoffice", "warehouse", "/api/backoffice/warehouse/v1/stock", "POST")
 };
 
 var clusters = new List<ClusterConfig>

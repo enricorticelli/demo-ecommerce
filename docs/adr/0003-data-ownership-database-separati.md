@@ -1,56 +1,56 @@
-# ADR-0003: Ownership dati e database separati per bounded context
+# ADR-0003: Data ownership and separate databases per bounded context
 
-- Data: 2026-03-07
-- Stato: Accepted
-- Decisori: Product/Tech Owner
-- Consultati: Stakeholder progetto
-- Informati: Team backend/frontend
+- Date: 2026-03-07
+- Status: Accepted
+- Decision Makers: Product/Tech Owner
+- Consulted: Project stakeholders
+- Informed: Backend/frontend team
 
-## Contesto
+## Context
 
-La soluzione richiede isolamento semantico tra contesti e carico medio/alto. L'uso di database condivisi aumenterebbe il coupling, rendendo piu difficile evolvere in modo indipendente i modelli di dominio.
+The solution needs semantic isolation between contexts and must handle medium/high load. Shared databases would increase coupling and make independent domain evolution harder.
 
-## Decisione
+## Decision
 
-Ogni bounded context possiede i propri dati e il proprio database/schema.
+Each bounded context owns its data and its own database/schema.
 
-1. Nessun accesso diretto al database di un altro contesto.
-2. Integrazione dati solo tramite API o eventi.
-3. Modelli di persistenza indipendenti per contesto.
-4. Migrazioni e lifecycle dati governati dal contesto proprietario.
+1. No direct database access to another context.
+2. Data integration only via APIs or events.
+3. Independent persistence models per context.
+4. Migrations and data lifecycle governed by the owning context.
 
-## Alternative considerate
+## Alternatives considered
 
-1. Database unico condiviso: semplice all'inizio, ma alto accoppiamento e rischio regressioni cross-context.
-2. Database unico con schema separati ma accesso promiscuo: riduce parte del rischio ma non elimina violazione ownership.
-3. Copia dati non governata: veloce nel breve, debito tecnico alto nel medio periodo.
+1. Single shared database: simple initially, high coupling and cross-context regression risk.
+2. Single database with separated schemas but mixed access: reduces part of the risk but still violates ownership.
+3. Ungoverned data copy: fast short-term, high technical debt mid-term.
 
-## Conseguenze
+## Consequences
 
 ### Positive
 
-- Autonomia evolutiva dei contesti.
-- Migliore allineamento con bounded context DDD.
-- Riduzione impatti collaterali su modifiche dati.
+- Independent context evolution.
+- Better alignment with DDD bounded contexts.
+- Fewer side effects from data model changes.
 
-### Negative / Trade-off
+### Negative / Trade-offs
 
-- Maggior lavoro di integrazione e sincronizzazione tra contesti.
-- Necessita di osservabilita e riconciliazione dati distribuiti.
+- More integration and synchronization work between contexts.
+- Need observability and distributed reconciliation.
 
-## Impatto su implementazione
+## Implementation impact
 
-- Definire ownership per ogni entita business nei documenti dei bounded context.
-- Introdurre politiche di versioning contratti e migrazioni backward-compatible.
-- Prevedere processi di compensazione in caso di inconsistenze temporanee.
+- Define ownership for each business entity in bounded context docs.
+- Introduce contract versioning and backward-compatible migration policies.
+- Plan compensation mechanisms for temporary inconsistencies.
 
-## Piano di adozione
+## Adoption plan
 
-1. Mappare ownership dati per contesto in `docs/bounded-contexts/`.
-2. Implementare integrazioni solo via contratti pubblici.
-3. Aggiungere check architetturali in review per prevenire accessi cross-db.
+1. Map data ownership per context in `docs/bounded-contexts/`.
+2. Implement integrations only through public contracts.
+3. Add architecture checks in review to prevent cross-db access.
 
-## Riferimenti
+## References
 
 - `../architecture.md`
 - `./0002-comunicazione-inter-context.md`

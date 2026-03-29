@@ -1,50 +1,50 @@
-# ADR-XXXX: Titolo breve e descrittivo
+# ADR-XXXX: Short, descriptive title
 
-- Data: YYYY-MM-DD
-- Stato: Proposed | Accepted | Superseded | Deprecated
-- Decisori: Nome/i
-- Consultati: Nome/i
-- Informati: Team/Stakeholder
+- Date: YYYY-MM-DD
+- Status: Proposed | Accepted | Superseded | Deprecated
+- Decision Makers: Name(s)
+- Consulted: Name(s)
+- Informed: Team/Stakeholders
 
-## Contesto
+## Context
 
-Descrivere il problema da risolvere, i driver di business e i vincoli tecnici/organizzativi.
+Describe the problem to solve, business drivers, and technical/organizational constraints.
 
-## Decisione
+## Decision
 
-Descrivere in modo esplicito la decisione presa.
+Describe the chosen decision explicitly.
 
-## Alternative considerate
+## Alternatives considered
 
-1. Alternativa A: pro e contro principali.
-2. Alternativa B: pro e contro principali.
-3. Alternativa C: pro e contro principali.
+1. Alternative A: key pros and cons.
+2. Alternative B: key pros and cons.
+3. Alternative C: key pros and cons.
 
-## Conseguenze
+## Consequences
 
 ### Positive
 
-- Beneficio 1.
-- Beneficio 2.
+- Benefit 1.
+- Benefit 2.
 
-### Negative / Trade-off
+### Negative / Trade-offs
 
-- Trade-off 1 e mitigazione.
-- Trade-off 2 e mitigazione.
+- Trade-off 1 and mitigation.
+- Trade-off 2 and mitigation.
 
-## Impatto su implementazione
+## Implementation impact
 
-- Componenti coinvolti.
-- Impatto su deployment e operation.
-- Impatto su test e qualita.
+- Components involved.
+- Deployment and operations impact.
+- Testing and quality impact.
 
-## Piano di adozione
+## Adoption plan
 
 1. Step 1.
 2. Step 2.
 3. Step 3.
 
-## Riferimenti
+## References
 
-- Link a codice/doc correlati.
-- ADR correlate.
+- Links to related code/docs.
+- Related ADRs.

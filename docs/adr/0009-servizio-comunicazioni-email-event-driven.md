@@ -1,58 +1,58 @@
-# ADR-0009: Servizio Communication per email esterne event-driven
+# ADR-0009: Communication service for event-driven external emails
 
-- Data: 2026-03-08
-- Stato: Accepted
-- Decisori: Product/Tech Owner
-- Consultati: Stakeholder progetto
-- Informati: Team backend/frontend
+- Date: 2026-03-08
+- Status: Accepted
+- Decision Makers: Product/Tech Owner
+- Consulted: Project stakeholders
+- Informed: Backend/frontend team
 
-## Contesto
+## Context
 
-Serve introdurre comunicazioni utente (conferma ordine) senza accoppiare i bounded context core a provider email o chiamate sincrone tra servizi.
+User communications (order confirmation) must be introduced without coupling core bounded contexts to email providers or synchronous inter-service calls.
 
-## Decisione
+## Decision
 
-Adottare un nuovo bounded context `Communication` con consumo asincrono di eventi e invio email SMTP.
+Adopt a new `Communication` bounded context with asynchronous event consumption and SMTP email sending.
 
-1. `Order` pubblica `OrderCompletedV1` con payload completo (incluso `CustomerEmail`).
-2. `Communication` consuma l'evento e invia email tramite adapter SMTP.
-3. Lo stesso evento puo essere consumato in parallelo da piu bounded context.
-4. Idempotenza obbligatoria nei consumer con deduplica persistente.
-5. Ambiente locale con Mailpit come mock SMTP e UI inbox.
+1. `Order` publishes `OrderCompletedV1` with complete payload (including `CustomerEmail`).
+2. `Communication` consumes the event and sends email through SMTP adapter.
+3. The same event can be consumed in parallel by multiple bounded contexts.
+4. Consumer idempotency is mandatory with persistent deduplication.
+5. Local environment uses Mailpit as SMTP mock and inbox UI.
 
-## Alternative considerate
+## Alternatives considered
 
-1. Invio email diretto da `Order`: coupling tecnico e responsabilita mescolate.
-2. Chiamata HTTP da `Communication` verso altri context per recuperare email: coupling temporale e maggiore fragilita.
-3. Provider email reale da subito: complessita operativa non necessaria in fase iniziale.
+1. Direct email sending from `Order`: technical coupling and mixed responsibilities.
+2. HTTP call from `Communication` to other contexts for email data: temporal coupling and fragility.
+3. Real email provider from day one: unnecessary operational complexity in early phase.
 
-## Conseguenze
+## Consequences
 
 ### Positive
 
-- Separazione chiara tra dominio core e canale comunicazione.
-- Resilienza grazie a integrazione asincrona e deduplica.
-- Estendibilita verso nuovi template/canali senza toccare i servizi core.
+- Clear separation between core domain and communication channel.
+- Better resilience via asynchronous integration and deduplication.
+- Easier extension for new templates/channels without touching core services.
 
-### Negative / Trade-off
+### Negative / Trade-offs
 
-- Nuovo servizio da mantenere e monitorare.
-- Overhead di un servizio dedicato e queue dedicate.
+- One more service to maintain and monitor.
+- Overhead of a dedicated service and queues.
 
-## Impatto su implementazione
+## Implementation impact
 
-- Contratto condiviso `OrderCompletedV1` riusato da piu consumer.
-- Queue RabbitMQ: `order-completed-communication` (email) e altre queue consumer-specifiche sul fanout `order-completed`.
-- Nuove configurazioni: `ConnectionStrings__CommunicationDb`, `Communication__Smtp__*`.
-- Nuovo servizio `communication-api` e container `mailpit` nel `docker-compose`.
+- Shared contract `OrderCompletedV1` reused by multiple consumers.
+- RabbitMQ queues: `order-completed-communication` (email) and other consumer-specific queues on fanout `order-completed`.
+- New configuration keys: `ConnectionStrings__CommunicationDb`, `Communication__Smtp__*`.
+- New `communication-api` service and `mailpit` container in `docker-compose`.
 
-## Piano di adozione
+## Adoption plan
 
-1. Introdurre modulo `Communication` e wiring infrastrutturale.
-2. Aggiornare producer `Order` per pubblicare un solo evento condiviso.
-3. Aggiungere test handler/contratti e smoke test locale con Mailpit.
+1. Introduce `Communication` module and infrastructure wiring.
+2. Update `Order` producer to publish a single shared event.
+3. Add handler/contract tests and local smoke test with Mailpit.
 
-## Riferimenti
+## References
 
 - `../architecture.md`
 - `../bounded-contexts/communication.md`

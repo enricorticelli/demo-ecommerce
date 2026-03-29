@@ -2,5 +2,5 @@ namespace Warehouse.Api.Contracts;
 
 public static class WarehouseRoutes
 {
-    public const string StoreBase = "/store/v1/stock";
+    public const string BackofficeBase = "/backoffice/v1/stock";
 }

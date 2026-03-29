@@ -1,56 +1,56 @@
-# ADR-0006: Idempotenza handler e deduplica dei messaggi
+# ADR-0006: Handler idempotency and message deduplication
 
-- Data: 2026-03-07
-- Stato: Accepted
-- Decisori: Product/Tech Owner
-- Consultati: Stakeholder progetto
-- Informati: Team backend/frontend
+- Date: 2026-03-07
+- Status: Accepted
+- Decision Makers: Product/Tech Owner
+- Consulted: Project stakeholders
+- Informed: Backend/frontend team
 
-## Contesto
+## Context
 
-Con integrazione event-driven, la consegna dei messaggi puo causare retry e duplicati. Senza idempotenza, i consumer possono applicare la stessa transizione piu volte, introducendo bug di dominio.
+In event-driven integration, message delivery can cause retries and duplicates. Without idempotency, consumers may apply the same transition multiple times, introducing domain bugs.
 
-## Decisione
+## Decision
 
-Rendere idempotenti tutti i consumer asincroni e introdurre deduplica:
+Make all asynchronous consumers idempotent and add deduplication:
 
-1. ogni handler deve tollerare duplicati dello stesso evento;
-2. usare chiavi di deduplica (`eventId`, `correlationId`) per tracciamento;
-3. trattare il reorder dei messaggi come caso previsto;
-4. definire policy di replay sicure.
+1. every handler must tolerate duplicate delivery of the same event;
+2. use deduplication keys (`eventId`, `correlationId`) for tracking;
+3. treat out-of-order delivery as an expected case;
+4. define safe replay policies.
 
-## Alternative considerate
+## Alternatives considered
 
-1. Affidarsi solo al broker: non elimina duplicati a livello applicativo.
-2. Idempotenza solo sui flussi principali: lascia zone fragili e non prevedibili.
-3. Compensazioni senza idempotenza: insufficiente e costoso da gestire.
+1. Rely only on broker semantics: does not remove application-level duplicates.
+2. Idempotency only for critical flows: leaves fragile areas.
+3. Compensation without idempotency: insufficient and costly.
 
-## Conseguenze
+## Consequences
 
 ### Positive
 
-- Riduzione effetti collaterali da retry/duplicati.
-- Maggiore affidabilita dei workflow distribuiti.
-- Facilita di recovery e replay controllato.
+- Reduced side effects from retries/duplicates.
+- Higher reliability of distributed workflows.
+- Easier recovery and controlled replay.
 
-### Negative / Trade-off
+### Negative / Trade-offs
 
-- Piu complessita nei consumer.
-- Necessita di storage e policy di deduplica.
+- Higher consumer complexity.
+- Need storage and governance for deduplication.
 
-## Impatto su implementazione
+## Implementation impact
 
-- Definire standard tecnici per check idempotenza in ogni handler.
-- Introdurre logiche di upsert/compare-and-set dove richiesto.
-- Aggiungere test specifici su duplicati e out-of-order events.
+- Define technical standards for idempotency checks in every handler.
+- Introduce upsert/compare-and-set logic where needed.
+- Add dedicated tests for duplicates and out-of-order events.
 
-## Piano di adozione
+## Adoption plan
 
-1. Introdurre guideline tecniche comuni per consumer.
-2. Adeguare progressivamente i workflow piu critici.
-3. Verificare in test integrazione i casi di replay e duplicazione.
+1. Introduce shared technical guidelines for consumers.
+2. Incrementally adapt critical workflows.
+3. Verify replay/duplication scenarios in integration tests.
 
-## Riferimenti
+## References
 
 - `./0002-comunicazione-inter-context.md`
 - `./0005-eventual-consistency-compensazioni.md`

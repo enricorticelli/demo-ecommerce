@@ -1,37 +1,54 @@
 # Bounded Context: Catalog
 
-## Scopo
+## Purpose
 
-Gestire il catalogo prodotti e i metadati commerciali (brand, categorie, collezioni).
+Manage the product catalog and commercial metadata (brands, categories, collections).
 
-## Responsabilita
+## Responsibilities
 
-1. Definire e mantenere anagrafiche prodotto.
-2. Esporre query per listing e dettaglio prodotti.
-3. Garantire coerenza dei dati catalogo interni al contesto.
+1. Define and maintain product records.
+2. Expose product listing and detail queries.
+3. Guarantee internal catalog data consistency.
 
-## Ownership dati
+## Data ownership
 
-- Prodotti.
-- Brand.
-- Categorie.
-- Collezioni.
+- Products.
+- Brands.
+- Categories.
+- Collections.
 
-## Integrazioni
+## Integrations
 
-- Espone API allo storefront via gateway.
-- Pubblica eventi quando cambiano informazioni rilevanti per altri contesti.
+- Exposes APIs through the gateway in two contexts:
+  - `store`: storefront-facing read endpoints for user experience.
+  - `backoffice`: management APIs with full CRUD for products, brands, categories, collections.
+- Publishes events when relevant catalog data changes for other contexts.
 
-## Convenzioni implementative adottate
+## Public endpoints (summary)
 
-1. Endpoint API sottili: orchestrazione demandata a command/query service.
-2. Mapping `View -> Response` centralizzato in mapper statici API.
-3. Repository EF Core separati per aggregate (`Brand`, `Category`, `Collection`, `Product`).
-4. Regole cross-entity in `Rules` applicative (unicita, referenze, vincoli delete).
-5. Ricerca `searchTerm` implementata server-side in query component dedicati.
-6. Event publishing via `IDomainEventPublisher` con adapter outbox in infrastructure.
-7. Eventi `*V1` in `Shared.BuildingBlocks.Contracts.IntegrationEvents.Catalog` con metadata standard.
+- `store`:
+  - `GET /api/store/catalog/v1/products/new-arrivals`
+  - `GET /api/store/catalog/v1/products/best-sellers`
+- `backoffice`:
+  - `GET/POST /api/backoffice/catalog/v1/products`
+  - `GET/PUT/DELETE /api/backoffice/catalog/v1/products/{id}`
+  - `GET/POST /api/backoffice/catalog/v1/brands`
+  - `GET/PUT/DELETE /api/backoffice/catalog/v1/brands/{id}`
+  - `GET/POST /api/backoffice/catalog/v1/categories`
+  - `GET/PUT/DELETE /api/backoffice/catalog/v1/categories/{id}`
+  - `GET/POST /api/backoffice/catalog/v1/collections`
+  - `GET/PUT/DELETE /api/backoffice/catalog/v1/collections/{id}`
 
-## Confini
+## Adopted implementation conventions
 
-Nessun altro contesto puo leggere/scrivere direttamente il database catalogo.
+1. Thin API endpoints: orchestration delegated to command/query services.
+2. Centralized `View -> Response` mapping in static API mappers.
+3. Separate EF Core repositories per aggregate (`Brand`, `Category`, `Collection`, `Product`).
+4. Cross-entity rules in application `Rules` (uniqueness, references, delete constraints).
+5. Server-side `searchTerm` support in dedicated query components.
+6. Event publishing via `IDomainEventPublisher` with outbox adapter in infrastructure.
+7. `*V1` events in `Shared.BuildingBlocks.Contracts.IntegrationEvents.Catalog` with standard metadata.
+
+## Boundaries
+
+No other context can read/write the catalog database directly.

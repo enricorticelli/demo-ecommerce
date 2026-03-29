@@ -1,56 +1,56 @@
-# ADR-0001: Modello architetturale a microservizi pragmatici
+# ADR-0001: Pragmatic microservices architecture model
 
-- Data: 2026-03-07
-- Stato: Accepted
-- Decisori: Product/Tech Owner
-- Consultati: Stakeholder progetto
-- Informati: Team backend/frontend
+- Date: 2026-03-07
+- Status: Accepted
+- Decision Makers: Product/Tech Owner
+- Consulted: Project stakeholders
+- Informed: Backend/frontend team
 
-## Contesto
+## Context
 
-Il backend attuale espone API mock ma la soluzione e gia strutturata in bounded context separati (`Catalog`, `Cart`, `Order`, `Payment`, `Shipping`, `Warehouse`) con gateway dedicato. Il team e ridotto e ha priorita di time-to-market, con previsione di carico medio/alto.
+The current backend exposes mock APIs, but the solution is already organized into separated bounded contexts (`Catalog`, `Cart`, `Order`, `Payment`, `Shipping`, `Warehouse`) with a dedicated gateway. The team is small, time-to-market is critical, and expected load is medium/high.
 
-## Decisione
+## Decision
 
-Adottare un modello di microservizi pragmatici:
+Adopt a pragmatic microservices model:
 
-1. bounded context separati come unita di deploy logica;
-2. ownership dati per contesto;
-3. integrazione contract-first;
-4. complessita infrastrutturale introdotta solo quando necessaria.
+1. separated bounded contexts as logical deployment units;
+2. per-context data ownership;
+3. contract-first integration;
+4. infrastructure complexity introduced only when needed.
 
-## Alternative considerate
+## Alternatives considered
 
-1. Modular monolith: piu semplice operativamente, ma riduce isolamento e indipendenza di evoluzione dei context gia separati.
-2. Microservizi full enterprise: massima autonomia, ma overhead eccessivo per team singolo.
-3. Architettura ibrida non governata: flessibile nel breve, ma alto rischio di incoerenza architetturale.
+1. Modular monolith: operationally simpler, but reduces isolation and independent evolution for already separated contexts.
+2. Full enterprise microservices: maximum autonomy, but excessive overhead for a single team.
+3. Ungoverned hybrid architecture: flexible short-term, high risk of architectural inconsistency.
 
-## Conseguenze
+## Consequences
 
 ### Positive
 
-- Confini di dominio chiari e allineati al modello DDD strategico.
-- Scalabilita e evoluzione per contesto.
-- Riduzione del rischio di accoppiamento semantico.
+- Clear domain boundaries aligned with strategic DDD.
+- Per-context scalability and evolution.
+- Lower semantic coupling risk.
 
-### Negative / Trade-off
+### Negative / Trade-offs
 
-- Maggior complessita operativa rispetto al monolite.
-- Necessita di disciplina alta su contratti, osservabilita e test.
+- Higher operational complexity compared to a monolith.
+- Requires high discipline on contracts, observability, and testing.
 
-## Impatto su implementazione
+## Implementation impact
 
-- Ogni contesto implementa vertical slice complete (API + application + domain + infrastructure).
-- No logica di business nel gateway.
-- Ogni variazione architetturale cross-context richiede ADR.
+- Each context implements complete vertical slices (API + application + domain + infrastructure).
+- No business logic in the gateway.
+- Any cross-context architectural change requires an ADR.
 
-## Piano di adozione
+## Adoption plan
 
-1. Formalizzare decisioni operative in ADR-0002 e ADR-0003.
-2. Implementare primi flussi reali su `Order`, `Payment`, `Shipping`.
-3. Estendere agli altri contesti con stessa governance.
+1. Formalize operational decisions in ADR-0002 and ADR-0003.
+2. Implement first real flows in `Order`, `Payment`, `Shipping`.
+3. Extend the same governance to other contexts.
 
-## Riferimenti
+## References
 
 - `../architecture.md`
 - `./0002-comunicazione-inter-context.md`

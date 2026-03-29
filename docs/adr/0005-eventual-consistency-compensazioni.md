@@ -1,56 +1,56 @@
-# ADR-0005: Eventual consistency e compensazioni nei workflow distribuiti
+# ADR-0005: Eventual consistency and compensation in distributed workflows
 
-- Data: 2026-03-07
-- Stato: Accepted
-- Decisori: Product/Tech Owner
-- Consultati: Stakeholder progetto
-- Informati: Team backend/frontend
+- Date: 2026-03-07
+- Status: Accepted
+- Decision Makers: Product/Tech Owner
+- Consulted: Project stakeholders
+- Informed: Backend/frontend team
 
-## Contesto
+## Context
 
-I flussi ordine coinvolgono piu bounded context con ownership dati separata. La coerenza forte cross-context non e realistica senza aumentare drasticamente coupling e costo operativo.
+Order flows involve multiple bounded contexts with separated data ownership. Strong cross-context consistency is not realistic without greatly increasing coupling and operational cost.
 
-## Decisione
+## Decision
 
-Adottare eventual consistency tra bounded context con regole esplicite:
+Adopt eventual consistency across bounded contexts with explicit rules:
 
-1. transazione forte solo dentro il singolo contesto;
-2. workflow cross-context guidati da eventi;
-3. gestione errori con compensazioni applicative;
-4. stati intermedi espliciti nei processi lunghi.
+1. strong transactions only inside a single context;
+2. event-driven cross-context workflows;
+3. application-level compensation for error handling;
+4. explicit intermediate states for long-running processes.
 
-## Alternative considerate
+## Alternatives considered
 
-1. Coerenza forte distribuita: elevato costo tecnico/operativo e ridotta resilienza.
-2. Best-effort senza compensazioni: rischio alto di stati incoerenti permanenti.
-3. Orchestrazione centralizzata hard-coded: fragile e poco evolutiva.
+1. Distributed strong consistency: high technical/operational cost and reduced resilience.
+2. Best-effort without compensation: high risk of permanent inconsistent states.
+3. Hard-coded centralized orchestration: fragile and hard to evolve.
 
-## Conseguenze
+## Consequences
 
 ### Positive
 
-- Migliore resilienza su failure parziali.
-- Scalabilita e autonomia dei contesti.
-- Maggiore chiarezza dei processi asincroni.
+- Better resilience against partial failures.
+- More scalability and context autonomy.
+- Clearer asynchronous process behavior.
 
-### Negative / Trade-off
+### Negative / Trade-offs
 
-- Esistenza di inconsistenze temporanee.
-- Necessita di meccanismi di riconciliazione e monitoraggio.
+- Temporary inconsistencies will exist.
+- Reconciliation and monitoring mechanisms are required.
 
-## Impatto su implementazione
+## Implementation impact
 
-- Modellare stati ordine/pagamento/spedizione con transizioni esplicite.
-- Definire azioni compensative per ogni step critico.
-- Esporre stati di processo in modo trasparente alle API consumer.
+- Model explicit states and transitions for order/payment/shipping.
+- Define compensating actions for each critical step.
+- Expose process states transparently to API consumers.
 
-## Piano di adozione
+## Adoption plan
 
-1. Definire mappa stati e transizioni per i workflow core.
-2. Implementare compensazioni minime per i failure path.
-3. Aggiungere metriche e alert su workflow bloccati.
+1. Define state/transition maps for core workflows.
+2. Implement minimum compensation on failure paths.
+3. Add metrics and alerts for stuck workflows.
 
-## Riferimenti
+## References
 
 - `./0002-comunicazione-inter-context.md`
 - `./0003-data-ownership-database-separati.md`

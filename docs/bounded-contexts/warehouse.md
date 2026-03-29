@@ -1,26 +1,31 @@
 # Bounded Context: Warehouse
 
-## Scopo
+## Purpose
 
-Gestire disponibilita e prenotazione stock per gli ordini.
+Manage stock availability and reservation for orders.
 
-## Responsabilita
+## Responsibilities
 
-1. Aggiornamento disponibilita inventario.
-2. Riserva stock su richiesta workflow ordine.
-3. Emissione esito riserva (`Reserved`/`Rejected`).
+1. Update inventory availability.
+2. Reserve stock for order workflows.
+3. Emit reservation outcome (`Reserved`/`Rejected`).
 
-## Ownership dati
+## Data ownership
 
-- Stock per prodotto.
-- Prenotazioni stock.
+- Stock by product.
+- Stock reservations.
 
-## Integrazioni
+## Integrations
 
-- Consuma richieste di riserva dal processo ordine.
-- Pubblica esito verso Order.
-- Espone API tecniche di gestione stock.
+- Consumes reservation requests from the order process.
+- Publishes outcomes to Order.
+- Exposes technical stock management APIs in the `backoffice` context.
 
-## Confini
+## Public endpoints (summary)
 
-Warehouse non modifica ordini e non accede a dati di pagamento/spedizione.
+- `POST /api/backoffice/warehouse/v1/stock/query`
+- `POST /api/backoffice/warehouse/v1/stock`
+
+## Boundaries
+
+Warehouse does not modify orders and does not access payment/shipping data.

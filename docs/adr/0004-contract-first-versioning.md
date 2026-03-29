@@ -1,56 +1,61 @@
-# ADR-0004: Contract-first e versioning di API ed eventi
+# ADR-0004: Contract-first and API/event versioning
 
-- Data: 2026-03-07
-- Stato: Accepted
-- Decisori: Product/Tech Owner
-- Consultati: Stakeholder progetto
-- Informati: Team backend/frontend
+- Date: 2026-03-07
+- Status: Accepted
+- Decision Makers: Product/Tech Owner
+- Consulted: Project stakeholders
+- Informed: Backend/frontend team
 
-## Contesto
+## Context
 
-Con bounded context separati, la stabilita dei contratti e fondamentale per evitare regressioni tra servizi e frontend. L'evoluzione del dominio richiede cambi frequenti, ma le integrazioni devono restare compatibili.
+With separated bounded contexts, contract stability is essential to avoid regressions between services and frontend consumers. Domain evolution is frequent, but integrations must remain compatible.
 
-## Decisione
+## Decision
 
-Adottare una governance contract-first per API ed eventi:
+Adopt contract-first governance for APIs and events:
 
-1. ogni endpoint/evento pubblico e definito come contratto versionato;
-2. breaking change solo con nuova versione (`v2`, `V2`);
-3. non-breaking change consentite solo se backward-compatible;
-4. deprecazione con finestra temporale esplicita e comunicata.
+1. every public endpoint/event is defined as a versioned contract;
+2. breaking changes require a new version (`v2`, `V2`);
+3. non-breaking changes are allowed only when backward-compatible;
+4. deprecation requires an explicit, communicated time window.
 
-## Alternative considerate
+For contextual HTTP namespace:
 
-1. Code-first senza governance: piu veloce nel breve, ma alto rischio di rotture tra contesti.
-2. Versionamento solo per API HTTP: insufficiente nei workflow event-driven.
-3. Versionamento ad hoc per team: incoerenza e debito tecnico crescente.
+1. use `store` for storefront APIs;
+2. use `backoffice` for management/full CRUD APIs.
 
-## Conseguenze
+## Alternatives considered
+
+1. Code-first without governance: faster short-term, high breakage risk between contexts.
+2. Versioning only HTTP APIs: insufficient for event-driven workflows.
+3. Team-by-team ad hoc versioning: inconsistency and growing technical debt.
+
+## Consequences
 
 ### Positive
 
-- Evoluzione prevedibile dei contratti.
-- Maggiore stabilita tra producer e consumer.
-- Migliore separazione tra modello interno e modello di integrazione.
+- Predictable contract evolution.
+- Better producer/consumer stability.
+- Stronger separation between internal model and integration model.
 
-### Negative / Trade-off
+### Negative / Trade-offs
 
-- Maggior overhead di documentazione e review.
-- Necessita di test di compatibilita contrattuale.
+- Higher documentation and review overhead.
+- Need contract compatibility testing.
 
-## Impatto su implementazione
+## Implementation impact
 
-- Definire DTO/API contract indipendenti dal dominio interno.
-- Introdurre regole di naming/versioning uniformi.
-- Aggiornare documentazione e changelog ad ogni versione.
+- Define DTO/API contracts independent from internal domain model.
+- Introduce consistent naming/versioning rules.
+- Update docs and changelog for each version.
 
-## Piano di adozione
+## Adoption plan
 
-1. Catalogare contratti API/eventi attuali per contesto.
-2. Definire policy di compatibilita e deprecazione.
-3. Aggiungere contract tests nel pipeline di build.
+1. Catalog current API/event contracts per context.
+2. Define compatibility and deprecation policies.
+3. Add contract tests in the build pipeline.
 
-## Riferimenti
+## References
 
 - `./0002-comunicazione-inter-context.md`
 - `./0003-data-ownership-database-separati.md`

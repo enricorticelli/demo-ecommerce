@@ -1,239 +1,244 @@
 # Bounded Context: Payment
 
-## Scopo
+## Purpose
 
-Gestire il ciclo di vita del pagamento dal momento in cui nasce un ordine fino alla notifica di esito verso `Order`, mantenendo ownership su sessione, stato e integrazione con provider esterni.
+Manage the payment lifecycle from order creation to outcome notification toward `Order`, owning session, state, and provider integrations.
 
-## Responsabilita
+## Responsibilities
 
-1. Creare/aggiornare la `PaymentSession` quando arriva `OrderCreatedV1`.
-2. Preparare checkout hosted lato provider (mock) su richiesta del frontend.
-3. Validare e processare webhook provider con deduplica.
-4. Applicare transizione di stato sessione (`Pending` -> `Authorized`/`Rejected`).
-5. Pubblicare eventi integrazione `PaymentAuthorizedV1` e `PaymentRejectedV1`.
+1. Create/update `PaymentSession` when `OrderCreatedV1` arrives.
+2. Prepare hosted checkout through provider (mock) on frontend demand.
+3. Validate and process provider webhooks with deduplication.
+4. Apply payment session state transitions (`Pending` -> `Authorized`/`Rejected`).
+5. Publish integration events `PaymentAuthorizedV1` and `PaymentRejectedV1`.
 
-## Ownership dati
+## Data ownership
 
-Payment possiede i dati in schema `payment`:
+Payment owns data in `payment` schema:
 
 - `payment.payment_sessions`:
-  - identificativi: `SessionId`, `OrderId`, `UserId`
+  - identifiers: `SessionId`, `OrderId`, `UserId`
   - checkout/provider: `PaymentMethod`, `ProviderCode`, `ExternalCheckoutId`, `ProviderStatus`, `RedirectUrl`
-  - stato dominio: `Status`, `TransactionId`, `FailureReason`
-  - diagnostica webhook: `LastWebhookEventId`, `LastProviderPayload`, `LastWebhookReceivedAtUtc`
+  - domain state: `Status`, `TransactionId`, `FailureReason`
+  - webhook diagnostics: `LastWebhookEventId`, `LastProviderPayload`, `LastWebhookReceivedAtUtc`
   - auditing: `CreatedAtUtc`, `CompletedAtUtc`
-- `payment.processed_integration_events`: deduplica eventi in ingresso (es. `OrderCreatedV1`).
-- `payment.processed_webhook_events`: deduplica webhook provider per chiave `(ProviderCode, ExternalEventId)`.
+- `payment.processed_integration_events`: deduplication for incoming integration events (for example `OrderCreatedV1`).
+- `payment.processed_webhook_events`: webhook deduplication by key `(ProviderCode, ExternalEventId)`.
 
-Vincoli principali:
+Main constraints:
 
-1. `OrderId` univoco in `payment_sessions` (una sessione per ordine).
-2. `ExternalCheckoutId` indicizzato per lookup webhook.
+1. `OrderId` unique in `payment_sessions` (one session per order).
+2. `ExternalCheckoutId` indexed for webhook lookup.
 3. `FailureReason` max 256, `LastProviderPayload` max 4096.
 
-## Modello dominio
+## Domain model
 
-Entita root: `PaymentSession` (`src/Payment.Domain/Entities/PaymentSession.cs`).
+Root entity: `PaymentSession` (`src/Payment.Domain/Entities/PaymentSession.cs`).
 
-Stato sessione:
+Session states:
 
-1. `Pending`: default alla creazione.
-2. `Authorized`: pagamento autorizzato, `TransactionId` valorizzato, `CompletedAtUtc` valorizzato.
-3. `Rejected`: pagamento rifiutato/annullato, `FailureReason` valorizzata, `CompletedAtUtc` valorizzato.
+1. `Pending`: default at creation.
+2. `Authorized`: payment authorized, `TransactionId` set, `CompletedAtUtc` set.
+3. `Rejected`: payment rejected/cancelled, `FailureReason` set, `CompletedAtUtc` set.
 
-Regole principali:
+Main rules:
 
-1. `Amount` non puo essere negativo.
-2. `PaymentMethod` di default: `stripe_card` se assente.
-3. Cambio `PaymentMethod` resetta contesto provider (`ProviderCode`, `ExternalCheckoutId`, `ProviderStatus`, `RedirectUrl`).
-4. `Authorize()` e `Reject()` sono idempotenti: se stato gia finale uguale, non fanno update.
+1. `Amount` cannot be negative.
+2. Default `PaymentMethod`: `stripe_card` when missing.
+3. Changing `PaymentMethod` resets provider context (`ProviderCode`, `ExternalCheckoutId`, `ProviderStatus`, `RedirectUrl`).
+4. `Authorize()` and `Reject()` are idempotent: no update when already in same terminal state.
 
-## Flussi applicativi
+## Application flows
 
-### 1) Inizializzazione sessione da evento ordine
+### 1) Session initialization from order event
 
 Handler: `AuthorizePaymentOnOrderCreatedHandler` (`src/Payment.Application/Handlers/AuthorizePaymentOnOrderCreatedHandler.cs`).
 
 Input:
 
-- evento `OrderCreatedV1` (da exchange `order-created`, queue `order-created-payment`).
+- `OrderCreatedV1` event (from `order-created` exchange, `order-created-payment` queue).
 
-Comportamento:
+Behavior:
 
-1. Deduplica evento con `IPaymentEventDeduplicationStore`.
-2. Se non esiste sessione per `OrderId`, crea `PaymentSession` con `UserId`, `TotalAmount`, `PaymentMethod` ricevuti.
-3. Se esiste gia, aggiorna il checkout context (`UserId`, `Amount`, `PaymentMethod`).
-4. Salva su DB.
+1. Deduplicate event via `IPaymentEventDeduplicationStore`.
+2. If no session exists for `OrderId`, create `PaymentSession` with incoming `UserId`, `TotalAmount`, `PaymentMethod`.
+3. If it exists, update checkout context (`UserId`, `Amount`, `PaymentMethod`).
+4. Persist in DB.
 
 Output:
 
-- Nessun evento in uscita in questa fase.
+- No outgoing integration event in this phase.
 
-### 2) Creazione/recupero checkout hosted
+### 2) Hosted checkout create/retrieve
 
-Endpoint query sessione ordine:
+Order/session query endpoints:
 
 - `GET /api/store/payment/v1/payments/sessions/orders/{orderId}`
+- `GET /api/store/payment/v1/payments/sessions/{sessionId}`
 
-Servizio: `PaymentQueryService` -> `PaymentCheckoutService`.
+Service: `PaymentQueryService` -> `PaymentCheckoutService`.
 
-Comportamento:
+Behavior:
 
-1. Cerca sessione per `OrderId`; se assente ritorna `404`.
-2. Se sessione non `Pending`, ritorna stato attuale.
-3. Se `Pending` ma checkout provider gia configurato (`RedirectUrl`, `ExternalCheckoutId`, `ProviderCode`), ritorna dati esistenti.
-4. Altrimenti:
-	- risolve provider da `PaymentMethod` (`IPaymentProviderRouter.ResolveByPaymentMethod`)
-	- invoca `CreateCheckoutAsync` su provider adapter
-	- persiste `ProviderCode`, `ExternalCheckoutId`, `RedirectUrl`, `ProviderStatus`
-	- ritorna sessione aggiornata
+1. Find session by `OrderId`; return `404` if missing.
+2. If session is not `Pending`, return current state.
+3. If `Pending` but provider checkout is already configured (`RedirectUrl`, `ExternalCheckoutId`, `ProviderCode`), return existing data.
+4. Otherwise:
+   - resolve provider from `PaymentMethod` (`IPaymentProviderRouter.ResolveByPaymentMethod`)
+   - call `CreateCheckoutAsync` on provider adapter
+   - persist `ProviderCode`, `ExternalCheckoutId`, `RedirectUrl`, `ProviderStatus`
+   - return updated session
 
-Effetto:
+Effect:
 
-- front-end riceve `RedirectUrl` verso hosted checkout (mock gateway).
+- frontend receives `RedirectUrl` to hosted checkout (mock gateway).
 
-### 3) Processamento webhook provider
+### 3) Provider webhook processing
 
-Endpoint webhook:
+Webhook endpoints:
 
 1. `POST /api/store/payment/v1/payments/webhooks/stripe`
 2. `POST /api/store/payment/v1/payments/webhooks/paypal`
 3. `POST /api/store/payment/v1/payments/webhooks/satispay`
 
-Servizio: `PaymentWebhookService`.
+Context note:
+
+1. Session and webhook endpoints are exposed in `store` to support storefront checkout and provider callbacks.
+
+Service: `PaymentWebhookService`.
 
 Pipeline:
 
-1. Legge raw payload e header.
-2. Verifica firma con `IPaymentWebhookVerifier` (header `X-Mock-Signature`, HMAC SHA256 con `WebhookSecret`).
-3. Parsifica payload provider in `PaymentWebhookNotification`.
-4. Valida `ExternalEventId`.
-5. Deduplica webhook (`providerCode` + `externalEventId`).
-6. Lookup sessione:
-	- prima per `SessionId` (se presente)
-	- fallback per `ExternalCheckoutId`
-7. Se sessione non trovata: marca comunque webhook come processato e ritorna `SessionNotFound`.
-8. Aggiorna metadati provider su sessione (`ProviderCode`, `ExternalCheckoutId`, `ProviderStatus`, ultimo payload/evento/timestamp).
-9. Se decisione webhook e `Authorized`, chiama `AuthorizeAsync`.
-10. Se decisione webhook e `Rejected`, chiama `RejectAsync`.
-11. Marca webhook processato.
+1. Read raw payload and headers.
+2. Verify signature via `IPaymentWebhookVerifier` (`X-Mock-Signature` header, HMAC SHA256 with `WebhookSecret`).
+3. Parse provider payload into `PaymentWebhookNotification`.
+4. Validate `ExternalEventId`.
+5. Deduplicate webhook (`providerCode` + `externalEventId`).
+6. Session lookup:
+   - first by `SessionId` (if present)
+   - fallback by `ExternalCheckoutId`
+7. If session is not found: still mark webhook processed and return `SessionNotFound`.
+8. Update provider metadata on session (`ProviderCode`, `ExternalCheckoutId`, `ProviderStatus`, last payload/event/timestamp).
+9. If webhook decision is `Authorized`, call `AuthorizeAsync`.
+10. If webhook decision is `Rejected`, call `RejectAsync`.
+11. Mark webhook processed.
 
-Risposte endpoint:
+Endpoint responses:
 
-1. `401` per firma invalida.
-2. `400` per payload invalido.
-3. `200` per `Processed`, `Duplicate`, `SessionNotFound`.
+1. `401` for invalid signature.
+2. `400` for invalid payload.
+3. `200` for `Processed`, `Duplicate`, `SessionNotFound`.
 
-### 4) Cambio stato e pubblicazione eventi
+### 4) State transition and event publication
 
-Servizio: `PaymentCommandService`.
+Service: `PaymentCommandService`.
 
 1. `AuthorizeAsync(sessionId, correlationId, transactionId)`:
-	- applica transizione su sessione
-	- se lo stato cambia, pubblica `PaymentAuthorizedV1(orderId, transactionId, metadata)`
+   - apply session transition
+   - if state changes, publish `PaymentAuthorizedV1(orderId, transactionId, metadata)`
 2. `RejectAsync(sessionId, reason, correlationId)`:
-	- normalizza/sanitizza reason
-	- applica transizione su sessione
-	- se lo stato cambia, pubblica `PaymentRejectedV1(orderId, reason, metadata)`
+   - normalize/sanitize reason
+   - apply session transition
+   - if state changes, publish `PaymentRejectedV1(orderId, reason, metadata)`
 
-Nota: `reason` viene sanitizzata rimuovendo sequenze numeriche 12-19 cifre e troncata a 256 caratteri.
+Note: `reason` is sanitized by removing 12-19 digit numeric sequences and truncated to 256 characters.
 
-## Integrazione provider
+## Provider integration
 
-Router provider: `PaymentProviderRouter`.
+Provider router: `PaymentProviderRouter`.
 
-Supporto metodi pagamento:
+Supported payment methods:
 
 1. Stripe adapter:
-	- metodi: `stripe_card`, `stripecard`, `card`, `creditcard`
-	- provider code: `stripe`
+   - methods: `stripe_card`, `stripecard`, `card`, `creditcard`
+   - provider code: `stripe`
 2. PayPal adapter:
-	- metodi: `paypal`
-	- provider code: `paypal`
+   - methods: `paypal`
+   - provider code: `paypal`
 3. Satispay adapter:
-	- metodi: `satispay`
-	- provider code: `satispay`
+   - methods: `satispay`
+   - provider code: `satispay`
 
-Mapping status webhook -> decisione dominio:
+Webhook status -> domain decision mapping:
 
 1. Stripe:
-	- `checkout.session.completed`, `payment_intent.succeeded` -> `Authorized`
-	- `checkout.session.expired`, `checkout.session.async_payment_failed`, `payment_intent.payment_failed` -> `Rejected`
+   - `checkout.session.completed`, `payment_intent.succeeded` -> `Authorized`
+   - `checkout.session.expired`, `checkout.session.async_payment_failed`, `payment_intent.payment_failed` -> `Rejected`
 2. PayPal:
-	- `CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED` -> `Authorized`
-	- `CHECKOUT.ORDER.CANCELLED`, `CHECKOUT.ORDER.VOIDED`, `PAYMENT.CAPTURE.DENIED` -> `Rejected`
+   - `CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED` -> `Authorized`
+   - `CHECKOUT.ORDER.CANCELLED`, `CHECKOUT.ORDER.VOIDED`, `PAYMENT.CAPTURE.DENIED` -> `Rejected`
 3. Satispay:
-	- `ACCEPTED` -> `Authorized`
-	- `CANCELED`, `CANCELLED`, `REJECTED` -> `Rejected`
+   - `ACCEPTED` -> `Authorized`
+   - `CANCELED`, `CANCELLED`, `REJECTED` -> `Rejected`
 
-Status non riconosciuti restano `Pending` (nessuna transizione finale).
+Unknown statuses remain `Pending` (no terminal transition).
 
-## Eventi di integrazione
+## Integration events
 
-Eventi consumati:
+Consumed events:
 
 1. `OrderCreatedV1`.
 
-Eventi pubblicati:
+Published events:
 
 1. `PaymentAuthorizedV1`:
-	- campi: `OrderId`, `TransactionId`, `Metadata`
+   - fields: `OrderId`, `TransactionId`, `Metadata`
 2. `PaymentRejectedV1`:
-	- campi: `OrderId`, `Reason`, `Metadata`
+   - fields: `OrderId`, `Reason`, `Metadata`
 
-Metadata evento creati con `IntegrationEventMetadataFactory` (`CorrelationId`, timestamp UTC, source context `Payment`).
+Event metadata is created through `IntegrationEventMetadataFactory` (`CorrelationId`, UTC timestamp, source context `Payment`).
 
-Trasporto messaggi (Wolverine + RabbitMQ):
+Message transport (Wolverine + RabbitMQ):
 
 1. subscribe queue `order-created-payment`
 2. publish queue `payment-authorized-order`
 3. publish queue `payment-rejected-order`
 
-## Dipendenze cross-context
+## Cross-context dependencies
 
-Payment non modifica mai lo stato ordine direttamente.
+Payment never updates order state directly.
 
-`Order` consuma gli eventi Payment:
+`Order` consumes Payment events:
 
-1. `HandlePaymentAuthorizedOnOrderHandler` applica pagamento su ordine e puo emettere `OrderCompletedV1`.
-2. `HandlePaymentRejectedOnOrderHandler` applica rifiuto e puo emettere `OrderCancelledV1`.
+1. `HandlePaymentAuthorizedOnOrderHandler` applies payment to order and may emit `OrderCompletedV1`.
+2. `HandlePaymentRejectedOnOrderHandler` applies rejection and may emit `OrderCancelledV1`.
 
-## Configurazione operativa
+## Operational configuration
 
-Chiavi principali:
+Main keys:
 
-1. `ConnectionStrings__PaymentDb` (o `ConnectionStrings:PaymentDb`)
+1. `ConnectionStrings__PaymentDb` (or `ConnectionStrings:PaymentDb`)
 2. `MessageBus__Host`, `MessageBus__Port`, `MessageBus__Username`, `MessageBus__Password`
 3. `Payment:SkipWolverineBootstrap` / `Payment:SkipDatabaseBootstrap`
 4. Provider options:
-	- `Payment:Providers:Stripe:*`
-	- `Payment:Providers:PayPal:*`
-	- `Payment:Providers:Satispay:*`
-	- campi: `CheckoutApiBaseUrl`, `ApiKey`, `WebhookSecret`, `ReturnUrlTemplate`, `CancelUrlTemplate`
+   - `Payment:Providers:Stripe:*`
+   - `Payment:Providers:PayPal:*`
+   - `Payment:Providers:Satispay:*`
+   - fields: `CheckoutApiBaseUrl`, `ApiKey`, `WebhookSecret`, `ReturnUrlTemplate`, `CancelUrlTemplate`
 
-Default return/cancel URL template puntano a `http://localhost:3000/payment/return`.
+Default return/cancel URL templates point to `http://localhost:3000/payment/return`.
 
-## Mock gateway (sviluppo)
+## Mock gateway (development)
 
-Servizio: `frontend/payment-mock-gateway/server.js`.
+Service: `frontend/payment-mock-gateway/server.js`.
 
-Funzioni:
+Functions:
 
-1. Espone `POST /mock/{provider}/checkouts` per creare checkout mock.
-2. Espone pagina hosted `GET /checkout/{provider}/{checkoutId}` con decisione utente.
-3. Invia webhook firmato verso Gateway API:
-	- `POST /api/store/payment/v1/payments/webhooks/{provider}`
-	- header `X-Mock-Signature: sha256=<hmac>`
-4. Reindirizza utente a `returnUrl` o `cancelUrl` con query di esito.
+1. Exposes `POST /mock/{provider}/checkouts` to create mock checkouts.
+2. Exposes hosted page `GET /checkout/{provider}/{checkoutId}` for user decision.
+3. Sends signed webhook to Gateway API:
+   - `POST /api/store/payment/v1/payments/webhooks/{provider}`
+   - header `X-Mock-Signature: sha256=<hmac>`
+4. Redirects user to `returnUrl` or `cancelUrl` with outcome query params.
 
-## Confini
+## Boundaries
 
-Payment resta owner esclusivo di sessione e stato pagamento.
+Payment remains exclusive owner of payment session and payment state.
 
-Non compete a Payment:
+Payment does not:
 
-1. decidere stato finale business dell'ordine
-2. accedere a DB di altri bounded context
-3. applicare regole di fulfillment/shipping
+1. decide final business state of the order;
+2. access other bounded context databases;
+3. apply fulfillment/shipping business rules.
 
-La comunicazione cross-context avviene solo via eventi contrattualizzati.
+Cross-context communication happens only through contract-based integration events.

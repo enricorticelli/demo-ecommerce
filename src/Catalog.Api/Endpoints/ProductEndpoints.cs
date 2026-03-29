@@ -16,13 +16,16 @@ public static class ProductEndpoints
         var storeGroup = app.MapGroup(CatalogRoutes.StoreProducts)
             .WithTags("Catalog");
 
-        storeGroup.MapGet("/", GetProducts).WithName("StoreGetProducts");
         storeGroup.MapGet("/new-arrivals", GetNewArrivals).WithName("StoreGetNewArrivals");
         storeGroup.MapGet("/best-sellers", GetBestSellers).WithName("StoreGetBestSellers");
-        storeGroup.MapGet("/{id:guid}", GetProductById).WithName("StoreGetProductById");
-        storeGroup.MapPost("/", CreateProduct).WithName("StoreCreateProduct");
-        storeGroup.MapPut("/{id:guid}", UpdateProduct).WithName("StoreUpdateProduct");
-        storeGroup.MapDelete("/{id:guid}", DeleteProduct).WithName("StoreDeleteProduct");
+        var backofficeGroup = app.MapGroup(CatalogRoutes.BackofficeProducts)
+            .WithTags("Catalog");
+
+        backofficeGroup.MapGet("/", GetProducts).WithName("BackofficeGetProducts");
+        backofficeGroup.MapGet("/{id:guid}", GetProductById).WithName("BackofficeGetProductById");
+        backofficeGroup.MapPost("/", CreateProduct).WithName("BackofficeCreateProduct");
+        backofficeGroup.MapPut("/{id:guid}", UpdateProduct).WithName("BackofficeUpdateProduct");
+        backofficeGroup.MapDelete("/{id:guid}", DeleteProduct).WithName("BackofficeDeleteProduct");
 
         return storeGroup;
     }
@@ -76,7 +79,7 @@ public static class ProductEndpoints
             correlationId,
             cancellationToken);
 
-            return Results.Created($"{CatalogRoutes.StoreProducts}/{product.Id}", product.ToResponse());
+            return Results.Created($"{CatalogRoutes.BackofficeProducts}/{product.Id}", product.ToResponse());
         }
         catch (Exception exception)
         {

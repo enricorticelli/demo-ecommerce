@@ -1,56 +1,56 @@
-# ADR-0007: Osservabilita distribuita minima obbligatoria
+# ADR-0007: Mandatory minimum distributed observability
 
-- Data: 2026-03-07
-- Stato: Accepted
-- Decisori: Product/Tech Owner
-- Consultati: Stakeholder progetto
-- Informati: Team backend/frontend
+- Date: 2026-03-07
+- Status: Accepted
+- Decision Makers: Product/Tech Owner
+- Consulted: Project stakeholders
+- Informed: Backend/frontend team
 
-## Contesto
+## Context
 
-In una architettura distribuita, il debugging senza osservabilita e costoso e lento. Per un team singolo serve una baseline minima ma solida, senza piattaforme troppo complesse in prima fase.
+In a distributed architecture, debugging without observability is expensive and slow. A single team needs a solid minimum baseline without introducing overly complex platforms too early.
 
-## Decisione
+## Decision
 
-Adottare uno standard minimo obbligatorio di osservabilita:
+Adopt a mandatory minimum observability standard:
 
-1. logging strutturato con `correlationId` in tutti i servizi;
-2. metriche base su throughput, errori, latenza endpoint e handler;
-3. tracing distribuito per i workflow principali;
-4. health checks `live` e `ready` in ogni servizio.
+1. structured logging with `correlationId` in all services;
+2. baseline metrics for throughput, errors, endpoint and handler latency;
+3. distributed tracing for core workflows;
+4. `live` and `ready` health checks in every service.
 
-## Alternative considerate
+## Alternatives considered
 
-1. Solo log testuali: insufficiente per tracing cross-context.
-2. Observability completa enterprise da subito: overhead non proporzionato.
-3. Nessuno standard comune: incident management imprevedibile.
+1. Text logs only: insufficient for cross-context tracing.
+2. Full enterprise observability from day one: disproportionate overhead.
+3. No shared standard: unpredictable incident management.
 
-## Conseguenze
+## Consequences
 
 ### Positive
 
-- Riduzione MTTR su incidenti applicativi.
-- Maggiore visibilita sui colli di bottiglia.
-- Migliore affidabilita operativa nel tempo.
+- Lower MTTR for application incidents.
+- Better visibility into bottlenecks.
+- Better long-term operational reliability.
 
-### Negative / Trade-off
+### Negative / Trade-offs
 
-- Costo iniziale di strumentazione e dashboard.
-- Necessita di governance sui dati di log/metriche.
+- Initial instrumentation and dashboard effort.
+- Need governance for log/metric data.
 
-## Impatto su implementazione
+## Implementation impact
 
-- Definire middleware comuni per correlation id.
-- Standardizzare naming di metriche e dimensioni.
-- Predisporre dashboard minime per flusso ordine.
+- Define shared middleware for correlation id.
+- Standardize metric names and dimensions.
+- Build minimum dashboards for order flow.
 
-## Piano di adozione
+## Adoption plan
 
-1. Introdurre logging strutturato in tutti i context.
-2. Aggiungere metriche e tracing nel flow ordine.
-3. Estendere progressivamente agli altri workflow.
+1. Introduce structured logging in all contexts.
+2. Add metrics and tracing in the order flow.
+3. Extend progressively to other workflows.
 
-## Riferimenti
+## References
 
 - `./0002-comunicazione-inter-context.md`
 - `./0005-eventual-consistency-compensazioni.md`

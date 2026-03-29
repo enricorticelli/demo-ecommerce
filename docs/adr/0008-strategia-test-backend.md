@@ -1,56 +1,56 @@
-# ADR-0008: Strategia test backend per architettura distribuita
+# ADR-0008: Backend test strategy for distributed architecture
 
-- Data: 2026-03-07
-- Stato: Accepted
-- Decisori: Product/Tech Owner
-- Consultati: Stakeholder progetto
-- Informati: Team backend/frontend
+- Date: 2026-03-07
+- Status: Accepted
+- Decision Makers: Product/Tech Owner
+- Consulted: Project stakeholders
+- Informed: Backend/frontend team
 
-## Contesto
+## Context
 
-La transizione da endpoint mock a backend reale richiede sicurezza evolutiva. In una architettura distribuita servono test su dominio, integrazione locale e compatibilita contratti.
+Moving from mock endpoints to a real backend requires safe evolution. In distributed architecture, testing must cover domain logic, local integration, and contract compatibility.
 
-## Decisione
+## Decision
 
-Adottare una strategia test multilivello:
+Adopt a multi-layer test strategy:
 
-1. unit test su dominio e application handler;
-2. integration test per endpoint e persistenza per contesto;
-3. contract test per API/eventi cross-context;
-4. test end-to-end selettivi sui workflow core.
+1. unit tests on domain and application handlers;
+2. integration tests on endpoints and persistence per context;
+3. contract tests for cross-context APIs/events;
+4. selective end-to-end tests on core workflows.
 
-## Alternative considerate
+## Alternatives considered
 
-1. Solo E2E: costosi, lenti e fragili per diagnosi.
-2. Solo unit test: copertura insufficiente su integrazioni reali.
-3. Test ad hoc senza strategia: crescita non governata della suite.
+1. E2E only: expensive, slow, fragile for diagnosis.
+2. Unit tests only: insufficient coverage for real integrations.
+3. Ad hoc tests without strategy: unmanaged suite growth.
 
-## Conseguenze
+## Consequences
 
 ### Positive
 
-- Riduzione regressioni su evoluzione dei servizi.
-- Maggiore confidenza su refactoring e cambi contrattuali.
-- Feedback rapido su errori di dominio e integrazione.
+- Reduced regressions during service evolution.
+- Higher confidence for refactoring and contract changes.
+- Fast feedback on domain and integration errors.
 
-### Negative / Trade-off
+### Negative / Trade-offs
 
-- Tempo iniziale per impostare pipeline e fixture.
-- Manutenzione continua dei test di contratto.
+- Initial time investment for pipeline and fixtures.
+- Ongoing maintenance of contract tests.
 
-## Impatto su implementazione
+## Implementation impact
 
-- Definire standard test per ciascun contesto.
-- Rendere compilabili e attendibili i test esistenti.
-- Introdurre quality gates progressivi in CI.
+- Define testing standards for each context.
+- Make existing tests buildable and reliable.
+- Introduce progressive quality gates in CI.
 
-## Piano di adozione
+## Adoption plan
 
-1. Rendere verdi i test dei contesti core.
-2. Aggiungere contract tests su eventi e API condivise.
-3. Attivare quality gate minimi in pipeline.
+1. Make core context tests green.
+2. Add contract tests for shared APIs/events.
+3. Enable minimum quality gates in pipeline.
 
-## Riferimenti
+## References
 
 - `./0004-contract-first-versioning.md`
 - `./0006-idempotenza-deduplica.md`

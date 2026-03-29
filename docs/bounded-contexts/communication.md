@@ -1,25 +1,25 @@
 # Bounded Context: Communication
 
-## Scopo
+## Purpose
 
-Gestire comunicazioni esterne asincrone verso utenti finali tramite email.
+Handle asynchronous external communications to end users via email.
 
-## Responsabilita
+## Responsibilities
 
-1. Consumare eventi di integrazione rilevanti per notifiche utente.
-2. Comporre e inviare email transactional (es. conferma ordine, ordine spedito).
-3. Garantire idempotenza su consumer per evitare invii duplicati.
+1. Consume integration events relevant for user notifications.
+2. Compose and send transactional emails (for example order confirmation, order shipped).
+3. Guarantee consumer idempotency to prevent duplicate sends.
 
-## Ownership dati
+## Data ownership
 
-- Eventi di integrazione processati (deduplica).
-- Configurazione tecnica canale email (SMTP).
+- Processed integration events (deduplication).
+- Technical email channel configuration (SMTP).
 
-## Integrazioni
+## Integrations
 
-- Consuma eventi da `Order` e `Shipping`.
-- Invia email via SMTP verso provider/mock esterno (Mailpit in locale).
+- Consumes events from `Order` and `Shipping`.
+- Sends emails via SMTP to external provider/mock (Mailpit locally).
 
-## Confini
+## Boundaries
 
-Communication non modifica stato di Order/Shipping e non accede ai loro database.
+Communication does not change Order/Shipping state and does not access their databases.
