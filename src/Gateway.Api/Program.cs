@@ -19,7 +19,7 @@ var app = builder.Build();
 app.UseExceptionHandler();
 app.UseCors("default");
 
-app.UseGatewayOpenApi(routes);
+app.UseGatewayOpenApi(routes, clusters);
 app.MapGatewayOperationalEndpoints();
 
 app.MapReverseProxy();

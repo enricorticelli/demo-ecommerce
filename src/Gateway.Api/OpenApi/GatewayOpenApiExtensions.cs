@@ -1,4 +1,5 @@
 using Microsoft.OpenApi;
+using System.Text.Json;
 using Yarp.ReverseProxy.Configuration;
 
 namespace Gateway.Api.OpenApi;
@@ -51,29 +52,38 @@ public static class GatewayOpenApiExtensions
         return services;
     }
 
-    public static WebApplication UseGatewayOpenApi(this WebApplication app, IEnumerable<RouteConfig> routeConfigs)
+    public static WebApplication UseGatewayOpenApi(
+        this WebApplication app,
+        IEnumerable<RouteConfig> routeConfigs,
+        IEnumerable<ClusterConfig> clusterConfigs)
     {
-        app.UseSwagger(options =>
+        var clusterAddressMap = clusterConfigs
+            .Where(cluster => !string.IsNullOrWhiteSpace(cluster.ClusterId))
+            .ToDictionary(
+                cluster => cluster.ClusterId!,
+                cluster => cluster.Destinations?.Values.FirstOrDefault()?.Address,
+                StringComparer.OrdinalIgnoreCase);
+
+        app.MapGet("/openapi/{documentName}.json", async (string documentName, CancellationToken cancellationToken) =>
         {
-            options.RouteTemplate = "openapi/{documentName}.json";
-            options.PreSerializeFilters.Add((document, request) =>
+            var normalizedDocumentName = Path.GetFileNameWithoutExtension(documentName);
+            var merged = await GatewayOpenApiJsonComposer.ComposeAsync(
+                routeConfigs,
+                clusterAddressMap,
+                normalizedDocumentName,
+                cancellationToken);
+
+            if (merged is null)
             {
-                var documentName = ResolveDocumentName(request);
-                GatewayOpenApiDocumentEnricher.Enrich(document, routeConfigs, documentName);
-            });
+                return Results.NotFound();
+            }
+
+            return Results.Text(merged.ToJsonString(new JsonSerializerOptions
+            {
+                WriteIndented = true
+            }), "application/json");
         });
 
         return app;
-    }
-
-    private static string? ResolveDocumentName(HttpRequest request)
-    {
-        if (request.RouteValues.TryGetValue("documentName", out var value) && value is not null)
-        {
-            return value.ToString();
-        }
-
-        var fileName = Path.GetFileName(request.Path.Value ?? string.Empty);
-        return Path.GetFileNameWithoutExtension(fileName);
     }
 }
