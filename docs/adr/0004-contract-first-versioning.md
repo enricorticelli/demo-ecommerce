@@ -1,62 +1,23 @@
-# ADR-0004: Contract-first and API/event versioning
+# ADR-0004: Contract-First Versioning of Integration Events
 
-- Date: 2026-03-07
-- Status: Accepted
-- Decision Makers: Product/Tech Owner
-- Consulted: Project stakeholders
-- Informed: Backend/frontend team
+- Status: accepted
+- Date: 2026-04-22
 
 ## Context
 
-With separated bounded contexts, contract stability is essential to avoid regressions between services and frontend consumers. Domain evolution is frequent, but integrations must remain compatible.
+Integration events cross service boundaries and are consumed by independent deployments. Unversioned events make backwards-incompatible changes dangerous and hard to coordinate.
 
 ## Decision
 
-Adopt contract-first governance for APIs and events:
+All integration events are defined as C# records in `src/Shared.BuildingBlocks/Contracts/IntegrationEvents/` and carry an explicit version suffix in their type name (e.g., `ProductCreatedV1`, `OrderCompletedV1`).
 
-1. every public endpoint/event is defined as a versioned contract;
-2. breaking changes require a new version (`v2`, `V2`);
-3. non-breaking changes are allowed only when backward-compatible;
-4. deprecation requires an explicit, communicated time window.
-
-For contextual HTTP namespace:
-
-1. use `store` for storefront APIs;
-2. use `backoffice` for management/full CRUD APIs.
-
-## Alternatives considered
-
-1. Code-first without governance: faster short-term, high breakage risk between contexts.
-2. Versioning only HTTP APIs: insufficient for event-driven workflows.
-3. Team-by-team ad hoc versioning: inconsistency and growing technical debt.
+- `IntegrationEventBase` is the base record (`Shared.BuildingBlocks/Contracts/IntegrationEvents/IntegrationEventBase.cs`).
+- `IntegrationEventMetadata` carries correlation and causation identifiers.
+- A new incompatible shape requires a new version record (e.g., `ProductCreatedV2`); both versions coexist until consumers are migrated.
+- Existing event records must not change field names or types.
 
 ## Consequences
 
-### Positive
-
-- Predictable contract evolution.
-- Better producer/consumer stability.
-- Stronger separation between internal model and integration model.
-
-### Negative / Trade-offs
-
-- Higher documentation and review overhead.
-- Need contract compatibility testing.
-
-## Implementation impact
-
-- Define DTO/API contracts independent from internal domain model.
-- Introduce consistent naming/versioning rules.
-- Update docs and changelog for each version.
-
-## Adoption plan
-
-1. Catalog current API/event contracts per context.
-2. Define compatibility and deprecation policies.
-3. Add contract tests in the build pipeline.
-
-## References
-
-- `./0010-inter-context-communication-events-only.md`
-- `./0003-data-ownership-separate-databases.md`
-- `../guidelines/integration-events.md`
+- Consumers can be deployed independently of producers.
+- Breaking changes are always additive (new version record), never in-place.
+- The `Shared.BuildingBlocks` project becomes a shared contract library — keep it free of domain business logic.

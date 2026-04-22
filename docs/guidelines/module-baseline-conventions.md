@@ -1,65 +1,54 @@
-# Module Baseline Conventions
+# G-MODULE: Module Baseline Conventions
 
-## Goal
+- Status: active
 
-Define a reusable and uniform baseline for all backend bounded contexts.
+## Project Layout
 
-## Layer structure
+Every bounded context must have exactly four projects plus one test project:
 
-1. `Api`
-2. `Application`
-3. `Domain`
-4. `Infrastructure`
-5. `Shared.BuildingBlocks` (cross-context components only)
+```
+src/
+  [Context].Api/
+  [Context].Application/
+  [Context].Domain/
+  [Context].Infrastructure/
+  [Context].Tests/
+```
 
-## API conventions
+Enforced by `CommonArchitectureTests.Module_WhenValidated_HasAllLayerProjects()`.
 
-1. Keep `Program.cs` minimal: only module extension calls (`Add<Context>Module`, `Use<Context>ModuleAsync`).
-2. Endpoints contain no business logic: validate basic input, read correlation id, delegate to application services.
-3. Keep `View -> Response` mapping in dedicated static mappers, one mapper per response type.
-4. `Api` must not depend on technical details (EF, broker, Wolverine, SQL).
-5. Endpoint exposure must follow `guidelines/endpoint-conventions.md`:
-   - `store` for storefront/user journey
-   - `backoffice` for management APIs (full CRUD)
+## Project Reference Rules
 
-## Application conventions
+| Layer          | May reference                                                |
+|----------------|--------------------------------------------------------------|
+| Domain         | Shared.BuildingBlocks only                                   |
+| Application    | Domain, Shared.BuildingBlocks only                           |
+| Infrastructure | Application, Domain, Shared.BuildingBlocks only              |
+| Api            | Application, Infrastructure, Shared.BuildingBlocks only      |
 
-1. Clear command/query separation.
-2. Use `*CommandService` for write use cases.
-3. Use `*QueryService` for listing, details, and search (`searchTerm`).
-4. Repositories are persistence abstractions (`I*Repository`) without HTTP concerns or response mapping.
-5. Put cross-entity rules in policy/specification (`I*Rules`), not in endpoints.
-6. Keep `Entity -> View` mapping in `Application` via shared `IViewMapper<TEntity, TView>`.
-7. Avoid fat services: one service per responsibility, composed via dependency inversion.
+Cross-context project references are always forbidden. Enforced by `CommonArchitectureTests.LayerProjectReferences_WhenValidated_FollowCommonRules()`.
 
-## Infrastructure conventions
+## Wolverine Wiring
 
-1. Keep EF Core repository implementations separate from application services.
-2. Isolate search logic in dedicated query objects/components.
-3. Publish events through infrastructure adapters (`OutboxDomainEventPublisher`) behind application abstraction (`IDomainEventPublisher`).
-4. Handle outbox/inbox and durability with Wolverine, without leaking details into `Application`.
-5. Centralize DI registrations in module infrastructure extensions.
+- All Wolverine configuration (RabbitMQ queues, exchanges, PostgreSQL persistence) lives in `[Context].Infrastructure/Configuration/[Context]HostBuilderExtensions.cs`.
+- Never place `UseWolverine`, `ListenToRabbitQueue`, or `PersistMessagesWithPostgresql` in `Program.cs`.
 
-## Shared conventions
+## DbContext
 
-1. Integration events live in `Shared.BuildingBlocks.Contracts.IntegrationEvents.<Context>`.
-2. Use versioned event names: `<EventName>V1`.
-3. One type per file.
-4. Required metadata: `eventId`, `occurredAtUtc`, `correlationId`, `sourceContext`.
-5. Reusable abstractions stay in shared (for example `IDomainEventPublisher`, `IViewMapper<,>`, standard application exceptions).
+- One `DbContext` per bounded context, named `[Context]DbContext`, placed in `[Context].Infrastructure/Persistence/`.
+- EF Core migrations live in `[Context].Infrastructure/Persistence/Migrations/`.
 
-## Code conventions
+## Package Management
 
-1. One type per file.
-2. Avoid container classes without clear responsibility.
-3. Use explicit, domain-oriented names.
-4. Never access another bounded context database directly.
-5. Never use synchronous HTTP between bounded contexts; cross-context communication must use integration events only.
+- Package versions are centralised in `Directory.Packages.props` at the repository root.
+- Add new packages only there; individual `.csproj` files reference packages without version numbers.
 
-## Minimum testing per module
+## Health and Observability
 
-1. Unit tests for rules/policies.
-2. Unit tests for command/query services with mock/fake dependencies.
-3. EF repository integration tests on PostgreSQL.
-4. Event contract tests (name/version/metadata).
-5. Endpoint tests to confirm stable HTTP contracts.
+- Every service must call `builder.AddDefaultApiServices()` and `app.UseDefaultApiPipeline()` from `Shared.BuildingBlocks`.
+- Every service must set `OTEL_SERVICE_NAME` in its docker-compose entry.
+
+## Dockerfile Pattern
+
+- Multi-stage build: `mcr.microsoft.com/dotnet/sdk:10.0` for build, `mcr.microsoft.com/dotnet/aspnet:10.0` for runtime.
+- Published with `UseAppHost=false` and TFM `net10.0`.

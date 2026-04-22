@@ -1,57 +1,23 @@
-# ADR-0007: Mandatory minimum distributed observability
+# ADR-0007: Minimum Distributed Observability via OpenTelemetry and Aspire Dashboard
 
-- Date: 2026-03-07
-- Status: Accepted
-- Decision Makers: Product/Tech Owner
-- Consulted: Project stakeholders
-- Informed: Backend/frontend team
+- Status: accepted
+- Date: 2026-04-22
 
 ## Context
 
-In a distributed architecture, debugging without observability is expensive and slow. A single team needs a solid minimum baseline without introducing overly complex platforms too early.
+Debugging distributed systems requires correlated traces, metrics, and logs across services. Instrumenting each service individually with vendor-specific SDKs creates lock-in.
 
 ## Decision
 
-Adopt a mandatory minimum observability standard:
+All services export telemetry using the **OpenTelemetry SDK** (packages in `Directory.Packages.props` lines 24–28) to a local **Aspire Dashboard** (image `mcr.microsoft.com/dotnet/aspire-dashboard:13`, `docker-compose.yml` line 54).
 
-1. structured logging with `correlationId` in all services;
-2. baseline metrics for throughput, errors, endpoint and handler latency;
-3. distributed tracing for core workflows;
-4. `live` and `ready` health checks in every service.
-
-## Alternatives considered
-
-1. Text logs only: insufficient for cross-context tracing.
-2. Full enterprise observability from day one: disproportionate overhead.
-3. No shared standard: unpredictable incident management.
+- Each service sets `OTEL_SERVICE_NAME` and exports to `OTEL_EXPORTER_OTLP_ENDPOINT=http://aspire-dashboard:18889`.
+- Instrumented surfaces: ASP.NET Core, HttpClient, EF Core / Npgsql, runtime metrics.
+- Evoluzione's in-house package `Evoluzione.TracedServiceCollection` (v10.0.0) standardises the registration boilerplate.
+- The `AddObservability()` extension is called from `DefaultApiExtensions.AddDefaultApiServices()` (`src/Shared.BuildingBlocks/Api/DefaultApiExtensions.cs` line 13).
+- Correlation IDs are propagated via W3C trace context.
 
 ## Consequences
 
-### Positive
-
-- Lower MTTR for application incidents.
-- Better visibility into bottlenecks.
-- Better long-term operational reliability.
-
-### Negative / Trade-offs
-
-- Initial instrumentation and dashboard effort.
-- Need governance for log/metric data.
-
-## Implementation impact
-
-- Define shared middleware for correlation id.
-- Standardize metric names and dimensions.
-- Build minimum dashboards for order flow.
-
-## Adoption plan
-
-1. Introduce structured logging in all contexts.
-2. Add metrics and tracing in the order flow.
-3. Extend progressively to other workflows.
-
-## References
-
-- `./0002-inter-context-communication.md`
-- `./0005-eventual-consistency-compensations.md`
-- `../architecture.md`
+- No vendor lock-in; switching exporters requires only endpoint configuration.
+- The Aspire Dashboard is for development. Production requires a real OTLP backend (Jaeger, Tempo, etc.).

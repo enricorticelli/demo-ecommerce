@@ -1,58 +1,23 @@
-# ADR-0002: Communication between bounded contexts
+# ADR-0002: Inter-Context Communication via RabbitMQ and Wolverine
 
-- Date: 2026-03-07
-- Status: Superseded
-- Decision Makers: Product/Tech Owner
-- Consulted: Project stakeholders
-- Informed: Backend/frontend team
-- Superseded by: `./0010-inter-context-communication-events-only.md`
+- Status: accepted
+- Date: 2026-04-22
 
 ## Context
 
-Business processes span multiple contexts (for example order, payment, shipping, warehouse). A consistent strategy is needed to choose between synchronous and asynchronous communication, avoiding strong coupling and ambiguous semantics.
+Bounded contexts must exchange information without compile-time coupling. Synchronous HTTP calls between services create tight temporal coupling and cascading failure risk.
 
 ## Decision
 
-Adopt a mixed communication model with explicit rules:
+All inter-context communication uses **asynchronous integration events** published to RabbitMQ and consumed via the **Wolverine Fx** messaging framework (v5.14.0, `Directory.Packages.props` lines 14–17).
 
-1. synchronous HTTP for user requests, immediate queries, and API-boundary commands;
-2. asynchronous event-driven communication for cross-context workflows and multi-step state transitions;
-3. API gateway only for routing and cross-cutting policies, never for domain orchestration;
-4. versioned and backward-compatible integration contracts.
-
-## Alternatives considered
-
-1. HTTP-only synchronous: simple at first, but fragile for resilience and temporal coupling.
-2. Event-driven only: decoupled but over-complex for simple use cases and debugging.
-3. Centralized orchestration in gateway: violates domain boundaries.
+- Events are declared as C# records in `src/Shared.BuildingBlocks/Contracts/IntegrationEvents/` and versioned with a `V1` suffix.
+- Producers publish via `IDomainEventPublisher` / `OutboxDomainEventPublisher` (see `src/Catalog.Infrastructure/Messaging/OutboxDomainEventPublisher.cs`).
+- Consumers implement Wolverine message handlers registered via `[Context]HostBuilderExtensions`.
+- RabbitMQ queue and exchange topology is configured per service (e.g., `CartHostBuilderExtensions.cs` lines 26–33).
 
 ## Consequences
 
-### Positive
-
-- Reduced temporal coupling between contexts.
-- Better resilience for distributed workflows.
-- Clearer responsibilities and ownership.
-
-### Negative / Trade-offs
-
-- Increased observability and tracing complexity.
-- Need explicit policies for retry, idempotency, and ordering.
-
-## Implementation impact
-
-- Define event guidelines in `docs/guidelines/integration-events.md`.
-- Add contract tests for cross-context APIs/events.
-- Standardize correlation id and structured logging.
-
-## Adoption plan
-
-1. Define application-domain events per context.
-2. Apply retry/idempotency policies in handlers.
-3. Monitor distributed workflows with metrics and tracing.
-
-## References
-
-- `../architecture.md`
-- `./0003-data-ownership-separate-databases.md`
-- `../guidelines/integration-events.md`
+- Services communicate without HTTP calls between bounded contexts.
+- Delivery is guaranteed by the Wolverine outbox (see ADR-0005).
+- Any new event requires a shared contract record in `Shared.BuildingBlocks.Contracts`.

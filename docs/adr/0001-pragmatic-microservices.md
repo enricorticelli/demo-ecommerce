@@ -1,57 +1,26 @@
-# ADR-0001: Pragmatic microservices architecture model
+# ADR-0001: Pragmatic Microservices via Bounded Contexts
 
-- Date: 2026-03-07
-- Status: Accepted
-- Decision Makers: Product/Tech Owner
-- Consulted: Project stakeholders
-- Informed: Backend/frontend team
+- Status: accepted
+- Date: 2026-04-22
 
 ## Context
 
-The current backend exposes mock APIs, but the solution is already organized into separated bounded contexts (`Catalog`, `Cart`, `Order`, `Payment`, `Shipping`, `Warehouse`) with a dedicated gateway. The team is small, time-to-market is critical, and expected load is medium/high.
+The system must separate business domains (Catalog, Cart, Order, Payment, Warehouse, Shipping, Communication) to allow independent deployability and clear ownership. A strict shared-database monolith would couple all domains; a full microservices mesh would add operational overhead.
 
 ## Decision
 
-Adopt a pragmatic microservices model:
+Organise the backend as **autonomous bounded contexts**, each deployed as its own ASP.NET Core service. Every context owns its domain layer, application layer, infrastructure layer, and API layer. Architecture tests (`src/Architecture.Tests.Common/CommonArchitectureTests.cs`) enforce the layer contract automatically.
 
-1. separated bounded contexts as logical deployment units;
-2. per-context data ownership;
-3. contract-first integration;
-4. infrastructure complexity introduced only when needed.
+Recognised contexts: Catalog, Cart, Order, Payment, Warehouse, Shipping, Communication.
 
-## Alternatives considered
-
-1. Modular monolith: operationally simpler, but reduces isolation and independent evolution for already separated contexts.
-2. Full enterprise microservices: maximum autonomy, but excessive overhead for a single team.
-3. Ungoverned hybrid architecture: flexible short-term, high risk of architectural inconsistency.
+Each service follows the four-layer project structure:
+- `[Context].Domain` – entities, value objects, domain rules. No framework dependencies.
+- `[Context].Application` – use cases, command/query services, repository interfaces, message handlers.
+- `[Context].Infrastructure` – EF Core DbContext, repository implementations, Wolverine wiring.
+- `[Context].Api` – ASP.NET Core minimal API endpoints.
 
 ## Consequences
 
-### Positive
-
-- Clear domain boundaries aligned with strategic DDD.
-- Per-context scalability and evolution.
-- Lower semantic coupling risk.
-
-### Negative / Trade-offs
-
-- Higher operational complexity compared to a monolith.
-- Requires high discipline on contracts, observability, and testing.
-
-## Implementation impact
-
-- Each context implements complete vertical slices (API + application + domain + infrastructure).
-- No business logic in the gateway.
-- Any cross-context architectural change requires an ADR.
-
-## Adoption plan
-
-1. Formalize operational decisions in ADR-0002 and ADR-0003.
-2. Implement first real flows in `Order`, `Payment`, `Shipping`.
-3. Extend the same governance to other contexts.
-
-## References
-
-- `../architecture.md`
-- `./0002-inter-context-communication.md`
-- `./0003-data-ownership-separate-databases.md`
+- A shared `Shared.BuildingBlocks` project (`src/Shared.BuildingBlocks/`) carries cross-cutting concerns (observability, API defaults, integration event contracts). It must stay thin.
+- Architecture tests prevent cross-context assembly references and wrong dependency directions.
+- Each context is deployable and scalable independently.

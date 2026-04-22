@@ -1,53 +1,37 @@
-# Integration Events Guidelines
+# G-EVENTS: Integration Event Conventions
 
-## Goal
+- Status: active
 
-Define clear, versioned, and resilient integration events for communication between bounded contexts.
+## Naming
 
-## Design rules
+- Event type names follow the pattern `[Subject][Verb]V[N]` where N is the version number, e.g., `ProductCreatedV1`, `OrderCompletedV1`, `StockReservedV1`.
+- Events are immutable C# records inheriting `IntegrationEventBase`.
+- All event contracts live in `src/Shared.BuildingBlocks/Contracts/IntegrationEvents/[Context]/`.
 
-1. An event represents a business fact that already happened.
-2. Event names use past tense (`OrderPlacedV1`, `PaymentAuthorizedV1`).
-3. Payload contains only what consumers need.
-4. No dependency on internal entities of other contexts.
-5. Contracts are defined in `Shared.BuildingBlocks.Contracts.IntegrationEvents.<Context>`.
-6. One event type per file.
+## Event Metadata
+
+- Every event carries `IntegrationEventMetadata` (correlation ID, causation ID, timestamp) produced by `IntegrationEventMetadataFactory`.
+- Never strip or omit metadata; it is required for deduplication and tracing (ADR-0006, ADR-0007).
 
 ## Versioning
 
-1. Every breaking change requires a new event version.
-2. Prefer backward-compatible extensions whenever possible.
-3. Deprecate old versions with an explicit plan.
+- Breaking changes (removed fields, renamed fields, type changes) require a new event version record (`V2`, etc.).
+- Old and new versions coexist until all consumers are migrated (ADR-0004).
+- Do not rename or change the type of an existing event record field.
 
-## Required metadata
+## Publishing
 
-1. `eventId` unique.
-2. `occurredAtUtc`.
-3. `correlationId` for end-to-end tracing.
-4. `sourceContext`.
+- Publish via `IDomainEventPublisher.PublishAndFlushAsync()` or `PublishBatchAndFlushAsync()` from the application layer only.
+- The Wolverine outbox ensures atomicity with the database transaction (`OutboxDomainEventPublisher`, `src/Catalog.Infrastructure/Messaging/OutboxDomainEventPublisher.cs`).
 
-## Consumer policy
+## Consuming (Handlers)
 
-1. Handlers must be idempotent by default.
-2. Use retry with backoff for transient errors.
-3. Use dead-letter queues and a replay runbook.
-4. Use structured logging with correlation id.
+- Handlers are Wolverine message handler classes in `[Context].Application/Handlers/`.
+- Every handler must check the deduplication store before processing to handle at-least-once delivery (ADR-0006).
+- Handlers must not call another bounded context's HTTP API (ADR-0010).
 
-## Producer policy
+## RabbitMQ Topology
 
-1. `Application` depends only on `IDomainEventPublisher`.
-2. Technical implementation (for example Wolverine outbox) stays in `Infrastructure`.
-3. Event publication and state persistence must happen in the same transactional boundary.
-
-## Contract testing
-
-1. Every producer publishes event schema/contract.
-2. Every consumer validates compatibility before deployment.
-
-## Related ADRs
-
-- `../adr/0010-inter-context-communication-events-only.md`
-- `../adr/0003-data-ownership-separate-databases.md`
-- `../adr/0004-contract-first-versioning.md`
-- `../adr/0005-eventual-consistency-compensations.md`
-- `../adr/0006-idempotency-deduplication.md`
+- Fanout exchanges are used for events consumed by multiple services (e.g., `order-completed` fanout, `CartHostBuilderExtensions.cs` line 26).
+- Direct queues are used for service-specific routing (e.g., `catalog-product-updated-cart`, line 28).
+- Queue and exchange names follow the pattern `[subject]-[verb]-[consumer]` in kebab-case.

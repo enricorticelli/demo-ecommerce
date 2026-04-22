@@ -1,57 +1,35 @@
-# ADR-0008: Backend test strategy for distributed architecture
+# ADR-0008: Backend Test Strategy — Unit, Integration, and Architecture Tests
 
-- Date: 2026-03-07
-- Status: Accepted
-- Decision Makers: Product/Tech Owner
-- Consulted: Project stakeholders
-- Informed: Backend/frontend team
+- Status: accepted
+- Date: 2026-04-22
 
 ## Context
 
-Moving from mock endpoints to a real backend requires safe evolution. In distributed architecture, testing must cover domain logic, local integration, and contract compatibility.
+Test coverage must catch domain logic bugs, handler correctness, and architectural drift without requiring a running infrastructure stack for every test run.
 
 ## Decision
 
-Adopt a multi-layer test strategy:
+Each bounded context has a `[Context].Tests` project that mixes three test kinds:
 
-1. unit tests on domain and application handlers;
-2. integration tests on endpoints and persistence per context;
-3. contract tests for cross-context APIs/events;
-4. selective end-to-end tests on core workflows.
+**Unit tests** (xUnit 2.9.3 + Moq 4.20.72):
+- Domain entity behaviour (e.g., `OrderDomainTests.cs`)
+- Application command/query services with mocked repositories (e.g., `OrderCommandServiceTests.cs`)
+- Mapper security checks (e.g., `OrderMapperSecurityTests.cs`)
 
-## Alternatives considered
+**Integration tests**:
+- EF Core persistence using the `Microsoft.EntityFrameworkCore.InMemory` provider (e.g., `OrderDbContextModelTests.cs`)
+- Message handler tests with mocked publishers (e.g., `OrderIntegrationHandlersTests.cs`)
 
-1. E2E only: expensive, slow, fragile for diagnosis.
-2. Unit tests only: insufficient coverage for real integrations.
-3. Ad hoc tests without strategy: unmanaged suite growth.
+**Architecture tests** (NetArchTest.Rules 1.3.2 via `src/Architecture.Tests.Common/CommonArchitectureTests.cs`):
+- All four layer projects exist.
+- Layer dependency direction is enforced at the assembly level.
+- Domain assembly has no dependency on EF Core, Wolverine, Npgsql, or ASP.NET Core.
+- No cross-context assembly references.
+- Endpoint files do not import infrastructure directly.
+- `Program.cs` does not contain low-level wiring (line 161–175).
+- Repository naming conventions (`I*Repository` / `*Repository`) are verified.
 
 ## Consequences
 
-### Positive
-
-- Reduced regressions during service evolution.
-- Higher confidence for refactoring and contract changes.
-- Fast feedback on domain and integration errors.
-
-### Negative / Trade-offs
-
-- Initial time investment for pipeline and fixtures.
-- Ongoing maintenance of contract tests.
-
-## Implementation impact
-
-- Define testing standards for each context.
-- Make existing tests buildable and reliable.
-- Introduce progressive quality gates in CI.
-
-## Adoption plan
-
-1. Make core context tests green.
-2. Add contract tests for shared APIs/events.
-3. Enable minimum quality gates in pipeline.
-
-## References
-
-- `./0004-contract-first-versioning.md`
-- `./0006-idempotency-deduplication.md`
-- `../guidelines/implementation-roadmap.md`
+- Breaking a layer boundary fails CI before review.
+- The shared `Architecture.Tests.Common` assembly is linked into every context test project, ensuring uniform enforcement.
