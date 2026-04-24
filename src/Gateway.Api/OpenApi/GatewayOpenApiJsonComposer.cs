@@ -92,6 +92,11 @@ public static class GatewayOpenApiJsonComposer
                 }
 
                 targetPathItem[method] = sourcePathItem[method]!.DeepClone();
+                if (!string.IsNullOrWhiteSpace(route.AuthorizationPolicy)
+                    && targetPathItem[method] is JsonObject operation)
+                {
+                    ApplyBearerSecurity(output, operation);
+                }
             }
 
             if (targetPathItem.Count > 0)
@@ -250,5 +255,46 @@ public static class GatewayOpenApiJsonComposer
                 }
             }
         }
+    }
+
+    private static void ApplyBearerSecurity(JsonObject document, JsonObject operation)
+    {
+        EnsureBearerSecurityScheme(document);
+        operation["security"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["Bearer"] = new JsonArray()
+            }
+        };
+    }
+
+    private static void EnsureBearerSecurityScheme(JsonObject document)
+    {
+        var components = document["components"] as JsonObject;
+        if (components is null)
+        {
+            components = new JsonObject();
+            document["components"] = components;
+        }
+
+        var securitySchemes = components["securitySchemes"] as JsonObject;
+        if (securitySchemes is null)
+        {
+            securitySchemes = new JsonObject();
+            components["securitySchemes"] = securitySchemes;
+        }
+
+        if (securitySchemes.ContainsKey("Bearer"))
+        {
+            return;
+        }
+
+        securitySchemes["Bearer"] = new JsonObject
+        {
+            ["type"] = "http",
+            ["scheme"] = "bearer",
+            ["bearerFormat"] = "opaque"
+        };
     }
 }

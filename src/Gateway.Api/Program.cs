@@ -18,6 +18,8 @@ var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseCors("default");
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseGatewayOpenApi(routes, clusters);
 app.MapGatewayOperationalEndpoints();

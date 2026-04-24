@@ -49,6 +49,26 @@ services:
       timeout: 5s
       retries: 20
 
+  keycloak:
+    <<: *container-logging
+    image: quay.io/keycloak/keycloak:26.6.1
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HEALTH_ENABLED: "true"
+      GATEWAY_BACKOFFICE_CLIENT_SECRET: ${GATEWAY_BACKOFFICE_CLIENT_SECRET:-local-dev-gateway-secret}
+    ports:
+      - "127.0.0.1:${KEYCLOAK_HOST_PORT:-18081}:8080"
+    volumes:
+      - ./infrastructure/keycloak:/opt/keycloak/data/import:ro
+      - keycloak-data:/opt/keycloak/data
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 bash -c ':> /dev/tcp/127.0.0.1/8080' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
   aspire-dashboard:
     <<: *container-logging
     image: mcr.microsoft.com/dotnet/aspire-dashboard:13
@@ -195,10 +215,18 @@ services:
       - .env
     environment:
       OTEL_SERVICE_NAME: gateway-api
+      Gateway__Auth__Authority: http://keycloak:8080/realms/demo-ecommerce
+      Gateway__Auth__Audience: gateway-backoffice
+      Gateway__Auth__ClientId: gateway-backoffice
+      Gateway__Auth__ClientSecret: ${GATEWAY_BACKOFFICE_CLIENT_SECRET:-local-dev-gateway-secret}
+      Gateway__Auth__RequireHttpsMetadata: "false"
+      Gateway__Auth__IntrospectionCacheSeconds: 45
     ports:
       - "127.0.0.1:${GATEWAY_HOST_PORT:-18080}:8080"
     depends_on:
       <<: *api-infra-dependencies
+      keycloak:
+        condition: service_healthy
       catalog-api:
         condition: service_healthy
       cart-api:
@@ -240,3 +268,4 @@ services:
 volumes:
   postgres-data:
   rabbitmq-data:
+  keycloak-data:

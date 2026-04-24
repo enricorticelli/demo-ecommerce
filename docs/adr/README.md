@@ -15,6 +15,7 @@ This folder stores Architecture Decision Records.
 - [ADR-0008 Backend test strategy — unit, integration, and architecture tests](./0008-backend-test-strategy.md)
 - [ADR-0009 Event-driven email via a dedicated Communication service](./0009-event-driven-email-communication-service.md)
 - [ADR-0010 No synchronous HTTP between bounded contexts](./0010-inter-context-communication-events-only.md)
+- [ADR-0011 Gateway authentication with Keycloak introspection and capabilities](./0011-gateway-keycloak-introspection-capability-security.md)
 
 ## ADR Status Rules
 

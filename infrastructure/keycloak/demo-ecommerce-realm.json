@@ -1,0 +1,147 @@
+{
+  "realm": "demo-ecommerce",
+  "enabled": true,
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "clients": [
+    {
+      "clientId": "backoffice-web",
+      "name": "Backoffice Web",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "attributes": {
+        "use.lightweight.access.token": "true"
+      },
+      "redirectUris": [
+        "http://localhost:13000/*"
+      ],
+      "webOrigins": [
+        "http://localhost:13000"
+      ],
+      "protocolMappers": [
+        {
+          "name": "gateway backoffice audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "included.client.audience": "gateway-backoffice"
+          }
+        },
+        {
+          "name": "backoffice capabilities introspection only",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "false",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false",
+            "introspection.token.claim": "true",
+            "multivalued": "true",
+            "claim.name": "resource_access.gateway-backoffice.roles",
+            "jsonType.label": "String",
+            "usermodel.clientRoleMapping.clientId": "gateway-backoffice"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "gateway-backoffice",
+      "name": "Gateway Backoffice Resource Server",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": false,
+      "protocol": "openid-connect",
+      "secret": "${GATEWAY_BACKOFFICE_CLIENT_SECRET}",
+      "attributes": {
+        "use.lightweight.access.token": "true"
+      },
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "defaultClientScopes": [
+        "web-origins",
+        "acr"
+      ],
+      "optionalClientScopes": [],
+      "protocolMappers": [
+        {
+          "name": "backoffice capabilities introspection only",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "false",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false",
+            "introspection.token.claim": "true",
+            "multivalued": "true",
+            "claim.name": "resource_access.gateway-backoffice.roles",
+            "jsonType.label": "String",
+            "usermodel.clientRoleMapping.clientId": "gateway-backoffice"
+          }
+        }
+      ]
+    }
+  ],
+  "roles": {
+    "client": {
+      "gateway-backoffice": [
+        {
+          "name": "catalog.products.read",
+          "description": "Read backoffice catalog products"
+        },
+        {
+          "name": "catalog.products.write",
+          "description": "Write backoffice catalog products"
+        },
+        {
+          "name": "catalog.brands.read",
+          "description": "Read backoffice catalog brands"
+        },
+        {
+          "name": "catalog.brands.write",
+          "description": "Write backoffice catalog brands"
+        },
+        {
+          "name": "catalog.categories.read",
+          "description": "Read backoffice catalog categories"
+        },
+        {
+          "name": "catalog.categories.write",
+          "description": "Write backoffice catalog categories"
+        },
+        {
+          "name": "catalog.collections.read",
+          "description": "Read backoffice catalog collections"
+        },
+        {
+          "name": "catalog.collections.write",
+          "description": "Write backoffice catalog collections"
+        },
+        {
+          "name": "warehouse.stock.read",
+          "description": "Read warehouse stock"
+        },
+        {
+          "name": "warehouse.stock.write",
+          "description": "Write warehouse stock"
+        },
+        {
+          "name": "catalog.*",
+          "description": "All catalog backoffice capabilities"
+        },
+        {
+          "name": "*",
+          "description": "All gateway backoffice capabilities"
+        }
+      ]
+    }
+  }
+}

@@ -1,3 +1,4 @@
+using Gateway.Api.Security;
 using Yarp.ReverseProxy.Configuration;
 
 namespace Gateway.Api.Configuration;
@@ -13,14 +14,22 @@ public static class GatewayProxyConfiguration
         CreateContextRoute("store-catalog-products-best-sellers-route", "catalog-cluster", "store", "catalog", "/api/store/catalog/v1/products/best-sellers", "GET"),
 
         // backoffice/catalog
-        CreateContextRoute("backoffice-catalog-products-collection-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/products", "GET", "POST"),
-        CreateContextRoute("backoffice-catalog-products-item-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/products/{id}", "GET", "PUT", "DELETE"),
-        CreateContextRoute("backoffice-catalog-brands-collection-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/brands", "GET", "POST"),
-        CreateContextRoute("backoffice-catalog-brands-item-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/brands/{id}", "GET", "PUT", "DELETE"),
-        CreateContextRoute("backoffice-catalog-categories-collection-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/categories", "GET", "POST"),
-        CreateContextRoute("backoffice-catalog-categories-item-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/categories/{id}", "GET", "PUT", "DELETE"),
-        CreateContextRoute("backoffice-catalog-collections-collection-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/collections", "GET", "POST"),
-        CreateContextRoute("backoffice-catalog-collections-item-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/collections/{id}", "GET", "PUT", "DELETE"),
+        CreateSecuredContextRoute("backoffice-catalog-products-collection-read-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/products", CapabilitySecurity.CatalogProductsRead, "GET"),
+        CreateSecuredContextRoute("backoffice-catalog-products-collection-write-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/products", CapabilitySecurity.CatalogProductsWrite, "POST"),
+        CreateSecuredContextRoute("backoffice-catalog-products-item-read-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/products/{id}", CapabilitySecurity.CatalogProductsRead, "GET"),
+        CreateSecuredContextRoute("backoffice-catalog-products-item-write-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/products/{id}", CapabilitySecurity.CatalogProductsWrite, "PUT", "DELETE"),
+        CreateSecuredContextRoute("backoffice-catalog-brands-collection-read-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/brands", CapabilitySecurity.CatalogBrandsRead, "GET"),
+        CreateSecuredContextRoute("backoffice-catalog-brands-collection-write-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/brands", CapabilitySecurity.CatalogBrandsWrite, "POST"),
+        CreateSecuredContextRoute("backoffice-catalog-brands-item-read-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/brands/{id}", CapabilitySecurity.CatalogBrandsRead, "GET"),
+        CreateSecuredContextRoute("backoffice-catalog-brands-item-write-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/brands/{id}", CapabilitySecurity.CatalogBrandsWrite, "PUT", "DELETE"),
+        CreateSecuredContextRoute("backoffice-catalog-categories-collection-read-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/categories", CapabilitySecurity.CatalogCategoriesRead, "GET"),
+        CreateSecuredContextRoute("backoffice-catalog-categories-collection-write-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/categories", CapabilitySecurity.CatalogCategoriesWrite, "POST"),
+        CreateSecuredContextRoute("backoffice-catalog-categories-item-read-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/categories/{id}", CapabilitySecurity.CatalogCategoriesRead, "GET"),
+        CreateSecuredContextRoute("backoffice-catalog-categories-item-write-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/categories/{id}", CapabilitySecurity.CatalogCategoriesWrite, "PUT", "DELETE"),
+        CreateSecuredContextRoute("backoffice-catalog-collections-collection-read-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/collections", CapabilitySecurity.CatalogCollectionsRead, "GET"),
+        CreateSecuredContextRoute("backoffice-catalog-collections-collection-write-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/collections", CapabilitySecurity.CatalogCollectionsWrite, "POST"),
+        CreateSecuredContextRoute("backoffice-catalog-collections-item-read-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/collections/{id}", CapabilitySecurity.CatalogCollectionsRead, "GET"),
+        CreateSecuredContextRoute("backoffice-catalog-collections-item-write-route", "catalog-cluster", "backoffice", "catalog", "/api/backoffice/catalog/v1/collections/{id}", CapabilitySecurity.CatalogCollectionsWrite, "PUT", "DELETE"),
 
         // store/cart
         CreateContextRoute("store-cart-get-route", "cart-cluster", "store", "cart", "/api/store/cart/v1/carts/{cartId}", "GET"),
@@ -44,8 +53,8 @@ public static class GatewayProxyConfiguration
         CreateContextRoute("store-shipping-by-order-route", "shipping-cluster", "store", "shipping", "/api/store/shipping/v1/shipments/orders/{orderId}", "GET"),
 
         // backoffice/warehouse
-        CreateContextRoute("backoffice-warehouse-query-route", "warehouse-cluster", "backoffice", "warehouse", "/api/backoffice/warehouse/v1/stock/query", "POST"),
-        CreateContextRoute("backoffice-warehouse-upsert-route", "warehouse-cluster", "backoffice", "warehouse", "/api/backoffice/warehouse/v1/stock", "POST")
+        CreateSecuredContextRoute("backoffice-warehouse-query-route", "warehouse-cluster", "backoffice", "warehouse", "/api/backoffice/warehouse/v1/stock/query", CapabilitySecurity.WarehouseStockRead, "POST"),
+        CreateSecuredContextRoute("backoffice-warehouse-upsert-route", "warehouse-cluster", "backoffice", "warehouse", "/api/backoffice/warehouse/v1/stock", CapabilitySecurity.WarehouseStockWrite, "POST")
     ];
 
     public static IReadOnlyList<ClusterConfig> CreateClusters() =>
@@ -66,10 +75,42 @@ public static class GatewayProxyConfiguration
         string matchPath,
         params string[] methods)
     {
+        return BuildContextRoute(routeId, clusterId, context, service, matchPath, authorizationPolicy: null, methods);
+    }
+
+    private static RouteConfig CreateSecuredContextRoute(
+        string routeId,
+        string clusterId,
+        string context,
+        string service,
+        string matchPath,
+        string requiredCapability,
+        params string[] methods)
+    {
+        return BuildContextRoute(
+            routeId,
+            clusterId,
+            context,
+            service,
+            matchPath,
+            CapabilitySecurity.PolicyName(requiredCapability),
+            methods);
+    }
+
+    private static RouteConfig BuildContextRoute(
+        string routeId,
+        string clusterId,
+        string context,
+        string service,
+        string matchPath,
+        string? authorizationPolicy,
+        params string[] methods)
+    {
         return new RouteConfig
         {
             RouteId = routeId,
             ClusterId = clusterId,
+            AuthorizationPolicy = authorizationPolicy,
             Match = new RouteMatch { Path = matchPath, Methods = methods },
             Transforms =
             [
