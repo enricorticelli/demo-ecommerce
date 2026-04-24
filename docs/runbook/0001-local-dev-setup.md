@@ -30,6 +30,7 @@ All services should show `healthy` after the configured health check intervals.
 |--------------------|---------------------------------------------|
 | API Gateway        | http://localhost:${GATEWAY_HOST_PORT}        |
 | Frontend (web)     | http://localhost:${FRONTEND_WEB_HOST_PORT}   |
+| Backoffice (auto)  | http://localhost:${BACKOFFICE_WEB_HOST_PORT} |
 | RabbitMQ UI        | http://localhost:${RABBITMQ_MANAGEMENT_HOST_PORT} |
 | Keycloak Admin     | http://localhost:${KEYCLOAK_HOST_PORT}             |
 | Aspire Dashboard   | http://localhost:${ASPIRE_DASHBOARD_HOST_PORT} |

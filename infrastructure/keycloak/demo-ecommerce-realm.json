@@ -13,13 +13,18 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "attributes": {
-        "use.lightweight.access.token": "true"
+        "use.lightweight.access.token": "true",
+          "post.logout.redirect.uris": "+##http://localhost:13001##http://localhost:13001/##http://127.0.0.1:13001##http://127.0.0.1:13001/"
       },
       "redirectUris": [
-        "http://localhost:13000/*"
+        "http://localhost:13000/*",
+        "http://localhost:13001/*",
+        "http://127.0.0.1:13001/*"
       ],
       "webOrigins": [
-        "http://localhost:13000"
+        "http://localhost:13000",
+        "http://localhost:13001",
+        "http://127.0.0.1:13001"
       ],
       "protocolMappers": [
         {

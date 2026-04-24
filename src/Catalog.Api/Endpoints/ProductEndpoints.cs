@@ -1,5 +1,6 @@
 using Catalog.Api.Contracts;
 using Catalog.Api.Contracts.Requests;
+using Catalog.Api.Contracts.Responses;
 using Catalog.Api.Mappers;
 using Catalog.Application.Abstractions.Commands;
 using Catalog.Application.Abstractions.Queries;
@@ -24,11 +25,28 @@ public static class ProductEndpoints
         var backofficeGroup = app.MapGroup(CatalogRoutes.BackofficeProducts)
             .WithTags("Catalog");
 
-        backofficeGroup.MapGet("/", GetProducts).WithName("BackofficeGetProducts");
-        backofficeGroup.MapGet("/{id:guid}", GetProductById).WithName("BackofficeGetProductById");
-        backofficeGroup.MapPost("/", CreateProduct).WithName("BackofficeCreateProduct");
-        backofficeGroup.MapPut("/{id:guid}", UpdateProduct).WithName("BackofficeUpdateProduct");
-        backofficeGroup.MapDelete("/{id:guid}", DeleteProduct).WithName("BackofficeDeleteProduct");
+        backofficeGroup.MapGet("/", GetProducts)
+            .WithName("BackofficeGetProducts")
+            .Produces<IEnumerable<ProductResponse>>();
+        backofficeGroup.MapGet("/{id:guid}", GetProductById)
+            .WithName("BackofficeGetProductById")
+            .Produces<ProductResponse>()
+            .ProducesProblem(StatusCodes.Status404NotFound);
+        backofficeGroup.MapPost("/", CreateProduct)
+            .WithName("BackofficeCreateProduct")
+            .Accepts<CreateProductRequest>("application/json")
+            .Produces<ProductResponse>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+        backofficeGroup.MapPut("/{id:guid}", UpdateProduct)
+            .WithName("BackofficeUpdateProduct")
+            .Accepts<UpdateProductRequest>("application/json")
+            .Produces<ProductResponse>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+        backofficeGroup.MapDelete("/{id:guid}", DeleteProduct)
+            .WithName("BackofficeDeleteProduct")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return storeGroup;
     }

@@ -1,5 +1,6 @@
 using Catalog.Api.Contracts;
 using Catalog.Api.Contracts.Requests;
+using Catalog.Api.Contracts.Responses;
 using Catalog.Api.Mappers;
 using Catalog.Application.Abstractions.Commands;
 using Catalog.Application.Abstractions.Queries;
@@ -16,11 +17,28 @@ public static class CategoryEndpoints
         var backofficeGroup = app.MapGroup(CatalogRoutes.BackofficeCategories)
             .WithTags("Catalog");
 
-        backofficeGroup.MapGet("/", GetCategories).WithName("BackofficeGetCategories");
-        backofficeGroup.MapGet("/{id:guid}", GetCategoryById).WithName("BackofficeGetCategoryById");
-        backofficeGroup.MapPost("/", CreateCategory).WithName("BackofficeCreateCategory");
-        backofficeGroup.MapPut("/{id:guid}", UpdateCategory).WithName("BackofficeUpdateCategory");
-        backofficeGroup.MapDelete("/{id:guid}", DeleteCategory).WithName("BackofficeDeleteCategory");
+        backofficeGroup.MapGet("/", GetCategories)
+            .WithName("BackofficeGetCategories")
+            .Produces<IEnumerable<CategoryResponse>>();
+        backofficeGroup.MapGet("/{id:guid}", GetCategoryById)
+            .WithName("BackofficeGetCategoryById")
+            .Produces<CategoryResponse>()
+            .ProducesProblem(StatusCodes.Status404NotFound);
+        backofficeGroup.MapPost("/", CreateCategory)
+            .WithName("BackofficeCreateCategory")
+            .Accepts<CreateCategoryRequest>("application/json")
+            .Produces<CategoryResponse>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+        backofficeGroup.MapPut("/{id:guid}", UpdateCategory)
+            .WithName("BackofficeUpdateCategory")
+            .Accepts<UpdateCategoryRequest>("application/json")
+            .Produces<CategoryResponse>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+        backofficeGroup.MapDelete("/{id:guid}", DeleteCategory)
+            .WithName("BackofficeDeleteCategory")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return backofficeGroup;
     }

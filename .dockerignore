@@ -1,0 +1,8 @@
+.git
+.github
+.vs
+**/node_modules
+**/.astro
+**/dist
+**/bin
+**/obj

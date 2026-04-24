@@ -1,0 +1,9 @@
+[class*='RaSaveButton-root'].MuiButton-containedPrimary.Mui-disabled {
+  color: rgba(4, 20, 23, 0.92) !important;
+  background-color: rgba(82, 201, 212, 0.55) !important;
+  font-weight: 700 !important;
+}
+
+[class*='RaSaveButton-root'].MuiButton-containedPrimary.Mui-disabled .MuiSvgIcon-root {
+  color: inherit !important;
+}

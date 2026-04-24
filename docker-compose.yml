@@ -265,6 +265,39 @@ services:
       timeout: 3s
       retries: 20
 
+  backoffice-web:
+    <<: *container-logging
+    build:
+      context: .
+      dockerfile: frontend/backoffice/Dockerfile
+    env_file:
+      - .env
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 3001"
+    environment:
+      VITE_BACKOFFICE_API_ENTRYPOINT: http://localhost:${GATEWAY_HOST_PORT:-18080}
+      VITE_BACKOFFICE_OPENAPI_URL: http://localhost:${GATEWAY_HOST_PORT:-18080}/openapi/backoffice.json
+      VITE_KEYCLOAK_AUTHORITY: http://localhost:${KEYCLOAK_HOST_PORT:-18081}/realms/demo-ecommerce
+      VITE_KEYCLOAK_CLIENT_ID: backoffice-web
+      BACKOFFICE_API_ENTRYPOINT: http://localhost:${GATEWAY_HOST_PORT:-18080}
+      BACKOFFICE_OPENAPI_URL: http://localhost:${GATEWAY_HOST_PORT:-18080}/openapi/backoffice.json
+      BACKOFFICE_KEYCLOAK_AUTHORITY: http://localhost:${KEYCLOAK_HOST_PORT:-18081}/realms/demo-ecommerce
+      BACKOFFICE_KEYCLOAK_CLIENT_ID: backoffice-web
+    volumes:
+      - ./frontend/backoffice:/app
+      - /app/node_modules
+    ports:
+      - "127.0.0.1:${BACKOFFICE_WEB_HOST_PORT:-13001}:3001"
+    depends_on:
+      gateway-api:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:3001 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+
 volumes:
   postgres-data:
   rabbitmq-data:

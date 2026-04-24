@@ -1,5 +1,6 @@
 using Catalog.Api.Contracts;
 using Catalog.Api.Contracts.Requests;
+using Catalog.Api.Contracts.Responses;
 using Catalog.Api.Mappers;
 using Catalog.Application.Abstractions.Commands;
 using Catalog.Application.Abstractions.Queries;
@@ -16,11 +17,28 @@ public static class BrandEndpoints
         var backofficeGroup = app.MapGroup(CatalogRoutes.BackofficeBrands)
             .WithTags("Catalog");
 
-        backofficeGroup.MapGet("/", GetBrands).WithName("BackofficeGetBrands");
-        backofficeGroup.MapGet("/{id:guid}", GetBrandById).WithName("BackofficeGetBrandById");
-        backofficeGroup.MapPost("/", CreateBrand).WithName("BackofficeCreateBrand");
-        backofficeGroup.MapPut("/{id:guid}", UpdateBrand).WithName("BackofficeUpdateBrand");
-        backofficeGroup.MapDelete("/{id:guid}", DeleteBrand).WithName("BackofficeDeleteBrand");
+        backofficeGroup.MapGet("/", GetBrands)
+            .WithName("BackofficeGetBrands")
+            .Produces<IEnumerable<BrandResponse>>();
+        backofficeGroup.MapGet("/{id:guid}", GetBrandById)
+            .WithName("BackofficeGetBrandById")
+            .Produces<BrandResponse>()
+            .ProducesProblem(StatusCodes.Status404NotFound);
+        backofficeGroup.MapPost("/", CreateBrand)
+            .WithName("BackofficeCreateBrand")
+            .Accepts<CreateBrandRequest>("application/json")
+            .Produces<BrandResponse>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+        backofficeGroup.MapPut("/{id:guid}", UpdateBrand)
+            .WithName("BackofficeUpdateBrand")
+            .Accepts<UpdateBrandRequest>("application/json")
+            .Produces<BrandResponse>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+        backofficeGroup.MapDelete("/{id:guid}", DeleteBrand)
+            .WithName("BackofficeDeleteBrand")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return backofficeGroup;
     }

@@ -1,5 +1,6 @@
 using Catalog.Api.Contracts;
 using Catalog.Api.Contracts.Requests;
+using Catalog.Api.Contracts.Responses;
 using Catalog.Api.Mappers;
 using Catalog.Application.Abstractions.Commands;
 using Catalog.Application.Abstractions.Queries;
@@ -16,11 +17,28 @@ public static class CollectionEndpoints
         var backofficeGroup = app.MapGroup(CatalogRoutes.BackofficeCollections)
             .WithTags("Catalog");
 
-        backofficeGroup.MapGet("/", GetCollections).WithName("BackofficeGetCollections");
-        backofficeGroup.MapGet("/{id:guid}", GetCollectionById).WithName("BackofficeGetCollectionById");
-        backofficeGroup.MapPost("/", CreateCollection).WithName("BackofficeCreateCollection");
-        backofficeGroup.MapPut("/{id:guid}", UpdateCollection).WithName("BackofficeUpdateCollection");
-        backofficeGroup.MapDelete("/{id:guid}", DeleteCollection).WithName("BackofficeDeleteCollection");
+        backofficeGroup.MapGet("/", GetCollections)
+            .WithName("BackofficeGetCollections")
+            .Produces<IEnumerable<CollectionResponse>>();
+        backofficeGroup.MapGet("/{id:guid}", GetCollectionById)
+            .WithName("BackofficeGetCollectionById")
+            .Produces<CollectionResponse>()
+            .ProducesProblem(StatusCodes.Status404NotFound);
+        backofficeGroup.MapPost("/", CreateCollection)
+            .WithName("BackofficeCreateCollection")
+            .Accepts<CreateCollectionRequest>("application/json")
+            .Produces<CollectionResponse>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+        backofficeGroup.MapPut("/{id:guid}", UpdateCollection)
+            .WithName("BackofficeUpdateCollection")
+            .Accepts<UpdateCollectionRequest>("application/json")
+            .Produces<CollectionResponse>()
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+        backofficeGroup.MapDelete("/{id:guid}", DeleteCollection)
+            .WithName("BackofficeDeleteCollection")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return backofficeGroup;
     }
