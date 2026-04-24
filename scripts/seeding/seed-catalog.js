@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { URLSearchParams } = require('url');
 
 const DEFAULT_COUNTS = {
   brands: 40,
@@ -10,9 +11,11 @@ const DEFAULT_COUNTS = {
   products: 2000
 };
 
+const FETCH_PAGE_SIZE = 250;
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const envFromFile = loadEnvFile(path.resolve(process.cwd(), '.env'));
+  const envFromFile = loadRuntimeEnv();
   const resolvedGatewayPort =
     args.gatewayPort ||
     envFromFile.GATEWAY_HOST_PORT ||
@@ -32,12 +35,14 @@ async function main() {
   const dryRun = Boolean(args.dryRun);
   const verbose = Boolean(args.verbose);
   const correlationPrefix = `seed-catalog-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const auth = createSeedAuth({ args, envFromFile, timeoutMs, verbose });
 
   const http = createHttpClient({
     baseUrl,
     timeoutMs,
     correlationPrefix,
-    verbose
+    verbose,
+    auth
   });
 
   const startedAt = Date.now();
@@ -185,10 +190,48 @@ function parseArgs(argv) {
       continue;
     }
 
+    if (token === '--auth-mode') {
+      args.authMode = argv[++i];
+      continue;
+    }
+
+    if (token === '--bearer-token') {
+      args.bearerToken = argv[++i];
+      continue;
+    }
+
+    if (token === '--keycloak-authority') {
+      args.keycloakAuthority = argv[++i];
+      continue;
+    }
+
+    if (token === '--client-id') {
+      args.clientId = argv[++i];
+      continue;
+    }
+
+    if (token === '--client-secret') {
+      args.clientSecret = argv[++i];
+      continue;
+    }
+
     throw new Error(`Unknown argument: ${token}`);
   }
 
   return args;
+}
+
+function loadRuntimeEnv() {
+  const candidates = [
+    path.resolve(__dirname, '..', '..', '.env'),
+    path.resolve(process.cwd(), '.env')
+  ];
+
+  const uniqueCandidates = [...new Set(candidates)];
+  return uniqueCandidates.reduce((merged, filePath) => ({
+    ...merged,
+    ...loadEnvFile(filePath)
+  }), {});
 }
 
 function loadEnvFile(filePath) {
@@ -223,7 +266,126 @@ function loadEnvFile(filePath) {
   return result;
 }
 
-function createHttpClient({ baseUrl, timeoutMs, correlationPrefix, verbose }) {
+function createSeedAuth({ args, envFromFile, timeoutMs, verbose }) {
+  const mode = normalizeAuthMode(
+    args.authMode
+    || process.env.SEED_AUTH_MODE
+    || envFromFile.SEED_AUTH_MODE
+    || 'auto'
+  );
+
+  const staticToken = firstNonEmpty(
+    args.bearerToken,
+    process.env.SEED_BEARER_TOKEN,
+    envFromFile.SEED_BEARER_TOKEN
+  );
+
+  const authority = normalizeBaseUrl(firstNonEmpty(
+    args.keycloakAuthority,
+    process.env.SEED_KEYCLOAK_AUTHORITY,
+    envFromFile.SEED_KEYCLOAK_AUTHORITY,
+    process.env.BACKOFFICE_KEYCLOAK_AUTHORITY,
+    envFromFile.BACKOFFICE_KEYCLOAK_AUTHORITY
+  ));
+
+  const clientId = firstNonEmpty(
+    args.clientId,
+    process.env.SEED_CLIENT_ID,
+    envFromFile.SEED_CLIENT_ID,
+    process.env.Gateway__Auth__ClientId,
+    envFromFile.Gateway__Auth__ClientId,
+    'gateway-backoffice'
+  );
+
+  const clientSecret = firstNonEmpty(
+    args.clientSecret,
+    process.env.SEED_CLIENT_SECRET,
+    envFromFile.SEED_CLIENT_SECRET,
+    process.env.Gateway__Auth__ClientSecret,
+    envFromFile.Gateway__Auth__ClientSecret,
+    process.env.GATEWAY_BACKOFFICE_CLIENT_SECRET,
+    envFromFile.GATEWAY_BACKOFFICE_CLIENT_SECRET
+  );
+
+  let cachedToken = staticToken || null;
+  let cachedTokenExpiresAt = staticToken ? Number.POSITIVE_INFINITY : 0;
+
+  return {
+    mode,
+    clientId,
+    hasConfiguration() {
+      return Boolean(staticToken || (authority && clientId && clientSecret));
+    },
+    async getAuthorizationHeader() {
+      if (mode === 'off') {
+        return null;
+      }
+
+      const token = await this.getToken();
+      return token ? `Bearer ${token}` : null;
+    },
+    async getToken() {
+      if (mode === 'off') {
+        return null;
+      }
+
+      if (cachedToken && cachedTokenExpiresAt > Date.now() + 5000) {
+        return cachedToken;
+      }
+
+      if (staticToken) {
+        cachedToken = staticToken;
+        cachedTokenExpiresAt = Number.POSITIVE_INFINITY;
+        return cachedToken;
+      }
+
+      if (!authority || !clientId || !clientSecret) {
+        return null;
+      }
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+      try {
+        const tokenEndpoint = `${authority}/protocol/openid-connect/token`;
+        const body = new URLSearchParams({
+          grant_type: 'client_credentials',
+          client_id: clientId,
+          client_secret: clientSecret
+        });
+
+        logVerbose(verbose, `[auth] POST ${tokenEndpoint} (client_credentials)`);
+
+        const response = await fetch(tokenEndpoint, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/x-www-form-urlencoded'
+          },
+          body: body.toString(),
+          signal: controller.signal
+        });
+
+        if (!response.ok) {
+          const errorBody = await safeReadBody(response);
+          throw new Error(`Token request failed with ${response.status}: ${errorBody}`);
+        }
+
+        const payload = await response.json();
+        if (!payload?.access_token) {
+          throw new Error('Token request succeeded without access_token.');
+        }
+
+        cachedToken = payload.access_token;
+        cachedTokenExpiresAt = Date.now() + (toInt(payload.expires_in, 60) * 1000);
+        return cachedToken;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+  };
+}
+
+function createHttpClient({ baseUrl, timeoutMs, correlationPrefix, verbose, auth }) {
   let counter = 0;
 
   return {
@@ -232,6 +394,10 @@ function createHttpClient({ baseUrl, timeoutMs, correlationPrefix, verbose }) {
       const correlationId = `${correlationPrefix}-${++counter}`;
       const maxRetries = 4;
       const baseDelayMs = 250;
+      let authorizationHeader = auth.mode === 'required'
+        ? await requireAuthorizationHeader(auth, method, pathName)
+        : null;
+      let authRetryUsed = false;
 
       for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
         const controller = new AbortController();
@@ -243,6 +409,9 @@ function createHttpClient({ baseUrl, timeoutMs, correlationPrefix, verbose }) {
           };
           if (body !== undefined) {
             headers['content-type'] = 'application/json';
+          }
+          if (authorizationHeader) {
+            headers.authorization = authorizationHeader;
           }
 
           logVerbose(verbose, `[http] ${method} ${url} (attempt ${attempt})`);
@@ -257,8 +426,32 @@ function createHttpClient({ baseUrl, timeoutMs, correlationPrefix, verbose }) {
           clearTimeout(timer);
 
           if (!response.ok) {
+            const shouldRetryWithAuth =
+              !authorizationHeader
+              && !authRetryUsed
+              && auth.mode !== 'off'
+              && (response.status === 401 || response.status === 403);
+
+            if (shouldRetryWithAuth) {
+              authRetryUsed = true;
+              authorizationHeader = await auth.getAuthorizationHeader();
+
+              if (authorizationHeader) {
+                logVerbose(verbose, `[auth] Retrying ${method} ${pathName} with bearer token after ${response.status}`);
+                continue;
+              }
+
+              if (auth.mode === 'required') {
+                throw new Error(`Authentication required for ${method} ${pathName}, but no seed JWT configuration is available.`);
+              }
+            }
+
             const errorBody = await safeReadBody(response);
             const shouldRetry = isTransientStatus(response.status);
+
+            if ((response.status === 401 || response.status === 403) && authorizationHeader) {
+              throw new Error(`${method} ${pathName} failed with ${response.status}: ${errorBody} (JWT accepted by the client may be missing required Keycloak capability roles)`);
+            }
 
             if (shouldRetry && attempt < maxRetries) {
               await delay(backoffMs(baseDelayMs, attempt));
@@ -292,12 +485,22 @@ function createHttpClient({ baseUrl, timeoutMs, correlationPrefix, verbose }) {
   };
 }
 
+async function requireAuthorizationHeader(auth, method, pathName) {
+  const authorizationHeader = await auth.getAuthorizationHeader();
+
+  if (authorizationHeader) {
+    return authorizationHeader;
+  }
+
+  throw new Error(`Authentication is required for ${method} ${pathName}, but no bearer token or Keycloak client credentials were configured.`);
+}
+
 async function fetchExisting(http) {
   const [brands, categories, collections, products] = await Promise.all([
-    http.request('GET', '/api/backoffice/catalog/v1/brands'),
-    http.request('GET', '/api/backoffice/catalog/v1/categories'),
-    http.request('GET', '/api/backoffice/catalog/v1/collections'),
-    http.request('GET', '/api/backoffice/catalog/v1/products')
+    fetchAll(http, '/api/backoffice/catalog/v1/brands'),
+    fetchAll(http, '/api/backoffice/catalog/v1/categories'),
+    fetchAll(http, '/api/backoffice/catalog/v1/collections'),
+    fetchAll(http, '/api/backoffice/catalog/v1/products')
   ]);
 
   return {
@@ -306,6 +509,58 @@ async function fetchExisting(http) {
     collections: Array.isArray(collections) ? collections : [],
     products: Array.isArray(products) ? products : []
   };
+}
+
+async function fetchAll(http, pathName) {
+  const items = [];
+  const seenKeys = new Set();
+
+  for (let offset = 0; ; offset += FETCH_PAGE_SIZE) {
+    const separator = pathName.includes('?') ? '&' : '?';
+    const page = await http.request('GET', `${pathName}${separator}limit=${FETCH_PAGE_SIZE}&offset=${offset}`);
+
+    if (!Array.isArray(page) || page.length === 0) {
+      return items;
+    }
+
+    let added = 0;
+    for (const entry of page) {
+      const key = itemKey(entry);
+      if (seenKeys.has(key)) {
+        continue;
+      }
+
+      seenKeys.add(key);
+      items.push(entry);
+      added += 1;
+    }
+
+    if (page.length > FETCH_PAGE_SIZE && offset === 0) {
+      return items;
+    }
+
+    if (added === 0) {
+      return items;
+    }
+
+    if (page.length < FETCH_PAGE_SIZE) {
+      return items;
+    }
+  }
+}
+
+function itemKey(entry) {
+  if (entry && typeof entry === 'object') {
+    if (entry.id) {
+      return `id:${entry.id}`;
+    }
+
+    if (entry.slug) {
+      return `slug:${entry.slug}`;
+    }
+  }
+
+  return JSON.stringify(entry);
 }
 
 async function createBrands(http, brands, concurrency, report) {
@@ -470,6 +725,30 @@ function normalizeBaseUrl(value) {
 function toInt(value, fallbackValue) {
   const parsed = Number.parseInt(String(value), 10);
   return Number.isFinite(parsed) ? parsed : fallbackValue;
+}
+
+function firstNonEmpty(...values) {
+  for (const value of values) {
+    if (value === undefined || value === null) {
+      continue;
+    }
+
+    const trimmed = String(value).trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+
+  return undefined;
+}
+
+function normalizeAuthMode(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (normalized === 'off' || normalized === 'required' || normalized === 'auto') {
+    return normalized;
+  }
+
+  throw new Error(`Unsupported auth mode: ${value}`);
 }
 
 function toMoney(value) {

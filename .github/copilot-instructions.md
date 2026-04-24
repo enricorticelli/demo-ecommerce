@@ -1,9 +1,10 @@
 # Copilot Instructions - E-commerce
 
-Le istruzioni operative condivise sono centralizzate in:
-- `docs/ai.md`
-
-## Lettura obbligatoria
-Prima di modificare codice, leggere i documenti in `docs/`.
-
-Applicare modifiche minime ma complete, senza violare Clean Architecture/SOLID e senza bypass dei confini tra bounded context.
+- Follow AGENTS.md as canonical contract.
+- Read ADRs before coding.
+- Respect rules in docs/rules/ as non-negotiable.
+- Follow conventions in docs/guidelines/.
+- Check docs/glossary/ for unfamiliar terms.
+- Prefer small diffs.
+- If a new architectural choice appears, draft a new ADR.
+- If a new convention, rule, procedure, or term emerges, draft the matching doc.

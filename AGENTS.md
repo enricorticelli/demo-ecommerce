@@ -1,9 +1,9 @@
 # AGENTS.md - E-commerce
 
-Le regole operative per agent automatici sono centralizzate in:
-- `docs/ai.md`
-
-## Lettura obbligatoria
-Prima di qualsiasi modifica codice, leggere i documenti in `docs/`.
-
-Se una richiesta viola le linee guida, proporre prima un'alternativa compatibile.
+- Read ADRs before coding.
+- Respect rules in docs/rules/ as non-negotiable.
+- Follow conventions in docs/guidelines/.
+- Check docs/glossary/ for unfamiliar terms.
+- Prefer small diffs.
+- If a new architectural choice appears, draft a new ADR.
+- If a new convention, rule, procedure, or term emerges, draft the matching doc.
