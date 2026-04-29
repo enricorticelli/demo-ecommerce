@@ -1,33 +1,35 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { authProvider } from './authProvider';
 
 export function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const hasTriggeredLogin = useRef(false);
 
-  const handleLogin = async () => {
-    if (isLoading || hasTriggeredLogin.current) {
-      return;
-    }
-
-    hasTriggeredLogin.current = true;
+  const triggerRedirect = async () => {
     setIsLoading(true);
     setErrorMessage(null);
 
     try {
       await authProvider.login?.({});
     } catch (error) {
-      hasTriggeredLogin.current = false;
       setErrorMessage(error instanceof Error ? error.message : 'Redirect to Keycloak failed.');
-    } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    void handleLogin();
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      if (!cancelled) {
+        void triggerRedirect();
+      }
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, []);
 
   return (
@@ -61,7 +63,7 @@ export function LoginPage() {
             <p style={{ margin: '20px 0 0', color: '#8f2d1f', lineHeight: 1.5 }}>{errorMessage}</p>
             <button
               type="button"
-              onClick={handleLogin}
+              onClick={triggerRedirect}
               disabled={isLoading}
               style={{
                 marginTop: '24px',
