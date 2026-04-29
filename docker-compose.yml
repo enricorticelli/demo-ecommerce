@@ -82,9 +82,10 @@ services:
     environment:
       DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
     ports:
-      - "${ASPIRE_DASHBOARD_HOST_PORT:-18890}:18888"
-      - "${ASPIRE_OTLP_HOST_PORT:-18891}:18889"
+      - "127.0.0.1:${ASPIRE_DASHBOARD_HOST_PORT:-18890}:18888"
+      - "127.0.0.1:${ASPIRE_OTLP_HOST_PORT:-18891}:18889"
     networks:
+      - edge
       - backend
     healthcheck:
       test: ["CMD", "dotnet", "--info"]
