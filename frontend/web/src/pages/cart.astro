@@ -1,0 +1,8 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import CartPage from '../components/CartPage.svelte';
+---
+
+<MainLayout title="Carrello">
+  <CartPage client:load />
+</MainLayout>

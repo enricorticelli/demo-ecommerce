@@ -1,0 +1,10 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import OrderTracker from '../../components/OrderTracker.svelte';
+
+const { id } = Astro.params;
+---
+
+<MainLayout title="Stato ordine">
+  <OrderTracker orderId={id!} client:load />
+</MainLayout>
