@@ -26,6 +26,8 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./scripts/postgres/init-multiple-databases.sh:/docker-entrypoint-initdb.d/01-init-multiple-databases.sh:ro
+    networks:
+      - backend
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d postgres || exit 1"]
       interval: 10s
@@ -43,6 +45,8 @@ services:
       - "${RABBITMQ_MANAGEMENT_HOST_PORT:-15673}:15672"
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - backend
     healthcheck:
       test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping || exit 1"]
       interval: 10s
@@ -63,6 +67,9 @@ services:
     volumes:
       - ./infrastructure/keycloak:/opt/keycloak/data/import:ro
       - keycloak-data:/opt/keycloak/data
+    networks:
+      - edge
+      - backend
     healthcheck:
       test: ["CMD-SHELL", "timeout 5 bash -c ':> /dev/tcp/127.0.0.1/8080' || exit 1"]
       interval: 10s
@@ -77,6 +84,8 @@ services:
     ports:
       - "${ASPIRE_DASHBOARD_HOST_PORT:-18890}:18888"
       - "${ASPIRE_OTLP_HOST_PORT:-18891}:18889"
+    networks:
+      - backend
     healthcheck:
       test: ["CMD", "dotnet", "--info"]
       interval: 10s
@@ -94,6 +103,8 @@ services:
       OTEL_SERVICE_NAME: catalog-api
     depends_on:
       <<: *api-infra-dependencies
+    networks:
+      - backend
     healthcheck: &api-health
       test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health/ready || exit 1"]
       interval: 10s
@@ -111,6 +122,8 @@ services:
       OTEL_SERVICE_NAME: cart-api
     depends_on:
       <<: *api-infra-dependencies
+    networks:
+      - backend
     healthcheck: *api-health
 
   order-api:
@@ -126,6 +139,8 @@ services:
       <<: *api-infra-dependencies
       cart-api:
         condition: service_healthy
+    networks:
+      - backend
     healthcheck: *api-health
 
   warehouse-api:
@@ -139,6 +154,8 @@ services:
       OTEL_SERVICE_NAME: warehouse-api
     depends_on:
       <<: *api-infra-dependencies
+    networks:
+      - backend
     healthcheck: *api-health
 
   payment-api:
@@ -152,6 +169,8 @@ services:
       OTEL_SERVICE_NAME: payment-api
     depends_on:
       <<: *api-infra-dependencies
+    networks:
+      - backend
     healthcheck: *api-health
 
   payment-mock-gateway:
@@ -165,6 +184,9 @@ services:
       OTEL_SERVICE_NAME: payment-mock-gateway
     ports:
       - "127.0.0.1:${PAYMENT_MOCK_GATEWAY_HOST_PORT:-18082}:8080"
+    networks:
+      - edge
+      - backend
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health/ready',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
       interval: 10s
@@ -182,6 +204,8 @@ services:
       OTEL_SERVICE_NAME: shipping-api
     depends_on:
       <<: *api-infra-dependencies
+    networks:
+      - backend
     healthcheck: *api-health
 
   communication-api:
@@ -197,6 +221,8 @@ services:
       <<: *api-infra-dependencies
       mailpit:
         condition: service_started
+    networks:
+      - backend
     healthcheck: *api-health
 
   mailpit:
@@ -205,6 +231,9 @@ services:
     ports:
       - "127.0.0.1:${MAILPIT_SMTP_HOST_PORT:-11025}:1025"
       - "127.0.0.1:${MAILPIT_UI_HOST_PORT:-18025}:8025"
+    networks:
+      - edge
+      - backend
 
   gateway-api:
     <<: *container-logging
@@ -241,6 +270,9 @@ services:
         condition: service_healthy
       communication-api:
         condition: service_healthy
+    networks:
+      - edge
+      - backend
     healthcheck: *api-health
 
   frontend-web:
@@ -259,6 +291,8 @@ services:
     depends_on:
       gateway-api:
         condition: service_healthy
+    networks:
+      - edge
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:3000 || exit 1"]
       interval: 10s
@@ -292,6 +326,8 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+    networks:
+      - edge
     healthcheck:
       test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:3001 || exit 1"]
       interval: 10s
@@ -302,3 +338,10 @@ volumes:
   postgres-data:
   rabbitmq-data:
   keycloak-data:
+
+networks:
+  edge:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true

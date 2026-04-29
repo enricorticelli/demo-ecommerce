@@ -16,6 +16,7 @@ This folder stores Architecture Decision Records.
 - [ADR-0009 Event-driven email via a dedicated Communication service](./0009-event-driven-email-communication-service.md)
 - [ADR-0010 No synchronous HTTP between bounded contexts](./0010-inter-context-communication-events-only.md)
 - [ADR-0011 Gateway authentication with Keycloak introspection and capabilities](./0011-gateway-keycloak-introspection-capability-security.md)
+- [ADR-0012 Backend services not directly reachable, only via Gateway](./0012-backend-services-not-directly-reachable.md)
 
 ## ADR Status Rules
 
